@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import threading
 import time
+import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
@@ -98,6 +99,7 @@ class FakeKinesis:
 
     def __init__(self, events: list[str]) -> None:
         self.events = list(events)
+        self.haptics_ms: list[int] = []
         stopping = self._stopping = threading.Event()
         fake = self
 
@@ -121,6 +123,16 @@ class FakeKinesis:
                     sent += len(pending)
                     self.wfile.write("".join(pending).encode() if pending else b": keepalive\n\n")
                     self.wfile.flush()
+
+            def do_POST(self) -> None:  # noqa: N802
+                parts = urllib.parse.urlsplit(self.path)
+                query = urllib.parse.parse_qs(parts.query)
+                accepted = parts.path == "/haptics" and query.get("token") == [TOKEN] and "ms" in query
+                if accepted:
+                    fake.haptics_ms.append(int(query["ms"][0]))
+                self.send_response(202 if accepted else 403)
+                self.send_header("Content-Length", "0")
+                self.end_headers()
 
             def log_message(self, format: str, *args: Any) -> None:  # noqa: A002
                 pass

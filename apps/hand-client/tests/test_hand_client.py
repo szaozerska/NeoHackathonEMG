@@ -52,6 +52,31 @@ def test_band_gestures_reach_the_headset_and_emg_is_logged(caplog):
     assert any("emg:" in record.getMessage() for record in caplog.records)
 
 
+def test_server_haptics_reach_kinesis_with_the_feed_token():
+    async def scenario():
+        server = GameServer(host="127.0.0.1", port=0, beacon_address=None)
+        await server.start()
+        try:
+            vr = await Connection.open("127.0.0.1", server.port)
+            await vr.handshake(p.Role.VR)
+            with fk.FakeKinesis([fk.hello("right")]) as kinesis:
+                client = asyncio.create_task(run_hand_client(kinesis.url, ("127.0.0.1", server.port), EmgLogger()))
+                await until(vr, lambda m: isinstance(m, p.Paired))
+                band = server.players["P1"].classifier
+                assert band is not None
+                band.send(p.Haptic(duration_ms=120))
+                while not kinesis.haptics_ms:
+                    await asyncio.sleep(0.02)
+                client.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await client
+                assert kinesis.haptics_ms == [120]
+        finally:
+            await server.stop()
+
+    asyncio.run(asyncio.wait_for(scenario(), 20))
+
+
 def test_server_choice_accepts_a_number_or_an_address():
     servers = [("10.0.0.5", 9000), ("10.0.0.6", 9001)]
     assert parse_choice("2", servers) == ("10.0.0.6", 9001)

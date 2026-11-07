@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from . import protocol as p
 from .discovery import run_beacon
 from .game_state import GameState, PlayerInput, Tuning
+from .haptics import haptics_for
 
 log = logging.getLogger(__name__)
 
@@ -233,7 +234,14 @@ class GameServer:
         outgoing.extend(events)
         for event in events:
             log.info("event: %s", p.encode(event))
+            for player_id, duration_ms in haptics_for(event):
+                self._send_haptic(player_id, duration_ms)
         self._broadcast(outgoing)
+
+    def _send_haptic(self, player_id: str, duration_ms: int) -> None:
+        slot = self.players.get(player_id)
+        if slot is not None and slot.classifier is not None:
+            slot.classifier.send(p.Haptic(duration_ms=duration_ms))
 
     def _broadcast(self, messages: list[p.Message]) -> None:
         payload = b"".join(p.encode_line(message) for message in messages)

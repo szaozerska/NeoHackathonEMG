@@ -212,6 +212,14 @@ class Gesture(Message):
 
 
 @dataclass
+class Haptic(Message):
+    """Server → one player's classifier: buzz that player's band once. Kinesis accepts 1–2000 ms."""
+
+    TYPE: ClassVar[str] = "haptic"
+    duration_ms: int
+
+
+@dataclass
 class Wrist(Message):
     TYPE: ClassVar[str] = "wrist"
     player_id: str | None

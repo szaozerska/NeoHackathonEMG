@@ -1,7 +1,8 @@
 """Hand-sign classification client (architecture.md §2.2): Kinesis feed in, signs and band gestures out to the server.
 
-Threads: the Kinesis reader (only reads, so Kinesis never drops us as a slow reader), the classifier, and the asyncio
-loop, which owns the game server connection and all routing. Both threads post into the loop's inbox, so routing
+Threads: the Kinesis reader (only reads, so Kinesis never drops us as a slow reader), the classifier, the haptics
+sender (the server's `haptic` messages → Kinesis), and the asyncio loop, which owns the game server connection and all
+routing. Both threads post into the loop's inbox, so routing
 is single-threaded.
 """
 
@@ -20,6 +21,7 @@ from spellgame.protocol import DISCOVERY_PORT, GAME_PORT
 from .band_gestures import GestureCleaner
 from .emg_classifier import ClassifierWorker, EmgClassifier, EmgLogger, SignPrediction
 from .kinesis_feed import BandGestureEvent, BandStatus, EmgBatch, FeedEvent, KinesisFeed, validate_feed_url
+from .kinesis_haptics import HapticsWorker
 from .server_link import ServerLink
 from .server_picker import Server, pick_server
 
@@ -81,6 +83,7 @@ async def run_hand_client(kinesis_url: str, server: Server, classifier: EmgClass
     loop = asyncio.get_running_loop()
     inbox: asyncio.Queue[InboxItem] = asyncio.Queue()
     emg_batches: queue.Queue[EmgBatch] = queue.Queue()
+    haptic_durations_ms: queue.Queue[int] = queue.Queue()
 
     def post(item: InboxItem) -> None:
         loop.call_soon_threadsafe(inbox.put_nowait, item)
@@ -91,12 +94,13 @@ async def run_hand_client(kinesis_url: str, server: Server, classifier: EmgClass
         elif isinstance(event, (BandStatus, BandGestureEvent)):
             post(event)
 
-    link = ServerLink(*server)
+    link = ServerLink(*server, on_haptic=haptic_durations_ms.put)
     feed = KinesisFeed(kinesis_url, on_feed_event)
     worker = ClassifierWorker(emg_batches, classifier, post)
     async with asyncio.TaskGroup() as tasks:
         tasks.create_task(run_in_thread(feed.run))
         tasks.create_task(run_in_thread(worker.run))
+        tasks.create_task(run_in_thread(HapticsWorker(kinesis_url, haptic_durations_ms).run))
         tasks.create_task(link.run())
         tasks.create_task(BandInputRouter(link).run(inbox))
 
