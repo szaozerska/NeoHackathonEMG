@@ -54,7 +54,11 @@ namespace SpellGame.Networking
                 ExceptionDispatchInfo.Capture(_readLoop.Exception.InnerException).Throw();
 
             while (_inboundLines.TryDequeue(out var line))
-                yield return MessageCodec.Decode(line);
+            {
+                var message = MessageCodec.Decode(line);
+                if (message != null)
+                    yield return message;
+            }
         }
 
         private async Task ReadLinesAsync(StreamReader reader, CancellationToken cancellationToken)

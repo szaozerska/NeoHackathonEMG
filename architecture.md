@@ -162,13 +162,15 @@ The first message on every TCP connection:
 
 | Type | Direction | Fields |
 |---|---|---|
-| `hello` / `welcome` / `error` | client ↔ server | see §4.2 |
+| `hello` / `welcome` / `error` | client ↔ server | see §4.2. `hello` may carry an optional `player_id`: a VR client reclaims its ID after a reconnect; a classifier pairs directly with that player |
 | `pinch` | classifier → server | `t`, `hand` (sent during the pairing screen) |
 | `pair_start` / `pair_prompt` / `paired` | server → VR and classifier | `pair_prompt`: `player_id` currently being prompted; `paired`: `player_id` |
-| `pose` | VR → server, server → VR | `player_id`, `t`, `joints{head, chest, l/r_shoulder, l/r_elbow, l/r_wrist, l/r_hand}` each `{pos:[x,y,z], rot:[w,x,y,z]}` |
-| `sign` | classifier → server, server → VR | `player_id`, `t`, `hand` (`left`/`right`), `sign` (label or `none`), `confidence` |
+| `pose` | VR → server, server → VR | `player_id`, `t`, `joints{head, chest, hips, l/r_shoulder, l/r_elbow, l/r_wrist, l/r_hand}` each `{pos:[x,y,z], rot:[w,x,y,z], vel?:[x,y,z]}`. `hips` is needed for the sword draw; `vel` (optional, measured on the headset) gives cleaner hand speed than the server's finite difference |
+| `sign` | classifier → server | `player_id`, `t`, `hand` (`left`/`right`, the hand wearing the band), `sign` (`fist`, `open_palm`, `snap` or `none`), `confidence`. `snap` is momentary: the server acts on the transition into it |
 | `wrist` *(optional)* | classifier → server | `player_id`, `t`, `hand`, `rot:[w,x,y,z]` |
-| `spell` | server → VR | `caster_id`, `spell`, `state` (`charging`/`cast`/`cancelled`), `charge` (0–1), `origin`, `direction` |
+| `spell` | server → VR | `caster_id`, `spell`, `state` (`charging`/`cast`/`cancelled`), `charge` (0–1), `origin`, `direction`. Lifecycle events; continuous state is in `state` |
+| `state` | server → VR, every tick | `tick`, `players[{player_id, hp, connected, band_paired, sign, item}]`, `projectiles[{id, kind, owner_id, pos, vel}]` |
+| `impact` | server → VR | `projectile_id`, `kind`, `owner_id`, `pos`, `reason` (`hit`/`expired`), `target_id` |
 | `damage` | server → VR | `target_id`, `source_id`, `amount`, `hp_after` |
 
 Timestamps (`t`) are sender-local and used only for ordering within one stream. Never compare the band's clock, a Mac clock, and the Quest clock directly.
@@ -189,3 +191,17 @@ Timestamps (`t`) are sender-local and used only for ordering within one stream. 
 - Server tick rate and pose send rate.
 - Whether the optional `wrist` stream is needed at all.
 - How much geometry spells need. This decides between the Python server and a headless Unity server (§2.3).
+
+## 9. Gestures (default)
+
+- The band hand does one gesture at a time. Finger and wrist state comes from the band (`sign`); arm motion comes from the Quest (`pose`).
+- Players share one physical room, so both headsets must agree on one coordinate frame (Meta colocation + Shared Spatial Anchors; fallback: recenter on marked floor spots). The server assumes poses arrive in that shared frame.
+- Each gesture is a server-side state machine over the band sign and a short history of the band hand's pose.
+
+| Gesture | Band | Quest | Server behaviour |
+|---|---|---|---|
+| **Fireball** (implemented) | `snap` | Throw: hand speed ≥ 2.5 m/s, mostly along the body's facing | Snap conjures a held fireball. The throw releases it at the hand with the peak hand velocity's direction (light aim assist), as a projectile hit-tested against a head-to-hips capsule. Held fireballs fizzle after 8 s |
+| **Sword** | `fist` held | Fist starts near the left hip, then pulls up diagonally | Drawn while the fist is held, gone on release. Blade capsule along the hand; damage scales with tip speed |
+| **Shield** | `open_palm` held | Palm facing away from the player; push impulse = peak push speed | Raised shield blocks; a forceful push gives a short power boost, and a sword contact during the boost is a parry |
+
+Tuning values live in `apps/server/spellgame/game_state.py` (`Tuning`).
