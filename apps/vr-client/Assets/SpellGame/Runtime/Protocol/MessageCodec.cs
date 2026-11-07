@@ -33,11 +33,14 @@ namespace SpellGame.Protocol
 
         public static string Encode(Message message) => JsonConvert.SerializeObject(message, Settings);
 
+        /// <summary>Returns null for message types this client doesn't know yet, so newer servers don't break it.</summary>
         public static Message Decode(string line)
         {
             var json = JObject.Parse(line);
             var typeName = json.Value<string>("type");
-            return (Message)json.ToObject(InboundTypes[typeName], Serializer);
+            return typeName != null && InboundTypes.TryGetValue(typeName, out var type)
+                ? (Message)json.ToObject(type, Serializer)
+                : null;
         }
     }
 }
