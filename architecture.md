@@ -16,7 +16,7 @@ Diagram: https://www.tldraw.com/f/j9TtJhe8cWZyB6hVz3jwV?d=v-977.-580.3038.1929.p
 
 ## 1. Overview
 
-A multiplayer VR spell-casting game.
+A multiplayer mixed-reality (passthrough AR) spell-casting game.
 
 - **Meta Quest 3** tracks each player's body.
 - **Meta Neural Band** reads the player's forearm EMG, and an ML classifier on a Mac turns it into hand signs.
@@ -26,15 +26,15 @@ There is one Quest, one Neural Band, and one classification Mac per player, plus
 
 ## 2. Components
 
-### 2.1 Meta Quest 3: VR client (Unity)
+### 2.1 Meta Quest 3: AR client (Unity, passthrough; called the VR client / role `vr` in code and protocol)
 - **Inputs:**
-  - Built-in camera tracking through Meta's Movement SDK (upper-body tracking): hand position and direction, wrists, elbows, shoulders, chest.
+  - Built-in camera tracking through Meta's Movement SDK (full-body tracking, legs estimated): hands, wrists, elbows, shoulders, chest, hips, knees, ankles, feet.
 - **Responsibilities:**
   - Find the game server on the LAN (§4.1), then open a TCP connection to it.
   - Stream position/pose packets (body and arms) to the server.
   - Receive **all** game-state packets (pose, hand sign, damage) and render them.
   - Process **no** game mechanics.
-  - Render the local player's own body from local tracking. Only other players and spell effects come from the server, so the player's own arms don't lag behind the network.
+  - Show the real room through passthrough; players see each other's real bodies, so skeletons are debug lines only. The local skeleton comes from local tracking, other players' from the server.
 - **Identity:** tagged with a player ID (§5).
 
 ### 2.2 Hand sign classification client (Mac, one per player)

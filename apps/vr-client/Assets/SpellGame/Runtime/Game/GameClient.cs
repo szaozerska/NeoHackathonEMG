@@ -15,7 +15,7 @@ namespace SpellGame.Game
     public sealed class GameClient : MonoBehaviour
     {
         [SerializeField] private OVRSkeleton bodySkeleton;
-        [SerializeField] private RemotePlayersView remotePlayers;
+        [SerializeField] private DebugSkeletonsView debugSkeletons;
         [SerializeField] private TextMesh statusLabel;
 
         [Header("Server")]
@@ -49,8 +49,12 @@ namespace SpellGame.Game
             _connection.Send(new HelloMessage { Role = ClientRole.Vr });
         }
 
+        private const string LocalSkeletonId = "local";
+
         private void Update()
         {
+            DrawLocalSkeleton();
+
             if (_connection == null)
                 return;
 
@@ -100,7 +104,7 @@ namespace SpellGame.Game
                     SetStatus($"You are {_playerId} · band paired");
                     break;
                 case PoseMessage pose when pose.PlayerId != _playerId:
-                    remotePlayers.ApplyPose(pose);
+                    debugSkeletons.Draw(pose.PlayerId, pose.Joints);
                     break;
                 case SignMessage sign:
                     SignReceived?.Invoke(sign);
@@ -112,6 +116,12 @@ namespace SpellGame.Game
                     DamageReceived?.Invoke(damage);
                     break;
             }
+        }
+
+        private void DrawLocalSkeleton()
+        {
+            if (_poseSampler.IsTracking)
+                debugSkeletons.Draw(LocalSkeletonId, _poseSampler.Sample());
         }
 
         private void SendPoseWhenDue()

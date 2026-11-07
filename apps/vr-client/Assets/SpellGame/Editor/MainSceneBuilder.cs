@@ -7,50 +7,31 @@ using UnityEngine;
 namespace SpellGame.Editor
 {
     /// <summary>
-    /// Regenerates the boilerplate scene: OVRCameraRig + Movement SDK body tracking + GameClient.
+    /// Regenerates the boilerplate scene: passthrough OVRCameraRig + Movement SDK body tracking + debug skeletons + GameClient.
     /// Headless: <c>Unity -batchmode -quit -projectPath . -executeMethod SpellGame.Editor.MainSceneBuilder.Build</c>
     /// </summary>
     public static class MainSceneBuilder
     {
         private const string ScenePath = "Assets/SpellGame/Scenes/Main.unity";
-        private const string PrefabFolder = "Assets/SpellGame/Prefabs";
         private const string MaterialFolder = "Assets/SpellGame/Materials";
         private const string CameraRigPrefabPath = "Packages/com.meta.xr.sdk.core/Prefabs/OVRCameraRig.prefab";
-        private const string LitShaderName = "Universal Render Pipeline/Lit";
+        private const string UnlitShaderName = "Universal Render Pipeline/Unlit";
 
         [MenuItem("SpellGame/Rebuild Main Scene")]
         public static void Build()
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-            CreateLight();
-            CreateFloor();
             var rig = CreateCameraRig();
             var trackingSpace = rig.transform.Find("TrackingSpace");
             var bodySkeleton = CreateBodyTracking(trackingSpace);
             var statusLabel = CreateStatusLabel(trackingSpace.Find("CenterEyeAnchor"));
-            var remotePlayers = CreateRemotePlayersView();
-            CreateGameClient(bodySkeleton, remotePlayers, statusLabel);
+            var debugSkeletons = CreateDebugSkeletonsView();
+            CreateGameClient(bodySkeleton, debugSkeletons, statusLabel);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
             Debug.Log($"[SpellGame] Built {ScenePath}.");
-        }
-
-        private static void CreateLight()
-        {
-            var light = new GameObject("Directional Light").AddComponent<Light>();
-            light.type = LightType.Directional;
-            light.shadows = LightShadows.Soft;
-            light.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
-        }
-
-        private static void CreateFloor()
-        {
-            var floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            floor.name = "Floor";
-            floor.transform.localScale = new Vector3(2f, 1f, 2f);
-            floor.GetComponent<MeshRenderer>().sharedMaterial = LitMaterial("Floor", new Color(0.35f, 0.35f, 0.4f));
         }
 
         private static OVRCameraRig CreateCameraRig()
@@ -61,12 +42,22 @@ namespace SpellGame.Editor
             var manager = new SerializedObject(rig.GetComponent<OVRManager>());
             manager.FindProperty("_trackingOriginType").intValue = (int)OVRManager.TrackingOrigin.FloorLevel;
             manager.FindProperty("requestBodyTrackingPermissionOnStartup").boolValue = true;
+            manager.FindProperty("isInsightPassthroughEnabled").boolValue = true;
             manager.ApplyModifiedPropertiesWithoutUndo();
 
+            rig.AddComponent<OVRPassthroughLayer>();
+            ClearToTransparent(rig.transform.Find("TrackingSpace/CenterEyeAnchor").GetComponent<Camera>());
             return rig.GetComponent<OVRCameraRig>();
         }
 
-        /// <summary>Local player body (architecture.md §2.1): drawn as a debug skeleton, sampled for the pose stream.</summary>
+        /// <summary>The passthrough layer is an underlay, so the camera must leave alpha at zero wherever nothing is drawn.</summary>
+        private static void ClearToTransparent(Camera camera)
+        {
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = Color.clear;
+        }
+
+        /// <summary>Local player body (architecture.md §2.1), sampled for the pose stream and the debug skeleton.</summary>
         private static OVRSkeleton CreateBodyTracking(Transform trackingSpace)
         {
             var body = new GameObject("Body Tracking");
@@ -77,18 +68,7 @@ namespace SpellGame.Editor
             var serializedSkeleton = new SerializedObject(skeleton);
             serializedSkeleton.FindProperty("_skeletonType").intValue = (int)OVRSkeleton.SkeletonType.FullBody;
             serializedSkeleton.ApplyModifiedPropertiesWithoutUndo();
-
-            AddSkeletonRenderer(body);
             return skeleton;
-        }
-
-        /// <summary>The SDK renderer defaults to the built-in "Diffuse" shader, which URP can't draw, so it gets URP materials.</summary>
-        private static void AddSkeletonRenderer(GameObject body)
-        {
-            var renderer = new SerializedObject(body.AddComponent<OVRSkeletonRenderer>());
-            renderer.FindProperty("_skeletonMaterial").objectReferenceValue = LitMaterial("LocalSkeleton", new Color(0.2f, 0.8f, 1f));
-            renderer.FindProperty("_systemGestureMaterial").objectReferenceValue = LitMaterial("LocalSkeletonSystemGesture", new Color(0.2f, 0.3f, 1f));
-            renderer.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static TextMesh CreateStatusLabel(Transform centerEye)
@@ -106,43 +86,26 @@ namespace SpellGame.Editor
             return label;
         }
 
-        private static RemotePlayersView CreateRemotePlayersView()
+        private static DebugSkeletonsView CreateDebugSkeletonsView()
         {
-            var view = new GameObject("Remote Players").AddComponent<RemotePlayersView>();
+            var view = new GameObject("Debug Skeletons").AddComponent<DebugSkeletonsView>();
             var serializedView = new SerializedObject(view);
-            serializedView.FindProperty("jointMarkerPrefab").objectReferenceValue = JointMarkerPrefab();
+            serializedView.FindProperty("boneMaterial").objectReferenceValue = UnlitMaterial("DebugSkeleton", new Color(0.2f, 1f, 0.4f));
             serializedView.ApplyModifiedPropertiesWithoutUndo();
             return view;
         }
 
-        private static void CreateGameClient(OVRSkeleton bodySkeleton, RemotePlayersView remotePlayers, TextMesh statusLabel)
+        private static void CreateGameClient(OVRSkeleton bodySkeleton, DebugSkeletonsView debugSkeletons, TextMesh statusLabel)
         {
             var client = new GameObject("Game Client").AddComponent<GameClient>();
             var serializedClient = new SerializedObject(client);
             serializedClient.FindProperty("bodySkeleton").objectReferenceValue = bodySkeleton;
-            serializedClient.FindProperty("remotePlayers").objectReferenceValue = remotePlayers;
+            serializedClient.FindProperty("debugSkeletons").objectReferenceValue = debugSkeletons;
             serializedClient.FindProperty("statusLabel").objectReferenceValue = statusLabel;
             serializedClient.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        private static GameObject JointMarkerPrefab()
-        {
-            var path = $"{PrefabFolder}/JointMarker.prefab";
-            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-            if (existing != null)
-                return existing;
-
-            Directory.CreateDirectory(PrefabFolder);
-            var marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            Object.DestroyImmediate(marker.GetComponent<Collider>());
-            marker.transform.localScale = Vector3.one * 0.08f;
-            marker.GetComponent<MeshRenderer>().sharedMaterial = LitMaterial("RemoteJoint", new Color(0.9f, 0.4f, 0.2f));
-            var prefab = PrefabUtility.SaveAsPrefabAsset(marker, path);
-            Object.DestroyImmediate(marker);
-            return prefab;
-        }
-
-        private static Material LitMaterial(string name, Color color)
+        private static Material UnlitMaterial(string name, Color color)
         {
             var path = $"{MaterialFolder}/{name}.mat";
             var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -150,7 +113,7 @@ namespace SpellGame.Editor
                 return existing;
 
             Directory.CreateDirectory(MaterialFolder);
-            var material = new Material(Shader.Find(LitShaderName)) { color = color };
+            var material = new Material(Shader.Find(UnlitShaderName)) { color = color };
             AssetDatabase.CreateAsset(material, path);
             return material;
         }

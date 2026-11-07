@@ -33,13 +33,13 @@ Assets/SpellGame/
     Networking/ServerDiscovery.cs      UDP beacon "SPELLGAME <port>" on 47777 (§4.1)
     Networking/AndroidMulticastLock.cs WifiManager.MulticastLock so the Quest receives broadcasts
     Networking/ServerConnection.cs     TCP (NoDelay), background line reader, main-thread decode
-    Tracking/BodyPoseSampler.cs        OVRSkeleton (Body) → head/chest/shoulders/elbows/wrists/hands
+    Tracking/BodyPoseSampler.cs        OVRSkeleton (FullBody) → head/chest/hips/arms/hands/legs/feet
     Game/GameClient.cs         Composition root: discover → connect → hello → stream pose, dispatch state
-    Game/RemotePlayersView.cs  Draws other players' joints from server pose packets
+    Game/DebugSkeletonsView.cs Draws local and remote skeletons as debug line segments
   Editor/                      SpellGame.Editor assembly
     QuestProjectConfigurator.cs  Menu "SpellGame/Configure Project for Quest 3"
     MainSceneBuilder.cs          Menu "SpellGame/Rebuild Main Scene"
-  Scenes/Main.unity            OVRCameraRig + body tracking + GameClient + status label
+  Scenes/Main.unity            OVRCameraRig with passthrough + body tracking + debug skeletons + GameClient + status label
 ```
 
 `GameClient` raises `SignReceived`, `SpellReceived` and `DamageReceived`. Gameplay views (spell VFX, HP bars)
@@ -51,7 +51,7 @@ The client ignores its own pose when the server echoes it back.
 1. Open `apps/vr-client` in Unity 6000.6.8f1, then switch the platform to **Android** (File → Build Profiles).
 2. Run **SpellGame → Configure Project for Quest 3**. This sets IL2CPP/ARM64, API 32+, Vulkan and Linear color.
    It also sets up URP, the OpenXR loader with Meta XR, Meta Quest Support and the Touch controller profiles,
-   requires body tracking in the OVR project config, and generates `Assets/Plugins/Android/AndroidManifest.xml`
+   requires body tracking and passthrough in the OVR project config, and generates `Assets/Plugins/Android/AndroidManifest.xml`
    with the LAN multicast permissions. Headless version:
    ```bash
    Unity -batchmode -quit -projectPath . -buildTarget Android -executeMethod SpellGame.Editor.QuestProjectConfigurator.Configure

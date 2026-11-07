@@ -141,6 +141,7 @@ namespace SpellGame.Editor
             config.targetDeviceTypes = new() { OVRProjectConfig.DeviceType.Quest3, OVRProjectConfig.DeviceType.Quest3S };
             config.bodyTrackingSupport = OVRProjectConfig.FeatureSupport.Required;
             config.handTrackingSupport = OVRProjectConfig.HandTrackingSupport.ControllersAndHands;
+            config.insightPassthroughSupport = OVRProjectConfig.FeatureSupport.Required;
             OVRProjectConfig.CommitProjectConfig(config);
 
             var runtime = OVRRuntimeSettings.GetRuntimeSettings();
