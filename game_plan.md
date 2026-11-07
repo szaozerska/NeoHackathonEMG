@@ -24,12 +24,20 @@ Shape of the system: [architecture.md](architecture.md).
 - Cooldown: a shrinking ember on the hand (`players[].cooldown`).
 
 ### 1b. Sword
+Server done (`_step_sword` in `game_state.py`, all values in `Tuning.sword_*`); Unity blade view still to do.
 - **Draw:** `fist` that starts within about 20 cm of the hip opposite the band hand ("left pocket" for a right-hand band),
   then pulls up diagonally across the body at least about 30 cm within 0.6 s.
 - **Release:** letting go of the fist removes the sword at once.
 - **Blade:** about 0.9 m capsule along the hand. Damage scales with tip speed above a minimum, with a per-target re-hit
   cooldown so one swing can't hit every tick.
 - **Visual:** glowing blade plus a swing trail that brightens with speed.
+- **Server specifics:** pocket = hips moved 15 cm toward the side opposite the band hand. The pull counts from the last
+  fist sample inside the pocket, ignores motion toward/away from the opponent, and must lie within 50° of the 45° up-and-
+  across diagonal. The blade runs 0.9 m from the hand along the forearm (elbow → hand); the Unity view must draw it the
+  same way. Damage: 6 at 2 m/s tip speed, rising to 15 at 8 m/s; below 2 m/s the blade touches without hurting. One hit
+  per target per 0.5 s.
+- **Events:** `spell {spell: sword, state: cast}` on draw, `state: sheathed` on release. Sword hits send `damage` with
+  `kind: sword` and the contact `pos` (fireball damage now carries `kind`/`pos` too).
 
 ### 1c. Shield
 - **Raise:** `open_palm` with the palm facing away from the player (toward the opponent) raises a disc in front of the palm.
