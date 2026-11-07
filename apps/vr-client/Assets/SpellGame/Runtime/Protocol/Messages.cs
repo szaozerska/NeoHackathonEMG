@@ -177,12 +177,15 @@ namespace SpellGame.Protocol
     {
         public const string Fireball = "fireball";
         public const string Sword = "sword";
+        public const string Shield = "shield";
     }
 
     public static class ImpactReason
     {
         public const string Hit = "hit";
         public const string Expired = "expired";
+        public const string Blocked = "blocked";
+        public const string Parried = "parried";
     }
 
     public sealed class ImpactMessage : Message
@@ -215,6 +218,9 @@ namespace SpellGame.Protocol
 
         /// <summary>Seconds until the player can conjure again.</summary>
         public float Cooldown { get; set; }
+
+        /// <summary>0-1 shield power from the last push; high enough, a sword contact is a parry.</summary>
+        public float ShieldBoost { get; set; }
     }
 
     public sealed class ProjectileSnapshot
