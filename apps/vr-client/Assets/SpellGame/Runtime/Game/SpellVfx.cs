@@ -11,32 +11,51 @@ namespace SpellGame.Game
     public static class SpellVfx
     {
         private static Mesh _sphereMesh;
+        private static Mesh _capsuleMesh;
 
-        private static Mesh SphereMesh
+        private static Mesh SphereMesh => _sphereMesh ??= PrimitiveMesh(PrimitiveType.Sphere);
+
+        /// <summary>Unity's capsule: 2 m tall along +y, 1 m wide.</summary>
+        private static Mesh CapsuleMesh => _capsuleMesh ??= PrimitiveMesh(PrimitiveType.Capsule);
+
+        private static Mesh PrimitiveMesh(PrimitiveType type)
         {
-            get
-            {
-                if (_sphereMesh != null)
-                    return _sphereMesh;
-
-                var primitive = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                _sphereMesh = primitive.GetComponent<MeshFilter>().sharedMesh;
-                Object.Destroy(primitive);
-                return _sphereMesh;
-            }
+            var primitive = GameObject.CreatePrimitive(type);
+            var mesh = primitive.GetComponent<MeshFilter>().sharedMesh;
+            Object.Destroy(primitive);
+            return mesh;
         }
 
         public static Transform CreateOrb(string name, Transform parent, Material material, float diameter)
         {
-            var orb = new GameObject(name);
-            orb.transform.SetParent(parent, false);
-            orb.transform.localScale = Vector3.one * diameter;
-            orb.AddComponent<MeshFilter>().sharedMesh = SphereMesh;
-            var renderer = orb.AddComponent<MeshRenderer>();
+            var orb = CreateMesh(name, parent, material, SphereMesh);
+            orb.localScale = Vector3.one * diameter;
+            return orb;
+        }
+
+        /// <summary>A capsule to be placed with <see cref="PlaceBlade"/>.</summary>
+        public static Transform CreateBlade(string name, Transform parent, Material material) =>
+            CreateMesh(name, parent, material, CapsuleMesh);
+
+        /// <summary>Stretch a <see cref="CreateBlade"/> capsule from <paramref name="hilt"/> to <paramref name="tip"/>.</summary>
+        public static void PlaceBlade(Transform blade, Vector3 hilt, Vector3 tip, float width)
+        {
+            var along = tip - hilt;
+            blade.position = (hilt + tip) * 0.5f;
+            blade.rotation = Quaternion.FromToRotation(Vector3.up, along);
+            blade.localScale = new Vector3(width, along.magnitude * 0.5f, width);
+        }
+
+        private static Transform CreateMesh(string name, Transform parent, Material material, Mesh mesh)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var renderer = go.AddComponent<MeshRenderer>();
             renderer.sharedMaterial = material;
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
-            return orb.transform;
+            return go.transform;
         }
 
         /// <summary>Continuous embers rising off an orb; parented so they follow it.</summary>

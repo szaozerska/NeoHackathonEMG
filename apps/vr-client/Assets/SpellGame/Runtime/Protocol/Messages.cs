@@ -27,6 +27,7 @@ namespace SpellGame.Protocol
         public const string Charging = "charging";
         public const string Cast = "cast";
         public const string Cancelled = "cancelled";
+        public const string Sheathed = "sheathed";
     }
 
     public sealed class HelloMessage : Message
@@ -164,11 +165,18 @@ namespace SpellGame.Protocol
         public string SourceId { get; set; }
         public float Amount { get; set; }
         public float HpAfter { get; set; }
+
+        /// <summary>What dealt the damage: <see cref="SpellKind.Fireball"/> or <see cref="SpellKind.Sword"/>.</summary>
+        public string Kind { get; set; }
+
+        /// <summary>Where the hit landed, [x, y, z]; may be null.</summary>
+        public float[] Pos { get; set; }
     }
 
     public static class SpellKind
     {
         public const string Fireball = "fireball";
+        public const string Sword = "sword";
     }
 
     public static class ImpactReason

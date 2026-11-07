@@ -24,7 +24,7 @@ Shape of the system: [architecture.md](architecture.md).
 - Cooldown: a shrinking ember on the hand (`players[].cooldown`).
 
 ### 1b. Sword
-Server done (`_step_sword` in `game_state.py`, all values in `Tuning.sword_*`); Unity blade view still to do.
+Server: `_step_sword` in `game_state.py`, all values in `Tuning.sword_*`. Unity: `SwordView.cs` (not yet compiled).
 - **Draw:** `fist` that starts within about 20 cm of the hip opposite the band hand ("left pocket" for a right-hand band),
   then pulls up diagonally across the body at least about 30 cm within 0.6 s.
 - **Release:** letting go of the fist removes the sword at once.
