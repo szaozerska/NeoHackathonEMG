@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 
 from spellgame import protocol as p
 from spellgame.client import Connection
@@ -22,9 +23,10 @@ class ServerLink:
     Input that arrives while disconnected is dropped: it is real-time and stale by the time a reconnect completes.
     """
 
-    def __init__(self, host: str, port: int) -> None:
+    def __init__(self, host: str, port: int, on_haptic: Callable[[int], None]) -> None:
         self._host = host
         self._port = port
+        self._on_haptic = on_haptic
         self._conn: Connection | None = None
         self.player_id: str | None = None
 
@@ -85,5 +87,7 @@ class ServerLink:
             case p.Paired(player_id=player_id):
                 self.player_id = player_id
                 log.info("band paired with %s", player_id)
+            case p.Haptic(duration_ms=duration_ms):
+                self._on_haptic(duration_ms)
             case p.Error(message=text):
                 log.error("game server error: %s", text)

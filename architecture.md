@@ -172,6 +172,7 @@ The first message on every TCP connection:
 | `state` | server → VR, every tick | `tick`, `players[{player_id, hp, connected, band_paired, sign, item, band_hand, cooldown}]` (`cooldown`: seconds until the player can conjure again), `projectiles[{id, kind, owner_id, pos, vel}]` |
 | `impact` | server → VR | `projectile_id`, `kind`, `owner_id`, `pos`, `reason` (`hit`/`expired`), `target_id` |
 | `damage` | server → VR | `target_id`, `source_id`, `amount`, `hp_after`, `kind` (`fireball`/`sword`), `pos` (where the hit landed) |
+| `haptic` | server → one player's classifier | `duration_ms` (1–2000). The hand-sign client forwards it to Kinesis's `POST /haptics`, which buzzes that player's band once. Sent on spell `charging` (40 ms) and `cast` (120 ms) to the caster, and on `damage` to the target (300 ms) and the source (60 ms); durations live in `spellgame/haptics.py` |
 
 Timestamps (`t`) are sender-local and used only for ordering within one stream. Never compare the band's clock, a Mac clock, and the Quest clock directly.
 

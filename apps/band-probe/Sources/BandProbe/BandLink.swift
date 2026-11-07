@@ -13,7 +13,7 @@ struct ProbeError: LocalizedError {
 final class BandLink: NSObject, @preconcurrency CBCentralManagerDelegate, @preconcurrency CBPeripheralDelegate,
     @preconcurrency StreamDelegate {
     private let address: UUID
-    private let onEvent: (BandEvent) -> Void
+    private var onEvent: (BandEvent) -> Void = { _ in }
     private let onEnd: (Error?) -> Void
     private var central: CBCentralManager?
     private var peripheral: CBPeripheral?
@@ -30,13 +30,13 @@ final class BandLink: NSObject, @preconcurrency CBCentralManagerDelegate, @preco
 
     var ready: Bool { session?.streamsEnabled == true }
 
-    init(address: UUID, onEvent: @escaping (BandEvent) -> Void, onEnd: @escaping (Error?) -> Void) {
+    init(address: UUID, onEnd: @escaping (Error?) -> Void) {
         self.address = address
-        self.onEvent = onEvent
         self.onEnd = onEnd
     }
 
-    func start() throws {
+    func start(onEvent: @escaping (BandEvent) -> Void) throws {
+        self.onEvent = onEvent
         let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Kinesis", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)

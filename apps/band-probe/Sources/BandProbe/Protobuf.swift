@@ -74,7 +74,7 @@ enum Protobuf {
         }.joined(separator: "\n")
     }
 
-    /// `1=5 2=x:0a01` → field 1 varint 5, field 2 bytes 0a01.
+    /// `1=5 2=x:0a01 3=f:0.5` → field 1 varint 5, field 2 bytes 0a01, field 3 float32 0.5.
     static func encode(_ assignments: [String]) throws -> Data {
         try assignments.reduce(into: Data()) { message, assignment in
             let parts = assignment.split(separator: "=", maxSplits: 1).map(String.init)
@@ -83,6 +83,12 @@ enum Protobuf {
             }
             if parts[1].hasPrefix("x:") {
                 message += BandWire.field(field, try data(hex: String(parts[1].dropFirst(2))))
+                return
+            }
+            if parts[1].hasPrefix("f:") {
+                guard let value = Float(parts[1].dropFirst(2)) else { throw ProbeError(message: "\(parts[1]) is not a float") }
+                message += BandWire.varint(UInt64(field << 3 | 5))
+                message += withUnsafeBytes(of: value.bitPattern.littleEndian) { Data($0) }
                 return
             }
             guard let value = UInt64(parts[1]) else { throw ProbeError(message: "\(parts[1]) is not an unsigned integer") }

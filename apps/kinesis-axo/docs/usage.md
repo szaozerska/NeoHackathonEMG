@@ -1,0 +1,122 @@
+# setup + controls
+
+## run it
+
+[download the dmg](https://github.com/callbacked/kinesis/releases/latest) and drag kinesis into applications. needs macos 14+ and bluetooth.
+
+to build from source, install xcode with a swift 6 toolchain:
+
+```sh
+./scripts/build.sh
+open dist/Kinesis.app
+```
+
+the build produces a universal app for apple silicon and intel. the app is native swift, including bluetooth, packet decoding, and the dial. no python worker or environment to keep running.
+
+the script uses your apple development signing identity if exactly one is available. you can choose one with `KINESIS_SIGNING_IDENTITY`. without one, it uses ad hoc signing, which can make macos ask for accessibility access again after a rebuild. quit kinesis before rebuilding.
+
+## connect
+
+1. [factory reset](https://www.meta.com/help/ai-glasses/1481163499576351/) your band first (hold its button for about 16 seconds), so it starts fresh.
+2. put your band in pairing mode (hold its button for 3 seconds until it flashes) and click **pair band**. kinesis finds it, signs you in with meta once, and claims it for this mac. it remembers the band afterward.
+3. allow bluetooth when macos asks, and accept the bluetooth pairing request. grant kinesis accessibility access to send shortcuts.
+4. click **enable controls** and try a gesture.
+
+closing the window keeps the connection in the menu bar. pause controls there whenever you want. quitting disconnects the band. the battery reading refreshes while connected. the column on the left is your band: its state, battery, and one button that always offers the next step, from **pair band** to **connect** to **enable controls**.
+
+the meta sign-in happens once, on meta's own page. the band only trusts an owner that meta has enrolled, so kinesis needs your account to claim it. the session token lives in your keychain. [enrollment notes](enrollment.md) cover the details.
+
+**forget this band** under **band** clears the band, its key, and your meta sign-in from this mac. a [factory reset](https://www.meta.com/help/ai-glasses/1481163499576351/) on the band is a good idea too, so setup goes smoothly next time: hold its button for about 16 seconds. forget the band under system settings › bluetooth as well. an old entry there can cause pairing issues later. kinesis reminds you of both.
+
+turn on **start automatically** under **band** to reconnect and enable controls when kinesis opens. it waits for a live connection and accessibility access. pausing or opening quick setup keeps controls paused for the rest of that run, until you enable them again.
+
+if an acknowledged connection delivers no sensor frames for ten seconds, kinesis reconnects using the saved pairing, even when status replies still arrive. this also covers a subscription that never sends its first frame. automatic recovery preserves whether controls were enabled or paused and releases held actions; it does not replay old gestures. a known charging band is left alone, and sensor recovery is attempted once until thirty seconds of continuous sensor traffic restore the retry budget. an absence of gestures while sensor data continues is not treated as a stall.
+
+the first launch has a short setup: connect, try a swipe, practice a pinch and turn, and allow mac controls. controls stay paused while you practice; the setup dial never changes your volume or brightness. **quick setup**, the arrow icon at the top right of the window, brings it back anytime. you can skip it too.
+
+choose your hand during setup or under **band**. kinesis reads the band's current setting when it connects. changing hands pauses mac controls, updates the band, and checks the setting again before confirming it. move the band to that wrist, then enable controls when you're ready. swipe directions come directly from the band; the app adjusts its own wrist-turn dial for the selected hand.
+
+**overview** shows your gestures, **gestures** holds the assignments, and **band** has the connection details. the appearance menu switches between light, dark, and your system setting.
+
+turn on **developer mode** at the bottom of **band** to unlock **readings**. it shows raw sEMG readings across eight channels and lets you record the stream. readings can be toggled on an existing connection. after a disconnection, turn them on again to resume. the battery readout also shows charging status when the band reports it.
+
+the column on the left keeps a running count of recognized swipes and taps, saved on this mac across launches. duplicate packets and individual dial ticks aren't added to the count.
+
+## controls
+
+everything is selectable in the app. the initial mappings are:
+
+| gesture | action |
+| --- | --- |
+| thumb swipe left / right | previous / next desktop |
+| thumb swipe up | mission control |
+| thumb swipe down | dismiss with escape |
+| index double tap | play / pause |
+| middle double tap | mute / unmute |
+| index or middle single tap | unassigned |
+| middle hold | unassigned |
+| pinch thumb + index, then turn your wrist | volume |
+
+under **gestures**, each swipe or tap can also run **start or stop Dictation**, **ChatGPT Dictation**, **Send in ChatGPT**, **air mouse on / off**, or its own **custom keyboard shortcut**. choose a custom shortcut, press a key with Control, Option or Command in the recorder, then save it. Shift can be included. each gesture keeps its own shortcut, saved across launches. recording pauses controls so a gesture cannot trigger another action during setup; enable controls again when you are ready. cancelling the recorder keeps the previous gesture assignment.
+
+when a finger has both a single-tap action and a double-tap or hold action, the single waits up to 0.4 seconds to distinguish them. a second contact or the longer gesture cancels the provisional single, so its action cannot block the double tap. pausing, disconnecting, changing that mapping or entering air-mouse mode discards pending actions.
+
+for Dictation, first enable it under macOS **System Settings → Keyboard → Dictation** and choose an ordinary custom shortcut, such as Control–Option–D. record that same combination in Kinesis's **macOS Dictation shortcut** setting. Fn twice and the microphone key are not recorded chords. select a text field in the app you want to type into, then perform the mapped gesture; Kinesis sends the shortcut without taking focus. macOS handles speech input and its permissions. Kinesis reports that it sent the shortcut, rather than claiming Dictation has started or stopped.
+
+**ChatGPT Dictation** has its own **ChatGPT Dictation shortcut** setting. record the shortcut you use in ChatGPT, then assign the action to a gesture. choose **current chat** to bring ChatGPT forward, or **my dot** for your Dot conversation before sending the configured start or stop chord. under my dot, leave **dot chat link** blank to open the current account’s Dot, or paste the copied `codex://threads/…` link to open that exact conversation. the link is saved on this Mac; arbitrary web links and links containing prompts are not accepted. review the text in ChatGPT before sending; Kinesis does not submit a message or claim that recording has started or stopped. this setting starts with current chat, has no default chord and does not change your macOS Dictation shortcut.
+
+**Send in ChatGPT** is a separate optional gesture action with its own **ChatGPT Send shortcut** setting and no default chord. Command-Return is the usual send shortcut; record the exact chord used by your app. leave ChatGPT in front, review the composed text, then perform the Send gesture. choosing a Dictation destination does not automatically send anything. index and middle gesture actions require the air mouse to be off, because those pinches control mouse buttons while it is on.
+
+the air mouse is available without developer mode. assign a gesture to turn it on and use that gesture again, or press Escape, to stop. index and middle pinches act as mouse buttons while it is active; a mapped air-mouse tap/hold remains available to turn it off without an extra click. thumb swipes retain their actions, so a swipe is a useful Dictation binding when you want to point at a field and dictate. the **cursor** page contains speed and steadiness settings.
+
+the dial arms once you have held the pinch for about a fifth of a second, so the two presses of a double tap never turn it. letting go of a turn is not counted as a tap. holding the index finger is the dial, so only the middle finger has a hold you can assign. the dial can also control brightness or be turned off. release and pinch again after changing its settings. media controls use the mac's current audio output, including connected airpods. brightness uses the normal brightness keys, so external displays may not respond.
+
+desktop and mission control actions use the standard control + arrow shortcuts. those need to be enabled in macos keyboard settings, and desktop switching needs another desktop. dismiss sends escape; outside mission control it can dismiss the current view. window and tab shortcuts act within the current app.
+
+## under the hood
+
+swiftui window and menu bar, corebluetooth for the band connection, and swift decoding of the gesture + motion stream from the poc. developer mode adds raw sEMG readings and local JSONL recording. stale input and duplicate gesture messages are filtered before controls run; reconnects don't replay old gestures.
+
+the app shows which command it sent. that isn't confirmation that another app acted on it. the dial is relative wrist motion, with adjustable sensitivity, rather than a tracked hand pose.
+
+the hand acts out what the band reports, seen from the thumb side the way meta shows these gestures. it pinches for as long as you hold a pinch, turns around the pinch while you turn the dial, and replays a swipe along the index finger. the thumb and the fingertip it meets light up. sixteen dots circle the hand, one for each electrode on the band; while you turn, the ones your wrist points at light up. with reduce motion on, the hand stays still and only lights up. it isn't live finger tracking: the poses are fixed and the band's events choose between them. the mesh comes from [webxr input profiles](https://github.com/immersive-web/webxr-input-profiles), with its mit notice bundled. `scripts/export-hand.py` exports the mesh with its skeleton: the joints, a parent for each, and four bone weights per vertex. [hand reference notes](hand-references.md) cover the research.
+
+the band uses a background-removed [meta product image published by gizmodo](https://gizmodo.com/metas-smart-glasses-now-have-a-screen-and-a-magic-wristband-2000659760); it isn't a 3d model.
+
+```sh
+swift test -Xswiftc -warnings-as-errors
+```
+
+[protocol notes and source](protocol.md).
+
+## release files
+
+to package a tested local app without rebuilding or changing its signing identity:
+
+```sh
+./scripts/package-local.sh
+```
+
+this writes a source ZIP, an app ZIP, local-release information and verified SHA-256 checksums under `dist/release-local/<version>-build<build>-<architecture>/`. output directories are immutable: the script refuses to overwrite a prior package. its source allowlist excludes Git history, builds, preferences, account sessions, pairing keys, captures and local runtime files. `dist/` stays ignored by Git; publish the archives separately as GitHub Release assets.
+
+`./scripts/build.sh --local` builds for the current Mac using Swift 6 Command Line Tools and ad-hoc signing by default. use that when a universal Xcode build is unavailable. rebuilding does not replace `/Applications/Kinesis.app`; replacing an installed locally signed build can require new macOS approval.
+
+the full upstream release workflow rebuilds a universal app and runs the complete test suite:
+
+```sh
+./scripts/release.sh
+```
+
+this checks the code, builds the app, and writes a source archive and a local app archive under `dist/release/`. some existing tests instantiate the real Meta session store, so use an isolated development account without saved band credentials when running the entire suite. local recordings, preferences, research copies, and signing credentials stay out of those archives. [release notes](release-notes.md).
+
+the local app archive stays separate from the public dmg. to make a public release, choose a developer id application identity and notarize the app first. `asc` uses your configured apple api credentials.
+
+```sh
+KINESIS_SIGNING_IDENTITY="Developer ID Application: your name (team id)" ./scripts/build.sh
+ditto -c -k --keepParent dist/Kinesis.app dist/Kinesis-notary.zip
+asc notarization submit --file dist/Kinesis-notary.zip --wait
+xcrun stapler staple dist/Kinesis.app
+./scripts/dmg.sh dist/Kinesis.app
+```
+
+the dmg script requires a stapled app, adds the applications shortcut, signs and notarizes the disk image, and checks gatekeeper before writing `dist/Kinesis-<version>.dmg`. both the app and the disk image carry notarization tickets for offline installation. set `KINESIS_SIGNING_IDENTITY` for this script too if more than one developer id identity is installed.

@@ -5,6 +5,7 @@ from spellgame import protocol as p
 from spellgame.client import Connection
 from spellgame.discovery import discover_servers, find_server
 from spellgame.game_state import Tuning
+from spellgame.haptics import CAST_MS, CHARGING_MS, HIT_DEALT_MS, HIT_TAKEN_MS
 from spellgame.server import GameServer
 from spellgame.sim import THROW_DURATION_S, standing_pose, throw_hand_offset
 
@@ -151,6 +152,9 @@ def test_two_players_pair_by_join_order_and_fireball_deals_damage():
                 assert {pl.player_id: pl.hp for pl in state.players} == {"P1": 100.0, "P2": hp_after}
                 assert {pl.player_id: pl.band_hand for pl in state.players} == {"P1": "right", "P2": "right"}
                 assert all(pl.band_paired for pl in state.players)
+                caster_buzzes = [await until(band1, lambda m: isinstance(m, p.Haptic)) for _ in range(3)]
+                assert [h.duration_ms for h in caster_buzzes] == [CHARGING_MS, CAST_MS, HIT_DEALT_MS]
+                assert (await until(band2, lambda m: isinstance(m, p.Haptic))).duration_ms == HIT_TAKEN_MS
             finally:
                 stop.set()
                 await streamer
