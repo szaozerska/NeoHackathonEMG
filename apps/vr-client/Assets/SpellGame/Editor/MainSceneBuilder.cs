@@ -66,18 +66,29 @@ namespace SpellGame.Editor
             return rig.GetComponent<OVRCameraRig>();
         }
 
-        /// <summary>Local player body (architecture.md §2.1): rendered locally, sampled for the pose stream.</summary>
+        /// <summary>Local player body (architecture.md §2.1): drawn as a debug skeleton, sampled for the pose stream.</summary>
         private static OVRSkeleton CreateBodyTracking(Transform trackingSpace)
         {
             var body = new GameObject("Body Tracking");
             body.transform.SetParent(trackingSpace, false);
-            body.AddComponent<OVRBody>().ProvidedSkeletonType = OVRPlugin.BodyJointSet.UpperBody;
+            body.AddComponent<OVRBody>().ProvidedSkeletonType = OVRPlugin.BodyJointSet.FullBody;
 
             var skeleton = body.AddComponent<OVRSkeleton>();
             var serializedSkeleton = new SerializedObject(skeleton);
-            serializedSkeleton.FindProperty("_skeletonType").intValue = (int)OVRSkeleton.SkeletonType.Body;
+            serializedSkeleton.FindProperty("_skeletonType").intValue = (int)OVRSkeleton.SkeletonType.FullBody;
             serializedSkeleton.ApplyModifiedPropertiesWithoutUndo();
+
+            AddSkeletonRenderer(body);
             return skeleton;
+        }
+
+        /// <summary>The SDK renderer defaults to the built-in "Diffuse" shader, which URP can't draw, so it gets URP materials.</summary>
+        private static void AddSkeletonRenderer(GameObject body)
+        {
+            var renderer = new SerializedObject(body.AddComponent<OVRSkeletonRenderer>());
+            renderer.FindProperty("_skeletonMaterial").objectReferenceValue = LitMaterial("LocalSkeleton", new Color(0.2f, 0.8f, 1f));
+            renderer.FindProperty("_systemGestureMaterial").objectReferenceValue = LitMaterial("LocalSkeletonSystemGesture", new Color(0.2f, 0.3f, 1f));
+            renderer.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static TextMesh CreateStatusLabel(Transform centerEye)

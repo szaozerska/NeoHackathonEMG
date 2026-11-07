@@ -100,6 +100,7 @@ namespace SpellGame.Protocol
     {
         public JointPose Head { get; set; }
         public JointPose Chest { get; set; }
+        public JointPose Hips { get; set; }
         public JointPose LShoulder { get; set; }
         public JointPose RShoulder { get; set; }
         public JointPose LElbow { get; set; }
@@ -108,9 +109,19 @@ namespace SpellGame.Protocol
         public JointPose RWrist { get; set; }
         public JointPose LHand { get; set; }
         public JointPose RHand { get; set; }
+        public JointPose LKnee { get; set; }
+        public JointPose RKnee { get; set; }
+        public JointPose LAnkle { get; set; }
+        public JointPose RAnkle { get; set; }
+        public JointPose LFoot { get; set; }
+        public JointPose RFoot { get; set; }
 
         [JsonIgnore]
-        public IEnumerable<JointPose> All => new[] { Head, Chest, LShoulder, RShoulder, LElbow, RElbow, LWrist, RWrist, LHand, RHand };
+        public IEnumerable<JointPose> All => new[]
+        {
+            Head, Chest, Hips, LShoulder, RShoulder, LElbow, RElbow, LWrist, RWrist, LHand, RHand,
+            LKnee, RKnee, LAnkle, RAnkle, LFoot, RFoot,
+        };
     }
 
     public sealed class PoseMessage : Message

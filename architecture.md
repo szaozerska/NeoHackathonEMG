@@ -165,7 +165,7 @@ The first message on every TCP connection:
 | `hello` / `welcome` / `error` | client ↔ server | see §4.2. `hello` may carry an optional `player_id`: a VR client reclaims its ID after a reconnect; a classifier pairs directly with that player |
 | `pinch` | classifier → server | `t`, `hand` (sent during the pairing screen) |
 | `pair_start` / `pair_prompt` / `paired` | server → VR and classifier | `pair_prompt`: `player_id` currently being prompted; `paired`: `player_id` |
-| `pose` | VR → server, server → VR | `player_id`, `t`, `joints{head, chest, hips, l/r_shoulder, l/r_elbow, l/r_wrist, l/r_hand}` each `{pos:[x,y,z], rot:[w,x,y,z], vel?:[x,y,z]}`. `hips` is needed for the sword draw; `vel` (optional, measured on the headset) gives cleaner hand speed than the server's finite difference |
+| `pose` | VR → server, server → VR | `player_id`, `t`, `joints{head, chest, hips, l/r_shoulder, l/r_elbow, l/r_wrist, l/r_hand, l/r_knee, l/r_ankle, l/r_foot}` each `{pos:[x,y,z], rot:[w,x,y,z], vel?:[x,y,z]}`. `hips` is needed for the sword draw; legs come from full-body tracking (estimated by the Quest runtime) and are for debugging and display only; `vel` (optional, measured on the headset) gives cleaner hand speed than the server's finite difference |
 | `sign` | classifier → server | `player_id`, `t`, `hand` (`left`/`right`, the hand wearing the band), `sign` (`fist`, `open_palm`, `snap` or `none`), `confidence`. `snap` is momentary: the server acts on the transition into it |
 | `wrist` *(optional)* | classifier → server | `player_id`, `t`, `hand`, `rot:[w,x,y,z]` |
 | `spell` | server → VR | `caster_id`, `spell`, `state` (`charging`/`cast`/`cancelled`), `charge` (0–1), `origin`, `direction`. Lifecycle events; continuous state is in `state` |

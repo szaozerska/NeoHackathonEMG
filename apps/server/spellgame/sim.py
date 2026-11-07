@@ -1,4 +1,4 @@
-"""Synthetic upper-body poses and gesture motion for fake clients and tests (no headset needed)."""
+"""Synthetic body poses and gesture motion for fake clients and tests (no headset needed)."""
 
 from __future__ import annotations
 
@@ -20,6 +20,12 @@ _STANDING = {
     "r_wrist": (0.25, 1.1, 0.25),
     "l_hand": (-0.25, 0.95, 0.25),
     "r_hand": (0.25, 1.1, 0.3),
+    "l_knee": (-0.1, 0.5, 0.02),
+    "r_knee": (0.1, 0.5, 0.02),
+    "l_ankle": (-0.1, 0.08, 0.0),
+    "r_ankle": (0.1, 0.08, 0.0),
+    "l_foot": (-0.1, 0.02, 0.14),
+    "r_foot": (0.1, 0.02, 0.14),
 }
 
 HAND_IDLE = np.array(_STANDING["r_hand"])

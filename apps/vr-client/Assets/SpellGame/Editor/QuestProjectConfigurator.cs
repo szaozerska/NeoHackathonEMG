@@ -142,6 +142,11 @@ namespace SpellGame.Editor
             config.bodyTrackingSupport = OVRProjectConfig.FeatureSupport.Required;
             config.handTrackingSupport = OVRProjectConfig.HandTrackingSupport.ControllersAndHands;
             OVRProjectConfig.CommitProjectConfig(config);
+
+            var runtime = OVRRuntimeSettings.GetRuntimeSettings();
+            runtime.BodyTrackingJointSet = OVRPlugin.BodyJointSet.FullBody;
+            runtime.BodyTrackingFidelity = OVRPlugin.BodyTrackingFidelity2.High;
+            OVRRuntimeSettings.CommitRuntimeSettings(runtime);
         }
 
         /// <summary>Generates Meta's store-compatible manifest, then adds the LAN permissions discovery needs (§4.1).</summary>

@@ -25,6 +25,12 @@ JOINT_NAMES = (
     "r_wrist",
     "l_hand",
     "r_hand",
+    "l_knee",
+    "r_knee",
+    "l_ankle",
+    "r_ankle",
+    "l_foot",
+    "r_foot",
 )
 
 
