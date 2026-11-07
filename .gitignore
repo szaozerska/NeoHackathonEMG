@@ -1,0 +1,33 @@
+# Unity caches and local state at any project depth
+**/[Ll]ibrary/
+**/[Tt]emp/
+**/[Oo]bj/
+**/[Ll]ogs/
+**/[Uu]ser[Ss]ettings/
+**/[Mm]emoryCaptures/
+**/[Rr]ecordings/
+**/[Tt]est[Rr]esults/
+
+# Local prototype build output (approved current builds remain trackable)
+/Product/Micah/**/[Bb]uild/
+/Product/Micah/**/[Bb]uilds/
+
+# Generated IDE files
+.vs/
+.idea/
+*.csproj
+*.sln
+*.slnx
+*.suo
+*.user
+*.pidb
+*.booproj
+*.opendb
+*.VC.db
+
+# Machine-local files
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
