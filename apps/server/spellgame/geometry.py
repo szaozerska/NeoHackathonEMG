@@ -57,6 +57,20 @@ def closest_point_on_segment(point: np.ndarray, a: np.ndarray, b: np.ndarray) ->
     return a + ab * float(np.clip((point - a) @ ab / length_sq, 0.0, 1.0))
 
 
+def segment_disc_contact(
+    a: np.ndarray, b: np.ndarray, center: np.ndarray, normal: np.ndarray, disc_radius: float, margin: float
+) -> np.ndarray | None:
+    """Where segment a-b passes within `margin` of a disc (centre, unit normal, radius), or None."""
+    da, db = float((a - center) @ normal), float((b - center) @ normal)
+    if (da > margin and db > margin) or (da < -margin and db < -margin):
+        return None
+    t = da / (da - db) if abs(da - db) > _EPSILON else 0.0
+    point = a + (b - a) * float(np.clip(t, 0.0, 1.0))
+    offset = point - center
+    radial = offset - normal * float(offset @ normal)
+    return point if float(np.linalg.norm(radial)) <= disc_radius + margin else None
+
+
 def segment_distance(p1: np.ndarray, q1: np.ndarray, p2: np.ndarray, q2: np.ndarray) -> float:
     """Shortest distance between segments p1-q1 and p2-q2 (Ericson, Real-Time Collision Detection §5.1.9)."""
     d1, d2, r = q1 - p1, q2 - p2, p1 - p2

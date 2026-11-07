@@ -30,12 +30,12 @@ class Match:
         for player_id in self.inputs:
             self.game.add_player(player_id)
 
-    def step(self, p1_hand=None, p1_facing=0.0, snap=False, sign=None):
+    def step(self, p1_hand=None, p1_facing=0.0, snap=False, sign=None, p2_hand=None):
         self.t += DT
         if sign is not None:
             self.inputs["P1"].sign = sign
         self.inputs["P1"].pose = standing_pose("P1", self.t, (0.0, 0.0), p1_facing, p1_hand)
-        self.inputs["P2"].pose = standing_pose("P2", self.t, self.p2_position, 180.0)
+        self.inputs["P2"].pose = standing_pose("P2", self.t, self.p2_position, 180.0, p2_hand)
         self.inputs["P1"].snapped = snap
         events = self.game.step(self.inputs, DT)
         self.inputs["P1"].snapped = False
@@ -239,7 +239,7 @@ def test_same_pull_without_starting_at_the_pocket_does_not_draw():
 
 def test_pull_from_pocket_without_a_fist_does_not_draw():
     match = sword_match()
-    match.motion(sword_draw_hand_offset, SWORD_DRAW_DURATION_S + 0.05, sign=p.Sign.OPEN_PALM)
+    match.motion(sword_draw_hand_offset, SWORD_DRAW_DURATION_S + 0.05, sign=p.Sign.NONE)
     assert match.p1.item == Item.NONE
 
 
@@ -312,3 +312,119 @@ def test_cannot_draw_while_holding_a_fireball():
     events = match.draw_sword()
     assert match.p1.item != Item.SWORD
     assert not [e for e in of_type(events, p.Spell) if e.spell == Item.SWORD]
+
+
+SHIELD_HAND = np.array([0.0, 1.3, 0.35])
+
+
+def raise_shield(match, hand=SHIELD_HAND):
+    return match.step(p1_hand=hand, sign=p.Sign.OPEN_PALM)
+
+
+def incoming_fireball(match, z=2.5, speed=-6.0):
+    match.game.projectiles.append(
+        Projectile(
+            id=7,
+            kind=Item.FIREBALL,
+            owner_id="P2",
+            pos=np.array([0.0, 1.3, z]),
+            vel=np.array([0.0, 0.0, speed]),
+            born=match.game.time,
+        )
+    )
+
+
+def give_p2_sword(match):
+    match.inputs["P2"].sign = p.Sign.FIST
+    match.p2.item = Item.SWORD
+
+
+def test_open_palm_raises_the_shield_and_releasing_lowers_it():
+    match = Match()
+    events = raise_shield(match)
+    assert match.p1.item == Item.SHIELD
+    assert [(e.spell, e.state) for e in of_type(events, p.Spell)] == [(Item.SHIELD, p.SpellState.CAST)]
+
+    events = match.step(p1_hand=SHIELD_HAND, sign=p.Sign.NONE)
+    assert match.p1.item == Item.NONE
+    assert [(e.spell, e.state) for e in of_type(events, p.Spell)] == [(Item.SHIELD, p.SpellState.SHEATHED)]
+
+
+def test_raised_shield_blocks_a_fireball_from_the_front():
+    match = Match()
+    raise_shield(match)
+    incoming_fireball(match)
+    events = match.run(1.0, p1_hand=SHIELD_HAND)
+
+    assert not of_type(events, p.Damage)
+    assert [(i.reason, i.target_id) for i in of_type(events, p.Impact)] == [("blocked", "P1")]
+    assert match.p1.hp == match.game.tuning.max_hp
+
+
+def test_fireball_hits_without_a_shield_or_from_behind_it():
+    unshielded = Match()
+    incoming_fireball(unshielded)
+    assert [i.reason for i in of_type(unshielded.run(1.0, p1_hand=SHIELD_HAND), p.Impact)] == ["hit"]
+
+    behind = Match()
+    raise_shield(behind)
+    incoming_fireball(behind, z=-2.0, speed=6.0)
+    assert [i.reason for i in of_type(behind.run(1.0, p1_hand=SHIELD_HAND), p.Impact)] == ["hit"]
+
+
+def test_forceful_push_boosts_the_shield_and_the_boost_fades():
+    match = Match()
+    start = np.array([0.0, 1.3, 0.15])
+    raise_shield(match, start)
+    match.motion(lambda t: start + np.array([0.0, 0.0, 0.3]) * min(t / 0.1, 1.0), 0.1, sign=p.Sign.OPEN_PALM)
+    assert match.game.snapshot().players[0].shield_boost > 0.5
+
+    match.run(match.game.tuning.shield_boost_decay_s + 0.05, p1_hand=start + np.array([0.0, 0.0, 0.3]))
+    assert match.p1.shield_boost == 0.0
+
+
+def test_gentle_push_gives_no_boost():
+    match = Match()
+    start = np.array([0.0, 1.3, 0.15])
+    raise_shield(match, start)
+    match.motion(lambda t: start + np.array([0.0, 0.0, 0.3]) * min(t, 1.0), 1.0, sign=p.Sign.OPEN_PALM)
+    assert match.p1.shield_boost == 0.0
+
+
+def test_raised_shield_blocks_a_sword_swing():
+    match = sword_match()
+    raise_shield(match)
+    give_p2_sword(match)
+    events = []
+    elapsed = 0.0
+    while elapsed < 0.3:
+        events += match.step(p1_hand=SHIELD_HAND, p2_hand=sword_swing_hand_offset(elapsed))
+        elapsed += DT
+
+    assert not of_type(events, p.Damage)
+    assert [(i.kind, i.reason, i.target_id) for i in of_type(events, p.Impact)] == [(Item.SWORD, "blocked", "P1")]
+    assert match.p2.item == Item.SWORD
+
+
+def test_boosted_push_into_a_sword_parries_it():
+    match = sword_match()
+    resting_blade_hand = np.array([0.0, 1.25, 0.4])
+    start = np.array([0.0, 1.3, 0.2])
+    raise_shield(match, start)
+    give_p2_sword(match)
+    match.step(p1_hand=start, p2_hand=resting_blade_hand)
+
+    events = []
+    elapsed = 0.0
+    while elapsed < 0.15:
+        hand = start + np.array([0.0, 0.0, 0.2]) * min(elapsed / 0.08, 1.0)
+        events += match.step(p1_hand=hand, p2_hand=resting_blade_hand)
+        elapsed += DT
+
+    assert [(i.reason, i.target_id) for i in of_type(events, p.Impact)] == [("parried", "P1")]
+    assert [(e.caster_id, e.spell, e.state) for e in of_type(events, p.Spell)] == [
+        ("P2", Item.SWORD, p.SpellState.SHEATHED)
+    ]
+    assert match.p2.item == Item.NONE
+    assert match.p2.sword_locked_until > match.game.time
+    assert not of_type(events, p.Damage)
