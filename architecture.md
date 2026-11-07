@@ -1,5 +1,7 @@
 # Spell-Casting Game: System Architecture Spec
 
+Diagram: https://www.tldraw.com/f/j9TtJhe8cWZyB6hVz3jwV?d=v-977.-580.3038.1929.page
+
 **How to read this spec:**
 - **Binding:** the shape of the system:
   - which components exist and what each one is responsible for;
