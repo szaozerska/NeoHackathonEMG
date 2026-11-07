@@ -7,7 +7,7 @@ import logging
 from collections.abc import Callable
 
 from spellgame import protocol as p
-from spellgame.client import Connection
+from spellgame.client import Connection, this_machine
 
 from .band_gestures import CleanGesture
 from .emg_classifier import SignPrediction
@@ -74,7 +74,7 @@ class ServerLink:
         while True:
             try:
                 conn = await Connection.open(self._host, self._port)
-                await conn.handshake(p.Role.CLASSIFIER, self.player_id)
+                await conn.handshake(p.Role.CLASSIFIER, self.player_id, this_machine("hand-client"))
             except OSError as exc:
                 log.warning("can't reach the game server at %s:%d (%s); retrying", self._host, self._port, exc)
                 await asyncio.sleep(RECONNECT_DELAY_S)

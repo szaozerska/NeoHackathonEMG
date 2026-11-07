@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import platform
 import socket
 from collections.abc import AsyncIterator
 
@@ -35,8 +36,8 @@ class Connection:
         while (message := await self.receive()) is not None:
             yield message
 
-    async def handshake(self, role: str, player_id: str | None = None) -> p.Welcome:
-        self.send(p.Hello(role=role, player_id=player_id))
+    async def handshake(self, role: str, player_id: str | None = None, device: p.DeviceInfo | None = None) -> p.Welcome:
+        self.send(p.Hello(role=role, player_id=player_id, device=device))
         reply = await self.receive()
         if not isinstance(reply, p.Welcome):
             raise ConnectionError(f"expected welcome, got {reply!r}")
@@ -48,6 +49,10 @@ class Connection:
             await self.writer.wait_closed()
         except ConnectionError:
             pass
+
+
+def this_machine(program: str) -> p.DeviceInfo:
+    return p.DeviceInfo(name=f"{program}@{socket.gethostname()}", model=f"{platform.system()} {platform.machine()}")
 
 
 async def resolve_server(host: str | None, port: int, discovery_port: int) -> tuple[str, int]:

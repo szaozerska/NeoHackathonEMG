@@ -133,11 +133,34 @@ class Joint:
 
 
 @dataclass
+class DeviceInfo:
+    """Identifies the machine behind a connection, for the server's monitor."""
+
+    name: str
+    model: str | None = None
+    id: str | None = None
+    """A stable unique identifier, e.g. the Quest's SystemInfo.deviceUniqueIdentifier."""
+
+    def to_dict(self) -> dict[str, Any]:
+        return {f.name: getattr(self, f.name) for f in fields(self)}
+
+
+@dataclass
 class Hello(Message):
     TYPE: ClassVar[str] = "hello"
     role: str
     player_id: str | None = None
     """Optional: a VR client reclaims its ID after a reconnect; a classifier pairs directly with that player."""
+    device: DeviceInfo | None = None
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Hello:
+        device = data.get("device")
+        return cls(
+            role=data["role"],
+            player_id=data.get("player_id"),
+            device=DeviceInfo(**device) if device is not None else None,
+        )
 
 
 @dataclass

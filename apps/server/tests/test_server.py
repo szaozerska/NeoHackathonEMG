@@ -88,6 +88,35 @@ def test_band_gesture_is_relayed_to_every_headset_with_the_bands_player_id():
     run(scenario())
 
 
+def test_server_records_each_clients_device_and_received_packets():
+    async def scenario():
+        server = GameServer(host="127.0.0.1", port=0, beacon_address=None)
+        await server.start()
+        try:
+            vr = await Connection.open("127.0.0.1", server.port)
+            await vr.handshake(p.Role.VR, device=p.DeviceInfo(name="Quest 3", id="q3"))
+            band = await Connection.open("127.0.0.1", server.port)
+            await band.handshake(p.Role.CLASSIFIER)
+            await until(band, lambda m: isinstance(m, p.Paired))
+            vr.send(standing_pose(None, 1.0))
+            await until(vr, lambda m: isinstance(m, p.Pose))
+
+            by_role = {conn.role: conn for conn in server.connections}
+            assert by_role[p.Role.VR].device == p.DeviceInfo(name="Quest 3", id="q3")
+            assert by_role[p.Role.CLASSIFIER].device is None
+            assert by_role[p.Role.CLASSIFIER].player_id == "P1"
+            assert [type(r.message) for r in by_role[p.Role.VR].recent_packets] == [p.Hello, p.Pose]
+            assert by_role[p.Role.VR].packets_received == 2
+
+            await band.close()
+            await until(vr, lambda m: isinstance(m, p.State) and not m.players[0].band_paired)
+            assert [conn.role for conn in server.connections] == [p.Role.VR]
+        finally:
+            await server.stop()
+
+    run(scenario())
+
+
 def test_rejects_connection_without_hello():
     async def scenario():
         server = GameServer(host="127.0.0.1", port=0, beacon_address=None)

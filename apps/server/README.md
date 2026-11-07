@@ -19,8 +19,12 @@ python3 -m venv .venv
 ## Run
 
 ```bash
-.venv/bin/python -m spellgame                 # --port, --tick-hz, --no-beacon, -v
+.venv/bin/python -m spellgame                 # --port, --tick-hz, --no-beacon, --no-tui, -v
 ```
+
+The server opens a live monitor (Textual): connected headsets and hand clients side by side, each with its player ID,
+address, the device it reported in `hello`, and its most recent incoming packets; the log runs underneath. `q` quits.
+`--no-tui` logs to stderr instead.
 
 Without a headset or a band, the fake clients stand in for them (each finds the server via the beacon, or pass `--host`):
 
@@ -51,5 +55,6 @@ spellgame/
   geometry.py     segment distance, body facing, quaternion rotation (Unity frame)
   sim.py          synthetic poses and throw motion for fake clients and tests
   client.py       client connection helpers
+  tui.py          live monitor: connected clients, device info, recent packets, log
   tools/          fake_vr.py, fake_band.py
 ```
