@@ -1,68 +1,72 @@
-# Unity workspace and local CLI guide
+# Unity CLI collaboration workspace
 
-This is Codex's active workspace for Micah. Keep scripts, prototypes, notes, and generated builds here until Micah explicitly approves moving work into `Product/current`.
+Micah's Unity project is `Product/Micah/Unity/HackathonEMG`. Codex tooling lives beside this guide. `Product/current` remains a placeholder until Micah approves a finalized build.
 
-## Verified local installation
+## Installation and project
 
-- Unity CLI: `unity`, version `1.0.0-beta.13`.
-- CLI binary: `/Users/micahb/.unity/bin/unity` (also resolves as `Unity` on this Mac).
-- Editor: `6000.6.8f1`, Apple Silicon (`arm64`).
-- Editor binary: `/Applications/Unity/Hub/Editor/6000.6.8f1/Unity.app/Contents/MacOS/Unity`.
-- The installed Editor reports the Web module.
+- CLI: `unity` version `1.0.0-beta.13`, installed at `/Users/micahb/.unity/bin/unity` on Micah's Mac.
+- Editor: `6000.6.8f1` (`237b6593792b`), arm64, with Web support installed.
+- Editor binary on this Mac: `/Applications/Unity/Hub/Editor/6000.6.8f1/Unity.app/Contents/MacOS/Unity`.
+- Project: local Unity 3D URP template `com.unity.template.urp-blank` version `17.2.6`.
+- Included scene: `Assets/Scenes/SampleScene.unity`, enabled in build settings.
+- Serialization: Force Text, as supplied by the template.
 
-The installed CLI help and official Unity 6.6 documentation were checked. Only CLI discovery and installation inventory were run; no Unity project has been created, opened, tested, or built yet.
+The project files were extracted by the Unity CLI. Initial Editor import failed because the agent sandbox denies Unity Package Manager's local socket (`listen EPERM`). ProjectVersion.txt was restored using the exact Editor version/revision reported in that run's log. This is a starter project, with no EMG integration or custom gameplay yet. An import, live Editor connection, and build are still required before calling it runtime-verified. The template includes a package lockfile; refresh and commit it after successful package resolution and Pipeline installation.
 
-## Start a project when implementation begins
+## Finish setup
 
-Run from the repository root:
-
-```sh
-unity --help
-unity editors --installed --format json
-unity projects new HackathonEMG --path "$PWD/Product/Micah/Unity" --editor-version 6000.6.8f1
-unity open "$PWD/Product/Micah/Unity/HackathonEMG"
-```
-
-A Unity project contains `Assets`, `Packages`, and `ProjectSettings`. The placeholder directories in this scaffold are not Unity projects yet. Choose a 2D/3D/rendering template when the product requirements are established. Keep all teammates on the version recorded in the project's `ProjectSettings/ProjectVersion.txt`.
-
-## Work in Unity
-
-Create scenes and GameObjects in the Editor; put C# MonoBehaviour scripts and assets under the project's `Assets` folder. Attach components to GameObjects, save scenes, and enter Play mode to check behavior. Add intended demo scenes to a build profile before building.
-
-Commit `Assets` and their `.meta` files, `Packages` (including its lockfile), and `ProjectSettings`. Use Visible Meta Files and Force Text serialization for team version control. Coordinate edits to shared scenes and prefabs.
-
-## CLI workflow after a project exists
+From the repository root, with this project's Editor closed:
 
 ```sh
-# Run these from the repository root.
-unity projects verify "$PWD/Product/Micah/Unity/HackathonEMG"
-unity run "$PWD/Product/Micah/Unity/HackathonEMG" --timeout 300 -- -nographics
-
-# Requires a configured Unity Test Framework and actual tests.
-unity test "$PWD/Product/Micah/Unity/HackathonEMG" --mode EditMode --output "$PWD/Product/Micah/Codex/Unity/TestResults/editmode.xml" --timeout 300
-
-# Requires configured build scenes/profile and platform support.
-unity build "$PWD/Product/Micah/Unity/HackathonEMG" --target WebGL --output-path "$PWD/Product/Micah/Codex/Unity/Builds/WebGL" --timeout 600
+bash Product/Micah/Codex/Unity/workspace.sh setup
 ```
 
-Close the project in the Editor before starting another Editor process in batch mode for that same project. Create output directories as needed. Package downloads and license verification may need network access.
+Setup imports the existing project, installs Unity's Pipeline package, opens the Editor, waits for this project to report ready, and discovers its commands. It stops on any error. It requires working Unity licensing, package network access, and local sockets. If Unity requests sign-in, use `unity auth login` in your Terminal and sign in to Unity Hub as needed; then rerun setup. Setup does not create a cloud project or change GitHub access.
 
-Live Editor automation uses the optional `com.unity.pipeline` package. Inspect `unity pipeline --help` before installing it into Micah's project. With that package installed and the project open, inspect commands with `unity list --project-path <absolute-project-path>` and target the same project explicitly in every command. Always verify Play mode actually advances and check the console for errors.
-
-Direct Editor invocation, without the CLI wrapper:
+## How Codex co-works with the Editor
 
 ```sh
-"/Applications/Unity/Hub/Editor/6000.6.8f1/Unity.app/Contents/MacOS/Unity" \
-  -batchmode -quit -nographics \
-  -projectPath "$PWD/Product/Micah/Unity/HackathonEMG" \
-  -logFile "$PWD/Product/Micah/Codex/Unity/editor.log"
+bash Product/Micah/Codex/Unity/workspace.sh open
+bash Product/Micah/Codex/Unity/workspace.sh status
+bash Product/Micah/Codex/Unity/workspace.sh commands
+bash Product/Micah/Codex/Unity/workspace.sh recompile
+bash Product/Micah/Codex/Unity/workspace.sh verify
 ```
 
-For custom build scripts, use a public static Editor method with `-executeMethod Namespace.Class.Method` and inspect the Editor exit code and build report.
+Every operation targets the absolute path of Micah's project. A connected Editor needs `com.unity.pipeline`; the standalone CLI alone cannot edit scenes. After command discovery, use `workspace.sh command <command> [arguments]` to run an available command. Use the discovered schemas before editing. Pipeline exposes scene/asset operations and C# evaluation so Codex can author GameObjects, attach components, inspect the hierarchy, save scenes, read errors, and drive Play mode. Availability depends on the installed package; do not assume a command name without discovery.
+
+Codex writes C# source under this project's `Assets`, recompiles, inspects errors, and uses Editor commands to author scenes and assets. It must verify Play mode advances, inspect the console, and save the scene before claiming a working demo. If the Editor cannot connect or a command times out, report it and diagnose; do not silently target a teammate's Editor. Opening Unity from an unrestricted Terminal does not automatically grant the agent sandbox permission to connect to it.
+
+Before a batch import/build, close this project's interactive Editor:
+
+```sh
+bash Product/Micah/Codex/Unity/workspace.sh import
+bash Product/Micah/Codex/Unity/workspace.sh build
+```
+
+Build output goes to this folder's ignored `Builds/WebGL`, never to `Product/current`. No player build has been verified yet.
+
+## Team Git workflow
+
+Install the Editor version in `ProjectSettings/ProjectVersion.txt`. Pull before starting work; use a personal feature branch, coordinate scene/prefab edits, and include `.meta` files with assets. Commit `Assets`, `Packages` (including the generated lockfile), and `ProjectSettings`. Exclude `Library`, `Temp`, `Logs`, `UserSettings`, and local build output. Contributors can keep prototypes in their named folders; shared promotion requires Micah's approval.
+
+The first scaffold is already on `main`. To publish this Unity setup from a normal Terminal if the agent remains restricted:
+
+```sh
+bash Product/Micah/Codex/Unity/publish-work.sh
+```
+
+That script verifies the expected origin/main branch, refuses pre-existing staged changes, stages only Micah's Unity project/tooling, commits, and pushes without force. Git hooks are disabled for its operations so unrelated hooks are not loaded. The old `push-scaffold.sh` was a one-time bootstrap for the initially empty folder; it intentionally refuses an existing checkout.
+
+Pushing shares code with existing repository collaborators; it does not invite teammates or grant repository permissions.
+
+## Verification and limits
+
+The CLI's project integrity check passed with zero findings (missing/orphan metadata, duplicate GUIDs, conflict markers, and manifest validity). Shell scripts passed Bash syntax checks. Editor import, Pipeline connection, Play mode, and WebGL output remain unverified because the sandbox blocks required local IPC/network capabilities. Check current command output rather than interpreting file presence as a successful import.
 
 ## Official references
 
-- [Unity 6.6 manual](https://docs.unity.com/en-us/engine/6000.6/manual)
+- [Unity CLI and Pipeline package](https://docs.unity.com/en-us/unity-cli/unity-pipeline/unity-pipeline-package)
 - [Editor command line arguments](https://docs.unity.com/en-us/engine/6000.6/manual/unity-editor/command-line-arguments/editor)
 - [Command line builds](https://docs.unity.com/en-us/engine/6000.6/manual/building-and-publishing/build-command-line)
-- Local CLI references: `unity skill show`, `unity open --help`, `unity run --help`, `unity build --help`, `unity test --help`.
+- Local command help: `unity skill show`, `unity pipeline install --help`, `unity command --help`.
