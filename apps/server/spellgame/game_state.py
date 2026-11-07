@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from . import protocol as p
-from .geometry import body_forward, normalize, segment_distance, vec
+from .geometry import UP, body_forward, body_right, closest_point_on_segment, normalize, segment_distance, vec
 
 
 @dataclass
@@ -47,6 +47,26 @@ class Tuning:
     aim_assist_strength: float = 0.5
     """0 disables aim assist; 1 snaps throws within the cone straight at the opponent's chest."""
 
+    sword_pocket_offset: float = 0.15
+    """The pocket is the hips moved this far toward the side opposite the band hand."""
+    sword_pocket_radius: float = 0.2
+    """A fist must start within this distance of the pocket for the pull to draw the sword."""
+    sword_draw_min_distance: float = 0.3
+    sword_draw_window_s: float = 0.6
+    """The pull must cover `sword_draw_min_distance` within this time of the hand leaving the pocket."""
+    sword_draw_cone_deg: float = 50.0
+    """How far the pull may stray from the ideal 45-degree up-and-across diagonal."""
+    sword_length: float = 0.9
+    """The blade extends from the hand along the forearm (elbow to hand)."""
+    sword_radius: float = 0.04
+    sword_min_tip_speed: float = 2.0
+    """m/s. A slower blade touches without hurting."""
+    sword_full_damage_tip_speed: float = 8.0
+    sword_min_damage: float = 6.0
+    sword_max_damage: float = 15.0
+    sword_rehit_s: float = 0.5
+    """A swing hits each target at most once in this window, so one pass isn't counted every tick."""
+
 
 @dataclass
 class PlayerInput:
@@ -65,6 +85,7 @@ class PlayerInput:
 class Item:
     NONE = "none"
     FIREBALL = "fireball"
+    SWORD = "sword"
 
 
 class HandTracker:
@@ -116,6 +137,11 @@ class PlayerState:
     cooldown_until: float = 0.0
     throw_peak: np.ndarray | None = None
     throw_peak_time: float = 0.0
+    draw_start: tuple[float, np.ndarray] | None = None
+    """Time and hand position of the last fist sample in the pocket, while a draw is possible."""
+    sword_tip: np.ndarray | None = None
+    sword_hits: dict[str, float] = field(default_factory=dict)
+    """Target ID to the time the sword last hit them."""
 
     @property
     def alive(self) -> bool:
@@ -176,6 +202,7 @@ class GameState:
             events.extend(self._apply_input(self.add_player(player_id), player_input))
         for player in self.players.values():
             events.extend(self._step_fireball(player))
+            events.extend(self._step_sword(player, dt))
         events.extend(self._step_projectiles(dt))
         return events
 
@@ -323,15 +350,7 @@ class GameState:
             start, end = projectile.pos, projectile.pos + projectile.vel * dt
             target = self._first_hit(projectile, start, end)
             if target is not None:
-                target.hp = max(0.0, target.hp - tuning.fireball_damage)
-                events.append(
-                    p.Damage(
-                        target_id=target.player_id,
-                        source_id=projectile.owner_id,
-                        amount=tuning.fireball_damage,
-                        hp_after=target.hp,
-                    )
-                )
+                events.append(self._damage(target, projectile.owner_id, tuning.fireball_damage, Item.FIREBALL, end))
                 events.append(self._impact(projectile, end, "hit", target.player_id))
             elif self.time - projectile.born >= tuning.fireball_lifetime_s:
                 events.append(self._impact(projectile, end, "expired", None))
@@ -340,6 +359,115 @@ class GameState:
                 remaining.append(projectile)
         self.projectiles = remaining
         return events
+
+    def _step_sword(self, player: PlayerState, dt: float) -> list[p.Message]:
+        able = player.alive and player.connected and player.sign == p.Sign.FIST
+        if player.item == Item.SWORD:
+            return self._swing(player, dt) if able else [self._sheathe(player)]
+        if not able or player.item != Item.NONE:
+            player.draw_start = None
+            return []
+
+        hand, pocket = player.band_hand_tracker.position, self._pocket(player)
+        if hand is None or pocket is None:
+            return []
+        if float(np.linalg.norm(hand - pocket)) <= self.tuning.sword_pocket_radius:
+            player.draw_start = (self.time, hand.copy())
+            return []
+        if player.draw_start is None:
+            return []
+        start_time, start_hand = player.draw_start
+        if self.time - start_time > self.tuning.sword_draw_window_s:
+            player.draw_start = None
+            return []
+        return [self._draw_sword(player)] if self._is_draw_pull(player, hand - start_hand) else []
+
+    def _pocket(self, player: PlayerState) -> np.ndarray | None:
+        if player.pose is None or "hips" not in player.pose.joints:
+            return None
+        toward_band_side = body_right(player.pose.joints) * (1.0 if player.band_hand == p.Hand.RIGHT else -1.0)
+        return vec(player.pose.joints["hips"].pos) - toward_band_side * self.tuning.sword_pocket_offset
+
+    def _is_draw_pull(self, player: PlayerState, pull: np.ndarray) -> bool:
+        """Up and across the body toward the band side; motion toward or away from the opponent is ignored."""
+        assert player.pose is not None
+        forward = body_forward(player.pose.joints)
+        pull = pull - forward * float(pull @ forward)
+        if float(np.linalg.norm(pull)) < self.tuning.sword_draw_min_distance:
+            return False
+        across = body_right(player.pose.joints) * (1.0 if player.band_hand == p.Hand.RIGHT else -1.0)
+        diagonal = normalize(UP + across)
+        return float(normalize(pull) @ diagonal) >= np.cos(np.radians(self.tuning.sword_draw_cone_deg))
+
+    def _draw_sword(self, player: PlayerState) -> p.Spell:
+        player.item = Item.SWORD
+        player.item_since = self.time
+        player.draw_start = None
+        player.sword_tip = None
+        player.sword_hits.clear()
+        blade = self._blade(player)
+        direction = normalize(blade[1] - blade[0]) if blade else None
+        return self._spell_event(player, p.SpellState.CAST, direction, spell=Item.SWORD)
+
+    def _sheathe(self, player: PlayerState) -> p.Spell:
+        player.item = Item.NONE
+        player.sword_tip = None
+        return self._spell_event(player, p.SpellState.SHEATHED, None, spell=Item.SWORD)
+
+    def _blade(self, player: PlayerState) -> tuple[np.ndarray, np.ndarray] | None:
+        """Hilt and tip of the drawn sword."""
+        hand = player.band_hand_tracker.position
+        if hand is None or player.pose is None:
+            return None
+        side = "l" if player.band_hand == p.Hand.LEFT else "r"
+        joints = player.pose.joints
+        base = joints.get(f"{side}_elbow") or joints.get(f"{side}_wrist")
+        direction = normalize(hand - vec(base.pos)) if base else np.zeros(3)
+        if not direction.any():
+            direction = body_forward(joints)
+        return hand, hand + direction * self.tuning.sword_length
+
+    def _swing(self, player: PlayerState, dt: float) -> list[p.Message]:
+        tuning = self.tuning
+        blade = self._blade(player)
+        if blade is None:
+            return []
+        hilt, tip = blade
+        previous_tip, player.sword_tip = player.sword_tip, tip
+        if previous_tip is None or dt <= 0.0:
+            return []
+        tip_speed = float(np.linalg.norm(tip - previous_tip)) / dt
+        if tip_speed < tuning.sword_min_tip_speed:
+            return []
+
+        events: list[p.Message] = []
+        reach = tuning.sword_radius + tuning.body_radius
+        for target in self._targets(player.player_id):
+            last_hit = player.sword_hits.get(target.player_id)
+            if last_hit is not None and self.time - last_hit < tuning.sword_rehit_s:
+                continue
+            capsule = target.body_capsule(tuning)
+            if capsule is None or segment_distance(hilt, tip, *capsule) > reach:
+                continue
+            player.sword_hits[target.player_id] = self.time
+            speed_range = tuning.sword_full_damage_tip_speed - tuning.sword_min_tip_speed
+            strength = float(np.clip((tip_speed - tuning.sword_min_tip_speed) / speed_range, 0.0, 1.0))
+            amount = round(tuning.sword_min_damage + (tuning.sword_max_damage - tuning.sword_min_damage) * strength, 1)
+            on_body = closest_point_on_segment((hilt + tip) / 2.0, *capsule)
+            contact = closest_point_on_segment(on_body, hilt, tip)
+            events.append(self._damage(target, player.player_id, amount, Item.SWORD, contact))
+        return events
+
+    def _damage(self, target: PlayerState, source_id: str, amount: float, kind: str, pos: np.ndarray) -> p.Damage:
+        target.hp = max(0.0, target.hp - amount)
+        return p.Damage(
+            target_id=target.player_id,
+            source_id=source_id,
+            amount=amount,
+            hp_after=target.hp,
+            kind=kind,
+            pos=_round(pos),
+        )
 
     def _first_hit(self, projectile: Projectile, start: np.ndarray, end: np.ndarray) -> PlayerState | None:
         reach = self.tuning.fireball_radius + self.tuning.body_radius
@@ -356,11 +484,13 @@ class GameState:
             if player.player_id != attacker_id and player.alive and player.connected
         ]
 
-    def _spell_event(self, player: PlayerState, state: str, direction: np.ndarray | None) -> p.Spell:
+    def _spell_event(
+        self, player: PlayerState, state: str, direction: np.ndarray | None, spell: str = Item.FIREBALL
+    ) -> p.Spell:
         origin = player.band_hand_tracker.position
         return p.Spell(
             caster_id=player.player_id,
-            spell=Item.FIREBALL,
+            spell=spell,
             state=state,
             charge=1.0,
             origin=_round(origin) if origin is not None else None,

@@ -44,6 +44,19 @@ def body_forward(joints: Mapping[str, Joint]) -> np.ndarray:
     return FORWARD.copy()
 
 
+def body_right(joints: Mapping[str, Joint]) -> np.ndarray:
+    """Horizontal direction to the player's right."""
+    return np.cross(UP, body_forward(joints))
+
+
+def closest_point_on_segment(point: np.ndarray, a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    ab = b - a
+    length_sq = float(ab @ ab)
+    if length_sq <= _EPSILON:
+        return a.copy()
+    return a + ab * float(np.clip((point - a) @ ab / length_sq, 0.0, 1.0))
+
+
 def segment_distance(p1: np.ndarray, q1: np.ndarray, p2: np.ndarray, q2: np.ndarray) -> float:
     """Shortest distance between segments p1-q1 and p2-q2 (Ericson, Real-Time Collision Detection §5.1.9)."""
     d1, d2, r = q1 - p1, q2 - p2, p1 - p2

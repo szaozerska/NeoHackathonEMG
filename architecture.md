@@ -168,10 +168,10 @@ The first message on every TCP connection:
 | `pose` | VR → server, server → VR | `player_id`, `t`, `joints{head, chest, hips, l/r_shoulder, l/r_elbow, l/r_wrist, l/r_hand, l/r_knee, l/r_ankle, l/r_foot}` each `{pos:[x,y,z], rot:[w,x,y,z], vel?:[x,y,z]}`. `hips` is needed for the sword draw; legs come from full-body tracking (estimated by the Quest runtime) and are for debugging and display only; `vel` (optional, measured on the headset) gives cleaner hand speed than the server's finite difference |
 | `sign` | classifier → server | `player_id`, `t`, `hand` (`left`/`right`, the hand wearing the band), `sign` (`fist`, `open_palm`, `snap` or `none`), `confidence`. `snap` is momentary: the server acts on the transition into it |
 | `wrist` *(optional)* | classifier → server | `player_id`, `t`, `hand`, `rot:[w,x,y,z]` |
-| `spell` | server → VR | `caster_id`, `spell`, `state` (`charging`/`cast`/`cancelled`), `charge` (0–1), `origin`, `direction`. Lifecycle events; continuous state is in `state` |
+| `spell` | server → VR | `caster_id`, `spell`, `state` (`charging`/`cast`/`cancelled`/`sheathed`), `charge` (0–1), `origin`, `direction`. Lifecycle events; continuous state is in `state`. Fireball: `charging` on snap, `cast` on throw, `cancelled` on fizzle. Sword: `cast` on draw, `sheathed` on release |
 | `state` | server → VR, every tick | `tick`, `players[{player_id, hp, connected, band_paired, sign, item, band_hand, cooldown}]` (`cooldown`: seconds until the player can conjure again), `projectiles[{id, kind, owner_id, pos, vel}]` |
 | `impact` | server → VR | `projectile_id`, `kind`, `owner_id`, `pos`, `reason` (`hit`/`expired`), `target_id` |
-| `damage` | server → VR | `target_id`, `source_id`, `amount`, `hp_after` |
+| `damage` | server → VR | `target_id`, `source_id`, `amount`, `hp_after`, `kind` (`fireball`/`sword`), `pos` (where the hit landed) |
 
 Timestamps (`t`) are sender-local and used only for ordering within one stream. Never compare the band's clock, a Mac clock, and the Quest clock directly.
 
