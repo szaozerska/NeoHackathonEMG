@@ -1,0 +1,8 @@
+.build/
+firmware/**/build/
+dist/
+.DS_Store
+.swiftpm/
+local/
+__pycache__/
+.opencode/
