@@ -206,6 +206,9 @@ class GameServer:
                 slot.input.snapped = True
             slot.input.sign = message.sign
             slot.input.hand = message.hand
+        elif conn is slot.classifier and isinstance(message, p.Gesture):
+            message.player_id = slot.player_id
+            self._broadcast([message])
 
     async def _tick_loop(self) -> None:
         loop = asyncio.get_running_loop()

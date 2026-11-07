@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import socket
+from collections.abc import AsyncIterator, Callable
 
 from .protocol import BEACON_PREFIX, DISCOVERY_PORT
 
@@ -55,16 +57,16 @@ def parse_beacon(payload: bytes) -> int | None:
         return None
 
 
-async def find_server(discovery_port: int = DISCOVERY_PORT, timeout_s: float | None = None) -> tuple[str, int]:
-    """Wait for a beacon and return (server_ip, tcp_port). The IP is the packet's sender address."""
+@contextlib.asynccontextmanager
+async def _listen_for_beacons(discovery_port: int, on_beacon: Callable[[str, int], None]) -> AsyncIterator[None]:
+    """Calls `on_beacon(server_ip, tcp_port)` for every beacon while the context is open."""
     loop = asyncio.get_running_loop()
-    found: asyncio.Future[tuple[str, int]] = loop.create_future()
 
     class _Listener(asyncio.DatagramProtocol):
         def datagram_received(self, data: bytes, addr: tuple[str, int]) -> None:
             tcp_port = parse_beacon(data)
-            if tcp_port is not None and not found.done():
-                found.set_result((addr[0], tcp_port))
+            if tcp_port is not None:
+                on_beacon(addr[0], tcp_port)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -73,6 +75,28 @@ async def find_server(discovery_port: int = DISCOVERY_PORT, timeout_s: float | N
     sock.bind(("", discovery_port))
     transport, _ = await loop.create_datagram_endpoint(_Listener, sock=sock)
     try:
-        return await asyncio.wait_for(found, timeout_s)
+        yield
     finally:
         transport.close()
+
+
+async def find_server(discovery_port: int = DISCOVERY_PORT, timeout_s: float | None = None) -> tuple[str, int]:
+    """Wait for a beacon and return (server_ip, tcp_port). The IP is the packet's sender address."""
+    found: asyncio.Future[tuple[str, int]] = asyncio.get_running_loop().create_future()
+
+    def on_beacon(server_ip: str, tcp_port: int) -> None:
+        if not found.done():
+            found.set_result((server_ip, tcp_port))
+
+    async with _listen_for_beacons(discovery_port, on_beacon):
+        return await asyncio.wait_for(found, timeout_s)
+
+
+async def discover_servers(discovery_port: int = DISCOVERY_PORT, listen_s: float = 2.5) -> list[tuple[str, int]]:
+    """Every distinct (server_ip, tcp_port) that beaconed within `listen_s`, in the order first heard."""
+    servers: dict[tuple[str, int], None] = {}
+    async with _listen_for_beacons(
+        discovery_port, lambda server_ip, tcp_port: servers.setdefault((server_ip, tcp_port))
+    ):
+        await asyncio.sleep(listen_s)
+    return list(servers)

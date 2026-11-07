@@ -3,6 +3,7 @@
 The game server from [architecture.md](../../architecture.md) §2.3. Python 3.11+ and `asyncio`.
 
 - TCP on 9000: `hello` handshake, join-order band pairing (§5), and a 30 Hz tick that broadcasts `pose`, `state` and events.
+- A paired band's `gesture` messages (its built-in decoded taps, swipes and pinches) are relayed straight to every headset.
 - UDP discovery beacon `SPELLGAME <port>` on 47777 (§4.1).
 - Game logic in `spellgame/game_state.py`, a pure `GameState.step(inputs, dt)` with no networking. Fireball is implemented (§9); sword and shield are next.
 - `spellgame/protocol.py` holds the shared message dataclasses; the hand-sign client should import it rather than redefine messages.
@@ -45,7 +46,7 @@ from stdin: `s` snap, `f` fist, `p` open palm, `n` none. `fake_vr` prints the `s
 spellgame/
   protocol.py     wire messages (§4.2, §6), NDJSON encode/decode
   server.py       TCP connections, pairing, tick loop, broadcast
-  discovery.py    UDP beacon + client-side find_server()
+  discovery.py    UDP beacon + client-side find_server() / discover_servers()
   game_state.py   simulation: gesture state machines, projectiles, hits, damage; Tuning constants
   geometry.py     segment distance, body facing, quaternion rotation (Unity frame)
   sim.py          synthetic poses and throw motion for fake clients and tests

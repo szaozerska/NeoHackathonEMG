@@ -1,0 +1,125 @@
+"""Hand-sign classification client (architecture.md §2.2): Kinesis feed in, signs and band gestures out to the server.
+
+Threads: the Kinesis reader (only reads, so Kinesis never drops us as a slow reader), the classifier, and the asyncio
+loop, which owns the game server connection and all routing. Both threads post into the loop's inbox, so routing
+is single-threaded.
+"""
+
+from __future__ import annotations
+
+import argparse
+import asyncio
+import contextlib
+import logging
+import queue
+import threading
+from collections.abc import Callable
+
+from spellgame.protocol import DISCOVERY_PORT, GAME_PORT
+
+from .band_gestures import GestureCleaner
+from .emg_classifier import ClassifierWorker, EmgClassifier, EmgLogger, SignPrediction
+from .kinesis_feed import BandGestureEvent, BandStatus, EmgBatch, FeedEvent, KinesisFeed, validate_feed_url
+from .server_link import ServerLink
+from .server_picker import Server, pick_server
+
+log = logging.getLogger("handclient")
+
+InboxItem = BandStatus | BandGestureEvent | SignPrediction
+
+
+class BandInputRouter:
+    """Tracks the band's status and forwards its gestures and the classifier's signs to the game server."""
+
+    def __init__(self, link: ServerLink) -> None:
+        self._link = link
+        self._gestures = GestureCleaner()
+        self._status: BandStatus | None = None
+
+    async def run(self, inbox: asyncio.Queue[InboxItem]) -> None:
+        while True:
+            self.handle(await inbox.get())
+
+    def handle(self, item: InboxItem) -> None:
+        match item:
+            case BandStatus():
+                self._on_status(item)
+            case BandGestureEvent():
+                gesture = self._gestures.clean(item)
+                if gesture is not None:
+                    log.info("band gesture: %s %s", gesture.finger, gesture.action)
+                    self._link.send_gesture(gesture, self._hand())
+            case SignPrediction():
+                self._link.send_sign(item, self._hand())
+
+    def _on_status(self, status: BandStatus) -> None:
+        if status != self._status:
+            log.info(
+                "band %s, hand %s, EMG %s",
+                "connected" if status.connected else "disconnected",
+                status.hand,
+                "active" if status.emg_active else "not active yet",
+            )
+        self._status = status
+
+    def _hand(self) -> str:
+        if self._status is None or self._status.hand is None:
+            raise RuntimeError("Kinesis doesn't know which wrist the band is on: choose it on Kinesis's band page")
+        return self._status.hand
+
+
+async def run_in_thread(work: Callable[[threading.Event], None]) -> None:
+    """Runs blocking `work(stop)` on a thread; `stop` is set when this task ends, including on cancellation."""
+    stop = threading.Event()
+    try:
+        await asyncio.to_thread(work, stop)
+    finally:
+        stop.set()
+
+
+async def run_hand_client(kinesis_url: str, server: Server, classifier: EmgClassifier) -> None:
+    loop = asyncio.get_running_loop()
+    inbox: asyncio.Queue[InboxItem] = asyncio.Queue()
+    emg_batches: queue.Queue[EmgBatch] = queue.Queue()
+
+    def post(item: InboxItem) -> None:
+        loop.call_soon_threadsafe(inbox.put_nowait, item)
+
+    def on_feed_event(event: FeedEvent) -> None:
+        if isinstance(event, EmgBatch):
+            emg_batches.put(event)
+        elif isinstance(event, (BandStatus, BandGestureEvent)):
+            post(event)
+
+    link = ServerLink(*server)
+    feed = KinesisFeed(kinesis_url, on_feed_event)
+    worker = ClassifierWorker(emg_batches, classifier, post)
+    async with asyncio.TaskGroup() as tasks:
+        tasks.create_task(run_in_thread(feed.run))
+        tasks.create_task(run_in_thread(worker.run))
+        tasks.create_task(link.run())
+        tasks.create_task(BandInputRouter(link).run(inbox))
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--kinesis-url", type=validate_feed_url, help="the stream URL copied from Kinesis's stream tab")
+    parser.add_argument("--host", help="game server IP; omit to pick from the servers found on the LAN")
+    parser.add_argument("--port", type=int, default=GAME_PORT)
+    parser.add_argument("--discovery-port", type=int, default=DISCOVERY_PORT)
+    parser.add_argument("--discovery-s", type=float, default=2.5, help="how long to listen for server beacons")
+    parser.add_argument("-v", "--verbose", action="store_true")
+    args = parser.parse_args()
+    logging.basicConfig(
+        level=logging.DEBUG if args.verbose else logging.INFO, format="%(asctime)s %(name)s %(message)s"
+    )
+    with contextlib.suppress(KeyboardInterrupt):
+        kinesis_url = args.kinesis_url or validate_feed_url(
+            input("Paste the stream URL from Kinesis's stream tab: ").strip()
+        )
+        server = (args.host, args.port) if args.host else pick_server(args.discovery_port, args.discovery_s)
+        asyncio.run(run_hand_client(kinesis_url, server, EmgLogger()))
+
+
+if __name__ == "__main__":
+    main()

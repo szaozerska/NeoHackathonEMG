@@ -3,7 +3,7 @@ import socket
 
 from spellgame import protocol as p
 from spellgame.client import Connection
-from spellgame.discovery import find_server
+from spellgame.discovery import discover_servers, find_server
 from spellgame.server import GameServer
 from spellgame.sim import THROW_DURATION_S, standing_pose, throw_hand_offset
 
@@ -37,6 +37,50 @@ def test_discovery_beacon_advertises_tcp_port():
         try:
             host, port = await find_server(discovery_port, timeout_s=3.0)
             assert (host, port) == ("127.0.0.1", server.port)
+        finally:
+            await server.stop()
+
+    run(scenario())
+
+
+def test_discover_servers_lists_each_beaconing_server_once():
+    async def scenario():
+        discovery_port = free_udp_port()
+        servers = [
+            GameServer(host="127.0.0.1", port=0, discovery_port=discovery_port, beacon_address="127.0.0.1")
+            for _ in range(2)
+        ]
+        for server in servers:
+            await server.start()
+        try:
+            found = await discover_servers(discovery_port, listen_s=1.5)
+            assert sorted(found) == sorted(("127.0.0.1", server.port) for server in servers)
+        finally:
+            for server in servers:
+                await server.stop()
+
+    run(scenario())
+
+
+def test_band_gesture_is_relayed_to_every_headset_with_the_bands_player_id():
+    async def scenario():
+        server = GameServer(host="127.0.0.1", port=0, beacon_address=None)
+        await server.start()
+        try:
+            vr1 = await Connection.open("127.0.0.1", server.port)
+            await vr1.handshake(p.Role.VR)
+            band1 = await Connection.open("127.0.0.1", server.port)
+            await band1.handshake(p.Role.CLASSIFIER)
+            await until(band1, lambda m: isinstance(m, p.Paired))
+            vr2 = await Connection.open("127.0.0.1", server.port)
+            await vr2.handshake(p.Role.VR)
+
+            band1.send(
+                p.Gesture(player_id=None, t=1.0, hand="right", finger=p.Finger.INDEX, action=p.GestureAction.TAP)
+            )
+            for vr in (vr1, vr2):
+                gesture = await until(vr, lambda m: isinstance(m, p.Gesture))
+                assert (gesture.player_id, gesture.finger, gesture.action) == ("P1", "index", "tap")
         finally:
             await server.stop()
 

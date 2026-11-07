@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spellgame-hand-client"
+version = "0.1.0"
+description = "Hand-sign classification client: Neural Band via Kinesis in, signs and gestures out (architecture.md §2.2)"
+requires-python = ">=3.11"
+dependencies = ["spellgame-server", "numpy>=1.26"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[project.scripts]
+hand-client = "handclient.main:main"
+
+[tool.setuptools.packages.find]
+include = ["handclient*"]
+namespaces = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]

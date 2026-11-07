@@ -53,6 +53,26 @@ class Sign:
     SNAP = "snap"
 
 
+class Finger:
+    THUMB = "thumb"
+    INDEX = "index"
+    MIDDLE = "middle"
+
+
+class GestureAction:
+    """The band's built-in decoded gestures, one per physical contact (the hand-sign client deduplicates them)."""
+
+    TAP = "tap"
+    DOUBLE_TAP = "double_tap"
+    PRESS = "press"
+    RELEASE = "release"
+    HOLD = "hold"
+    SWIPE_UP = "swipe_up"
+    SWIPE_DOWN = "swipe_down"
+    SWIPE_LEFT = "swipe_left"
+    SWIPE_RIGHT = "swipe_right"
+
+
 class SpellState:
     CHARGING = "charging"
     CAST = "cast"
@@ -177,6 +197,18 @@ class SignMessage(Message):
     hand: str
     sign: str
     confidence: float = 1.0
+
+
+@dataclass
+class Gesture(Message):
+    """A band's built-in decoded gesture (classifier → server → every VR client), e.g. for game UI interaction."""
+
+    TYPE: ClassVar[str] = "gesture"
+    player_id: str | None
+    t: float
+    hand: str
+    finger: str
+    action: str
 
 
 @dataclass
