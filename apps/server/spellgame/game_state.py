@@ -26,7 +26,8 @@ class Tuning:
     velocity_window_s: float = 0.04
     hand_history_s: float = 0.3
 
-    fireball_damage: float = 20.0
+    fireball_damage: float = 8.0
+    """100 HP / 8 is about 13 hits, roughly a minute of steady fireball exchange."""
     fireball_radius: float = 0.15
     fireball_lifetime_s: float = 4.0
     fireball_hold_timeout_s: float = 8.0
@@ -38,9 +39,10 @@ class Tuning:
     throw_release_ratio: float = 0.85
     """Release once hand speed falls below this fraction of its peak (the peak velocity is the throw)."""
     throw_release_timeout_s: float = 0.15
-    throw_speed_scale: float = 3.0
-    throw_min_speed: float = 8.0
-    throw_max_speed: float = 18.0
+    throw_speed_scale: float = 2.0
+    throw_min_speed: float = 6.0
+    throw_max_speed: float = 10.0
+    """m/s. Slow enough to see, dodge or block across a 3-5 m room (about 0.4-0.7 s in flight)."""
     aim_assist_cone_deg: float = 20.0
     aim_assist_strength: float = 0.5
     """0 disables aim assist; 1 snaps throws within the cone straight at the opponent's chest."""
@@ -188,6 +190,8 @@ class GameState:
                     band_paired=player.band_paired,
                     sign=player.sign,
                     item=player.item,
+                    band_hand=player.band_hand,
+                    cooldown=round(max(0.0, player.cooldown_until - self.time), 3),
                 )
                 for player in self.players.values()
             ],

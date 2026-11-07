@@ -7,7 +7,7 @@ using UnityEngine;
 namespace SpellGame.Editor
 {
     /// <summary>
-    /// Regenerates the boilerplate scene: passthrough OVRCameraRig + Movement SDK body tracking + debug skeletons + GameClient.
+    /// Regenerates the scene: passthrough OVRCameraRig + Movement SDK body tracking + debug skeletons + GameClient + spell views.
     /// Headless: <c>Unity -batchmode -quit -projectPath . -executeMethod SpellGame.Editor.MainSceneBuilder.Build</c>
     /// </summary>
     public static class MainSceneBuilder
@@ -27,7 +27,8 @@ namespace SpellGame.Editor
             var bodySkeleton = CreateBodyTracking(trackingSpace);
             var statusLabel = CreateStatusLabel(trackingSpace.Find("CenterEyeAnchor"));
             var debugSkeletons = CreateDebugSkeletonsView();
-            CreateGameClient(bodySkeleton, debugSkeletons, statusLabel);
+            var client = CreateGameClient(bodySkeleton, debugSkeletons, statusLabel);
+            CreateFireballView(client);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
@@ -95,7 +96,7 @@ namespace SpellGame.Editor
             return view;
         }
 
-        private static void CreateGameClient(OVRSkeleton bodySkeleton, DebugSkeletonsView debugSkeletons, TextMesh statusLabel)
+        private static GameClient CreateGameClient(OVRSkeleton bodySkeleton, DebugSkeletonsView debugSkeletons, TextMesh statusLabel)
         {
             var client = new GameObject("Game Client").AddComponent<GameClient>();
             var serializedClient = new SerializedObject(client);
@@ -103,6 +104,18 @@ namespace SpellGame.Editor
             serializedClient.FindProperty("debugSkeletons").objectReferenceValue = debugSkeletons;
             serializedClient.FindProperty("statusLabel").objectReferenceValue = statusLabel;
             serializedClient.ApplyModifiedPropertiesWithoutUndo();
+            return client;
+        }
+
+        private static void CreateFireballView(GameClient client)
+        {
+            var view = new GameObject("Fireball View").AddComponent<FireballView>();
+            var serializedView = new SerializedObject(view);
+            serializedView.FindProperty("gameClient").objectReferenceValue = client;
+            serializedView.FindProperty("fireMaterial").objectReferenceValue = UnlitMaterial("Fire", new Color(1f, 0.38f, 0.05f));
+            serializedView.FindProperty("sparkMaterial").objectReferenceValue = UnlitMaterial("Spark", new Color(1f, 0.85f, 0.3f));
+            serializedView.FindProperty("smokeMaterial").objectReferenceValue = UnlitMaterial("Smoke", new Color(0.45f, 0.45f, 0.45f));
+            serializedView.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static Material UnlitMaterial(string name, Color color)

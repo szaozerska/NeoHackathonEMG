@@ -169,7 +169,7 @@ The first message on every TCP connection:
 | `sign` | classifier → server | `player_id`, `t`, `hand` (`left`/`right`, the hand wearing the band), `sign` (`fist`, `open_palm`, `snap` or `none`), `confidence`. `snap` is momentary: the server acts on the transition into it |
 | `wrist` *(optional)* | classifier → server | `player_id`, `t`, `hand`, `rot:[w,x,y,z]` |
 | `spell` | server → VR | `caster_id`, `spell`, `state` (`charging`/`cast`/`cancelled`), `charge` (0–1), `origin`, `direction`. Lifecycle events; continuous state is in `state` |
-| `state` | server → VR, every tick | `tick`, `players[{player_id, hp, connected, band_paired, sign, item}]`, `projectiles[{id, kind, owner_id, pos, vel}]` |
+| `state` | server → VR, every tick | `tick`, `players[{player_id, hp, connected, band_paired, sign, item, band_hand, cooldown}]` (`cooldown`: seconds until the player can conjure again), `projectiles[{id, kind, owner_id, pos, vel}]` |
 | `impact` | server → VR | `projectile_id`, `kind`, `owner_id`, `pos`, `reason` (`hit`/`expired`), `target_id` |
 | `damage` | server → VR | `target_id`, `source_id`, `amount`, `hp_after` |
 
@@ -205,3 +205,9 @@ Timestamps (`t`) are sender-local and used only for ordering within one stream. 
 | **Shield** | `open_palm` held | Palm facing away from the player; push impulse = peak push speed | Raised shield blocks; a forceful push gives a short power boost, and a sword contact during the boost is a parry |
 
 Tuning values live in `apps/server/spellgame/game_state.py` (`Tuning`).
+
+**Starting balance (default):** 100 HP; fireball 8 damage, flying at 6–10 m/s so it can be seen, dodged or blocked across a 3–5 m room. That is roughly 13 hits, or about a minute of steady exchange.
+
+**Later versions:**
+- Spells take time to charge up (e.g. holding a conjured fireball longer makes it stronger), driving `spell.charge`.
+- Difficulty settings: selectable `Tuning` presets (HP, damage, spell speed, aim assist, cooldowns).

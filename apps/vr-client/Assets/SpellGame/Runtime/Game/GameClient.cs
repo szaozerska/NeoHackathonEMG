@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using SpellGame.Networking;
@@ -31,12 +32,30 @@ namespace SpellGame.Game
         private ServerConnection _connection;
         private string _playerId;
         private float _nextPoseSendTime;
+        private BodyJoints _localJoints;
+        private readonly Dictionary<string, BodyJoints> _remoteJoints = new();
 
         public event Action<SignMessage> SignReceived;
         public event Action<SpellMessage> SpellReceived;
         public event Action<DamageMessage> DamageReceived;
+        public event Action<ImpactMessage> ImpactReceived;
+        public event Action<StateMessage> StateReceived;
 
         public string PlayerId => _playerId;
+
+        /// <summary>
+        /// Latest joints for a player: the local player's come from local tracking (no network delay), others' from the server.
+        /// </summary>
+        public bool TryGetJoints(string playerId, out BodyJoints joints)
+        {
+            if (playerId != null && playerId == _playerId)
+            {
+                joints = _localJoints;
+                return joints != null;
+            }
+
+            return _remoteJoints.TryGetValue(playerId ?? "", out joints);
+        }
 
         private async void Start()
         {
@@ -104,6 +123,7 @@ namespace SpellGame.Game
                     SetStatus($"You are {_playerId} · band paired");
                     break;
                 case PoseMessage pose when pose.PlayerId != _playerId:
+                    _remoteJoints[pose.PlayerId] = pose.Joints;
                     debugSkeletons.Draw(pose.PlayerId, pose.Joints);
                     break;
                 case SignMessage sign:
@@ -115,13 +135,22 @@ namespace SpellGame.Game
                 case DamageMessage damage:
                     DamageReceived?.Invoke(damage);
                     break;
+                case ImpactMessage impact:
+                    ImpactReceived?.Invoke(impact);
+                    break;
+                case StateMessage state:
+                    StateReceived?.Invoke(state);
+                    break;
             }
         }
 
         private void DrawLocalSkeleton()
         {
-            if (_poseSampler.IsTracking)
-                debugSkeletons.Draw(LocalSkeletonId, _poseSampler.Sample());
+            if (_poseSampler == null || !_poseSampler.IsTracking)
+                return;
+
+            _localJoints = _poseSampler.Sample();
+            debugSkeletons.Draw(LocalSkeletonId, _localJoints);
         }
 
         private void SendPoseWhenDue()
@@ -134,7 +163,7 @@ namespace SpellGame.Game
             {
                 PlayerId = _playerId,
                 T = Time.realtimeSinceStartupAsDouble,
-                Joints = _poseSampler.Sample(),
+                Joints = _localJoints,
             });
         }
 

@@ -264,6 +264,10 @@ class PlayerSnapshot:
     sign: str
     item: str
     """What the player currently holds: `none` or `fireball`."""
+    band_hand: str = Hand.RIGHT
+    """The hand wearing the Neural Band, where held spells are drawn."""
+    cooldown: float = 0.0
+    """Seconds until the player can conjure again."""
 
     def to_dict(self) -> dict[str, Any]:
         return {f.name: getattr(self, f.name) for f in fields(self)}

@@ -36,13 +36,16 @@ Assets/SpellGame/
     Tracking/BodyPoseSampler.cs        OVRSkeleton (FullBody) → head/chest/hips/arms/hands/legs/feet
     Game/GameClient.cs         Composition root: discover → connect → hello → stream pose, dispatch state
     Game/DebugSkeletonsView.cs Draws local and remote skeletons as debug line segments
+    Game/FireballView.cs       Fireball visuals: snap burst, held orb on the band hand, projectile + trail, impact, cooldown ember
+    Game/SpellVfx.cs           Procedural orbs, trails and particle bursts (no art assets yet)
   Editor/                      SpellGame.Editor assembly
     QuestProjectConfigurator.cs  Menu "SpellGame/Configure Project for Quest 3"
     MainSceneBuilder.cs          Menu "SpellGame/Rebuild Main Scene"
-  Scenes/Main.unity            OVRCameraRig with passthrough + body tracking + debug skeletons + GameClient + status label
+  Scenes/Main.unity            OVRCameraRig with passthrough + body tracking + debug skeletons + GameClient + status label + Fireball View
 ```
 
-`GameClient` raises `SignReceived`, `SpellReceived` and `DamageReceived`. Gameplay views (spell VFX, HP bars)
+`GameClient` raises `SignReceived`, `SpellReceived`, `DamageReceived`, `ImpactReceived` and `StateReceived`, and
+`TryGetJoints(playerId)` gives the latest joints (local tracking for the local player). Gameplay views (spell VFX, HP bars)
 subscribe to these events and never touch the network. The local player's body is rendered from local tracking.
 The client ignores its own pose when the server echoes it back.
 

@@ -85,9 +85,10 @@ def test_throw_launches_fireball_forward_and_hits_opponent():
     assert match.p1.item == Item.NONE
 
     events += match.run(1.0)
-    assert [(d.target_id, d.source_id, d.hp_after) for d in of_type(events, p.Damage)] == [("P2", "P1", 80.0)]
+    hp_after = match.game.tuning.max_hp - match.game.tuning.fireball_damage
+    assert [(d.target_id, d.source_id, d.hp_after) for d in of_type(events, p.Damage)] == [("P2", "P1", hp_after)]
     assert [(i.reason, i.target_id) for i in of_type(events, p.Impact)] == [("hit", "P2")]
-    assert match.p2.hp == 80.0
+    assert match.p2.hp == hp_after
     assert not match.game.projectiles
 
 
@@ -180,3 +181,13 @@ def test_knocked_out_player_cannot_cast_or_be_hit():
     match.inputs["P2"].snapped = True
     match.game.step(match.inputs, DT)
     assert match.p2.item == Item.NONE
+
+
+def test_snapshot_reports_band_hand_and_cooldown_after_a_throw():
+    match = Match()
+    match.step(snap=True)
+    match.throw()
+
+    snapshot = next(pl for pl in match.game.snapshot().players if pl.player_id == "P1")
+    assert snapshot.band_hand == p.Hand.RIGHT
+    assert 0.0 < snapshot.cooldown <= match.game.tuning.fireball_cooldown_s

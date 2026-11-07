@@ -4,6 +4,7 @@ import socket
 from spellgame import protocol as p
 from spellgame.client import Connection
 from spellgame.discovery import discover_servers, find_server
+from spellgame.game_state import Tuning
 from spellgame.server import GameServer
 from spellgame.sim import THROW_DURATION_S, standing_pose, throw_hand_offset
 
@@ -144,9 +145,11 @@ def test_two_players_pair_by_join_order_and_fireball_deals_damage():
                 cast = await until(vr2, lambda m: isinstance(m, p.Spell) and m.state == p.SpellState.CAST)
                 assert cast.caster_id == "P1"
                 damage = await until(vr2, lambda m: isinstance(m, p.Damage))
-                assert (damage.target_id, damage.source_id, damage.hp_after) == ("P2", "P1", 80.0)
+                hp_after = Tuning().max_hp - Tuning().fireball_damage
+                assert (damage.target_id, damage.source_id, damage.hp_after) == ("P2", "P1", hp_after)
                 state = await until(vr1, lambda m: isinstance(m, p.State) and m.players[1].hp < 100.0)
-                assert {pl.player_id: pl.hp for pl in state.players} == {"P1": 100.0, "P2": 80.0}
+                assert {pl.player_id: pl.hp for pl in state.players} == {"P1": 100.0, "P2": hp_after}
+                assert {pl.player_id: pl.band_hand for pl in state.players} == {"P1": "right", "P2": "right"}
                 assert all(pl.band_paired for pl in state.players)
             finally:
                 stop.set()

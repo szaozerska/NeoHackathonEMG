@@ -165,4 +165,72 @@ namespace SpellGame.Protocol
         public float Amount { get; set; }
         public float HpAfter { get; set; }
     }
+
+    public static class SpellKind
+    {
+        public const string Fireball = "fireball";
+    }
+
+    public static class ImpactReason
+    {
+        public const string Hit = "hit";
+        public const string Expired = "expired";
+    }
+
+    public sealed class ImpactMessage : Message
+    {
+        public const string TypeName = "impact";
+        public override string Type => TypeName;
+        public int ProjectileId { get; set; }
+        public string Kind { get; set; }
+        public string OwnerId { get; set; }
+        public float[] Pos { get; set; }
+        public string Reason { get; set; }
+        public string TargetId { get; set; }
+
+        [JsonIgnore]
+        public Vector3 Position => new(Pos[0], Pos[1], Pos[2]);
+    }
+
+    public sealed class PlayerSnapshot
+    {
+        public string PlayerId { get; set; }
+        public float Hp { get; set; }
+        public bool Connected { get; set; }
+        public bool BandPaired { get; set; }
+        public string Sign { get; set; }
+
+        /// <summary>What the player currently holds, e.g. <see cref="SpellKind.Fireball"/> or "none".</summary>
+        public string Item { get; set; }
+
+        public string BandHand { get; set; } = HandSide.Right;
+
+        /// <summary>Seconds until the player can conjure again.</summary>
+        public float Cooldown { get; set; }
+    }
+
+    public sealed class ProjectileSnapshot
+    {
+        public int Id { get; set; }
+        public string Kind { get; set; }
+        public string OwnerId { get; set; }
+        public float[] Pos { get; set; }
+        public float[] Vel { get; set; }
+
+        [JsonIgnore]
+        public Vector3 Position => new(Pos[0], Pos[1], Pos[2]);
+
+        [JsonIgnore]
+        public Vector3 Velocity => new(Vel[0], Vel[1], Vel[2]);
+    }
+
+    /// <summary>Full game state, broadcast every server tick.</summary>
+    public sealed class StateMessage : Message
+    {
+        public const string TypeName = "state";
+        public override string Type => TypeName;
+        public int Tick { get; set; }
+        public List<PlayerSnapshot> Players { get; set; } = new();
+        public List<ProjectileSnapshot> Projectiles { get; set; } = new();
+    }
 }
