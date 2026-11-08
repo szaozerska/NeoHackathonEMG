@@ -85,7 +85,9 @@ class LiveTester:
                 if not isinstance(wearing,str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,80}',wearing):raise ValueError('Enter a wearing-session ID.')
                 if value.get('role','train') not in ('train','evaluation') or value.get('hand','Right') not in ('Right','Left') or value.get('focus','full') not in ('full','live_intent','intent','snaps','controls','states','transitions'):raise ValueError('Invalid role, hand or focus')
                 contribution=value.get('profile')=='micah_emg'
-                if contribution:
+                capture_mode=value.get('capture_mode','full_context')
+                if capture_mode not in ('full_context','emg_only'):raise ValueError('Choose EMG-only or full sensor capture.')
+                if contribution and capture_mode=='full_context':
                     telemetry=self.sensor_timing.status(self.clock());rates=telemetry['delivered_sensor_hz']
                     motion_fresh=all(kind in self.band_context and self.clock()-self.band_context[kind]['host_uptime']<1.5 for kind in ('gyro','orientation'))
                     if not motion_fresh or telemetry['forearm'] is None or not all(rates.get(kind) for kind in ('gyro','orientation')):
@@ -98,11 +100,13 @@ class LiveTester:
                 self.collection=IntentCollection(self.capture,self.clock,wearing,value.get('role','train'),self.target_hand,value.get('focus','full'),value.get('initial_intent','non_intended'),guard,defer_cleanup=contribution)
                 if contribution:
                     self.capture.meta.update(kind='micah_emg_intent_contribution',contributor='Micah',
+                        requested_capture_mode=capture_mode,
                         collection_protocol='spacebar-held-motion-intent-v1',camera_policy='disabled',
                         input_modalities=['emg'],recorded_context=['available_gyro','available_orientation','available_band_events'],classification_policy='participant_motion_selection_only_no_model_predictions',
                         timing_policy='Native band microseconds, Kinesis receipt uptime, Python receipt uptime and browser alignment all retained. Arrival delay and forearm angles are estimates in the documented Kinesis frame.',
                         postprocessing_required=True,cleanup_applied=False,
                         browser_clock_alignment_at_start=value.get('clock_alignment'),
+                        motion_context_available_at_start=all(kind in self.band_context and self.clock()-self.band_context[kind]['host_uptime']<1.5 for kind in ('gyro','orientation')),
                         host_monotonic_clock=time.get_clock_info('monotonic').implementation,
                         sensor_timing_at_start=self.sensor_timing.status(self.clock()),
                         label_policy='Immediate participant reports: Space down marks intended, Space up marks non-intended. No keyboard-edge clipping or fixed minimum interval. Preserve baseline context, key times and sensor coverage for later cleanup. Motion/effort are participant selections, not verified physical onsets or force.')

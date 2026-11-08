@@ -94,6 +94,18 @@ def test_emg_only_file_cannot_claim_full_synchronized_motion_capture(tmp_path):
     assert tester.capture is None and not tester.contribution_root.exists()
 
 
+def test_explicit_emg_only_session_starts_without_motion_but_records_limitation(tmp_path):
+    tester,predictor,clock=setup(tmp_path);pump(tester,predictor,clock,'none')
+    tester.contribution_root=tmp_path/'Micah data contribution'
+    result=tester.collection_action('start',{'profile':'micah_emg','wearing_session':'micah-01',
+        'focus':'live_intent','initial_intent':'non_intended','capture_mode':'emg_only'})
+    assert result['collection']['phase']=='live'
+    assert tester.capture.meta['requested_capture_mode']=='emg_only'
+    assert tester.capture.meta['motion_context_available_at_start'] is False
+    assert tester.capture.meta['sensor_timing_at_start']['forearm'] is None
+    tester.close()
+
+
 def test_native_time_coverage_does_not_mistake_delivery_bursts_for_sensor_gaps(tmp_path):
     tester,predictor,clock=setup(tmp_path);pump(tester,predictor,clock,'none');motion_context(tester,clock)
     tester.contribution_root=tmp_path/'Micah data contribution'

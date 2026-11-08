@@ -3,6 +3,7 @@ from pathlib import Path
 import signal
 import threading
 import time
+import sys
 
 from spelltrain import intent_collection
 from spelltrain.live_test import LiveTester
@@ -25,7 +26,7 @@ def pump():
         while seq<target:
             seq+=1;now=start+seq/128
             tester.packet({'source_seq':seq,'source_t':seq*7812.5,'source_uptime':now,'samples':[[32768]*8]*16})
-            if seq%8==0:
+            if seq%8==0 and '--emg-only' not in sys.argv:
                 tester.band_event('status',{'schema_version':1,'type':'status','host_time_s':now,
                     'payload':{'hand':'right','band_connection_id':'synthetic-band','connected':True}})
                 for kind,values in [('orientation',[1,0,0,0]),('gyro',[0,0,0])]:

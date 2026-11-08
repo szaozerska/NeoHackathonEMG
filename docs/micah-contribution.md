@@ -33,9 +33,11 @@ keyboard/mouse events so their effects can be considered later.
 ## Synchronization and full sensor context
 
 Enable **Kinesis → stream → local sensor feed**, paste its current URL into the
-page, and select your wrist in Kinesis. Start waits for fresh EMG, gyro,
-orientation and a known wrist for angle calculations. Raw recording files
-contain EMG only, so they cannot meet this full-context requirement.
+page, and select your wrist in Kinesis. When motion context is available the button offers **Start full sensor session**.
+A raw recording file supplies EMG only, so the button instead offers **Start
+EMG-only session** as soon as fresh EMG arrives. This records your labels and
+EMG without pretending motion data exists. The selected mode and missing motion
+context are saved in metadata. Keep Kinesis recording while collecting.
 
 The page shows measured gyro/orientation Hz, forearm elevation, relative
 forearm compass, estimated excess arrival delay, Kinesis→Python delivery lag,
@@ -108,3 +110,5 @@ that key down/up produce the intended/non-intended boundaries, key repeat is
 ignored, motion/effort and sensor timing are saved, and no camera or classifier
 output enters the recording. Browser tests require the local Playwright install
 documented in `docs/intent-lab.md` and Google Chrome on macOS.
+
+For a separate localhost instance, use `.venv/bin/python scripts/start_live_test.py --background --port 8775 --open-browser`. Each explicitly selected port has its own PID file. The file reader follows recording replacements at the same pathname.

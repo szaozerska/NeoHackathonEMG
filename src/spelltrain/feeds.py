@@ -161,6 +161,8 @@ def tail_kinesis(filename, stop, callback, error):
                 stream.seek(0, 2)  # Do not replay an old recording as new live data.
             while not stop.is_set():
                 position = stream.tell()
+                if position>filename.stat().st_size:
+                    stream.seek(0);position=0
                 line = stream.readline()
                 if not line.endswith("\n"):
                     stream.seek(position)

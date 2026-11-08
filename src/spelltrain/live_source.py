@@ -73,7 +73,13 @@ class LiveInput:
         generation = [0]
         try:
             while not stop.is_set():
-                source = ('stream', self.url) if self.url else ('file', str(discover_recording() or self.fallback))
+                if self.url:source=('stream',self.url)
+                else:
+                    path=discover_recording() or self.fallback
+                    try:
+                        stat=path.stat();identity=(stat.st_dev,stat.st_ino)
+                    except OSError:identity=None
+                    source=('file',str(path),identity)
                 if source != current:
                     if worker_stop:
                         worker_stop.set()

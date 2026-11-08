@@ -15,13 +15,16 @@ def main():
     parser.add_argument('--open-browser',action='store_true')
     parser.add_argument('--kinesis-file')
     parser.add_argument('--model', help='Override the fallback model path')
+    parser.add_argument('--port',type=int,help='Use a specific localhost port for a separate bench')
     args=parser.parse_args()
+    if args.port is not None and not 1024<=args.port<=65535:parser.error('Port must be between 1024 and 65535')
     root=Path(__file__).resolve().parents[1]
     local=root/'artifacts/player-a/gestures-v4/model.joblib'
     model=Path(args.model).resolve() if args.model else local if local.exists() else root/'models/gestures-v4/model.joblib'
     if not model.exists():raise SystemExit('The updated model is missing: '+str(model))
     port=None
-    for candidate in (8765,8766):
+    candidates=(args.port,) if args.port is not None else (8765,8766)
+    for candidate in candidates:
         url=f'http://127.0.0.1:{candidate}'
         try:
             status=json.load(urllib.request.urlopen(url+'/api/status',timeout=.5))
@@ -31,13 +34,13 @@ def main():
                 if args.open_browser:subprocess.run(['open',url],check=True)
                 return
         except (OSError,ValueError):pass
-    for candidate in (8765,8766):
+    for candidate in candidates:
         with socket.socket() as probe:
             probe.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
             try:probe.bind(('127.0.0.1',candidate))
             except OSError:continue
         port=candidate;break
-    if port is None:raise SystemExit('Ports 8765 and 8766 are in use; existing apps were left running.')
+    if port is None:raise SystemExit('Requested localhost ports are in use; existing apps were left running.')
     raw=root/'data/player-a/raw';raw.mkdir(parents=True,exist_ok=True)
     if args.kinesis_file:capture=Path(args.kinesis_file).resolve()
     else:
@@ -60,7 +63,7 @@ def main():
     with (support/'live-tester.log').open('a') as log:
         child=subprocess.Popen(command,cwd=root,stdin=subprocess.DEVNULL,stdout=log,
                                stderr=subprocess.STDOUT,start_new_session=True)
-    (support/'live-tester.pid').write_text(str(child.pid)+'\n')
+    (support/('live-tester.pid' if args.port is None else f'live-tester-{port}.pid')).write_text(str(child.pid)+'\n')
     for _ in range(100):
         if child.poll() is not None:raise SystemExit('Tester exited; see data/player-a/live-tester.log')
         try:

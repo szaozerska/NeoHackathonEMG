@@ -130,3 +130,22 @@ def test_dashboard_connects_real_sse_without_recording_or_exposing_link(monkeypa
         tester.close()
         feed.shutdown()
         feed.server_close()
+
+
+def test_auto_reader_reopens_recording_replaced_at_same_path(monkeypatch,tmp_path):
+    path=tmp_path/'recording.jsonl';path.write_text('old\n')
+    monkeypatch.setattr(live_source,'discover_recording',lambda:path)
+    opened=[]
+    def reader(filename,stop,callback,error):
+        opened.append(__import__('pathlib').Path(filename).read_text())
+        stop.wait(5)
+    monkeypatch.setattr(live_source,'tail_kinesis',reader)
+    source=live_source.LiveInput(path,lambda _:None,lambda _:None,lambda *_:None)
+    stop=threading.Event();worker=threading.Thread(target=source.run,args=(stop,));worker.start()
+    try:
+        deadline=time.monotonic()+4
+        while not opened and time.monotonic()<deadline:time.sleep(.01)
+        replacement=tmp_path/'replacement.jsonl';replacement.write_text('new\n');replacement.replace(path)
+        while len(opened)<2 and time.monotonic()<deadline:time.sleep(.01)
+        assert opened==['old\n','new\n']
+    finally:stop.set();worker.join(2)
