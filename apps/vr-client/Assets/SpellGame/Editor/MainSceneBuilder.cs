@@ -14,6 +14,7 @@ namespace SpellGame.Editor
     {
         private const string ScenePath = "Assets/SpellGame/Scenes/Main.unity";
         private const string MaterialFolder = "Assets/SpellGame/Materials";
+        private const string ShieldFolder = "Assets/SpellGame/Shield";
         private const string CameraRigPrefabPath = "Packages/com.meta.xr.sdk.core/Prefabs/OVRCameraRig.prefab";
         private const string UnlitShaderName = "Universal Render Pipeline/Unlit";
 
@@ -176,9 +177,35 @@ namespace SpellGame.Editor
             var view = new GameObject("Shield View").AddComponent<ShieldView>();
             var serializedView = new SerializedObject(view);
             serializedView.FindProperty("gameClient").objectReferenceValue = client;
-            serializedView.FindProperty("shieldMaterial").objectReferenceValue = UnlitMaterial("Shield", new Color(0.4f, 0.75f, 1f));
-            serializedView.FindProperty("sparkMaterial").objectReferenceValue = UnlitMaterial("Spark", new Color(1f, 0.85f, 0.3f));
+            serializedView.FindProperty("shieldMaterial").objectReferenceValue = ShieldMaterial("ShieldForceField", "SpellGame/Shield/ForceField", null);
+            serializedView.FindProperty("sparkMaterial").objectReferenceValue = ShieldMaterial("ShieldSpark", "SpellGame/Shield/Spark", m => m.SetFloat("_Ring", 0f));
+            serializedView.FindProperty("ringMaterial").objectReferenceValue = ShieldMaterial("ShieldRing", "SpellGame/Shield/Spark", m => m.SetFloat("_Ring", 1f));
             serializedView.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>A material on one of the Assets/SpellGame/Shield shaders, created next to them on first build.</summary>
+        private static Material ShieldMaterial(string name, string shaderName, System.Action<Material> configure)
+        {
+            var shader = Shader.Find(shaderName);
+            if (shader == null)
+                throw new System.InvalidOperationException($"[SpellGame] Shader '{shaderName}' not found; is Assets/SpellGame/Shield/Shaders imported?");
+
+            var path = $"{ShieldFolder}/{name}.mat";
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                Directory.CreateDirectory(ShieldFolder);
+                material = new Material(shader);
+                configure?.Invoke(material);
+                AssetDatabase.CreateAsset(material, path);
+            }
+            else if (material.shader != shader)
+            {
+                material.shader = shader;
+                configure?.Invoke(material);
+                EditorUtility.SetDirty(material);
+            }
+            return material;
         }
 
         private static Material UnlitMaterial(string name, Color color)
