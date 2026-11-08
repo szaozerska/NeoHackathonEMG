@@ -475,6 +475,8 @@ class PlayerSnapshot:
     """The headset has reported its poses are in the shared room frame (§5.1)."""
     max_hp: float = 0.0
     """Starting HP (`Tuning.max_hp`), so clients can scale HP bars without copying the tuning."""
+    void_charge: float = 0.0
+    """0-1 progress of an Infinite Void hold (`Tuning.domain_void_hold_s`); back to 0 when released or once it fires."""
 
     def to_dict(self) -> dict[str, Any]:
         return {f.name: getattr(self, f.name) for f in fields(self)}

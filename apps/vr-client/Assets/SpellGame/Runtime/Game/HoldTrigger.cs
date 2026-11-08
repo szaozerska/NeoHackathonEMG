@@ -12,6 +12,9 @@ namespace SpellGame.Game
             _holdSeconds = holdSeconds;
         }
 
+        /// <summary>0-1 progress of the current hold; 0 once it has fired.</summary>
+        public float Progress => _firedThisHold ? 0f : _heldSeconds >= _holdSeconds ? 1f : _heldSeconds / _holdSeconds;
+
         /// <summary>True on the frame the hold reaches <c>holdSeconds</c>.</summary>
         public bool Update(bool held, float deltaTime)
         {

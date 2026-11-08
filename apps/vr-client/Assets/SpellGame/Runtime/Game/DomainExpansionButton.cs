@@ -10,6 +10,9 @@ namespace SpellGame.Game
 
         private HoldTrigger _hold;
 
+        /// <summary>0-1 progress of the current B hold, for <see cref="VoidChargeView"/>.</summary>
+        public float Progress => _hold?.Progress ?? 0f;
+
         private static bool BHeld => OVRInput.Get(OVRInput.Button.Two, OVRInput.Controller.RTouch);
 
         private void Awake()

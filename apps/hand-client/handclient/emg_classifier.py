@@ -92,8 +92,15 @@ class NeuralSignClassifier:
         heartbeat_s: float = 1.0,
         predictor: Any = None,
         snap_threshold: float | None = None,
+        void_threshold: float = 0.35,
     ) -> None:
-        """`snap_threshold` replaces the bundle's snap confidence threshold (higher: fewer accidental fireballs)."""
+        """`snap_threshold` replaces the bundle's snap confidence threshold (higher: fewer accidental fireballs).
+
+        `void_threshold`: an unsure state reading whose most likely class is Infinite Void counts as it from this
+        probability, below the bundle's state threshold. The void needs a hold of seconds, so a missed reading costs
+        more than a stray one.
+        """
+        self._void_threshold = void_threshold
         if predictor is None:
             predictor = NeuralEMGPredictor(model_dir)
         if snap_threshold is not None:
@@ -115,10 +122,20 @@ class NeuralSignClassifier:
             return self._report(batch.host_time_s, p.Sign.SNAP, snap["confidence"])
         if state is None:
             return None
-        sign = NEURAL_SIGNS.get(state["label"], p.Sign.NONE)
+        sign = NEURAL_SIGNS.get(self._label(outputs, state), p.Sign.NONE)
         if sign != self._sign or batch.host_time_s - self._sent_at >= self._heartbeat_s:
             return self._report(batch.host_time_s, sign, state["confidence"])
         return None
+
+    def _label(self, outputs: list[dict[str, Any]], state: dict[str, Any]) -> str:
+        label = str(state["label"])
+        if label not in ("unknown", "none"):
+            return label
+        scores = next((o for o in reversed(outputs) if o["kind"] == "neural_scores" and o.get("task") == "state"), None)
+        probabilities = scores["probabilities"] if scores is not None else {}
+        void = probabilities.get("infinite_void", 0.0)
+        likely_void = bool(probabilities) and void >= self._void_threshold and void >= max(probabilities.values())
+        return "infinite_void" if likely_void else label
 
     def _report(self, t: float, sign: str, confidence: float) -> SignPrediction:
         if sign != self._sign:

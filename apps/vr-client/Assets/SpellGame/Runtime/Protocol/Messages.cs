@@ -396,6 +396,9 @@ namespace SpellGame.Protocol
 
         /// <summary>Starting HP (server Tuning.max_hp); 0 from older servers.</summary>
         public float MaxHp { get; set; }
+
+        /// <summary>0-1 progress of an Infinite Void hold on the band; 0 when released or once it fires.</summary>
+        public float VoidCharge { get; set; }
     }
 
     public sealed class ProjectileSnapshot
