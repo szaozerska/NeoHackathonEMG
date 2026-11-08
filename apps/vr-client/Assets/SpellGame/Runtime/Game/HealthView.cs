@@ -22,8 +22,8 @@ namespace SpellGame.Game
         [Tooltip("Unlit material the bar materials are copied from (only its colour is changed).")]
         [SerializeField] private Material baseMaterial;
 
-        [Tooltip("Server starting HP.")]
-        [SerializeField] private float maxHp = 100f;
+        [Tooltip("Fallback starting HP for servers that don't send max_hp.")]
+        [SerializeField] private float maxHp = 150f;
 
         [Header("Wrist bar (own HP)")]
         [SerializeField] private Vector2 wristBarSize = new(0.12f, 0.016f);
@@ -109,7 +109,7 @@ namespace SpellGame.Game
         {
             if (damage.TargetId != gameClient.PlayerId)
                 return;
-            var lowHp = 1f - Mathf.Clamp01(damage.HpAfter / maxHp);
+            var lowHp = 1f - Mathf.Clamp01(damage.HpAfter / MaxHpOf(damage.TargetId));
             var color = damage.Kind == SpellKind.Sword ? swordFlash : damage.Kind == SpellKind.Fireball ? fireballFlash : Color.red;
             Flash(Mathf.Clamp01(0.4f + damage.Amount / 20f + 0.5f * lowHp), color, AttackerPosition(damage.SourceId, damage.Pos));
         }
@@ -171,7 +171,7 @@ namespace SpellGame.Game
 
             _wristBar.Root.gameObject.SetActive(wrist != null);
             if (wrist != null)
-                PlaceBar(_wristBar, wrist.Position + Vector3.up * wristBarLift, viewer, _players[ownId].Hp);
+                PlaceBar(_wristBar, wrist.Position + Vector3.up * wristBarLift, viewer, _players[ownId]);
         }
 
         private void UpdateHeadBars(Vector3 viewer)
@@ -184,7 +184,7 @@ namespace SpellGame.Game
                 var visible = gameClient.TryGetJoints(playerId, out var joints) && joints.Head != null;
                 bar.Root.gameObject.SetActive(visible);
                 if (visible)
-                    PlaceBar(bar, joints.Head.Position + Vector3.up * headBarHeight, viewer, player.Hp);
+                    PlaceBar(bar, joints.Head.Position + Vector3.up * headBarHeight, viewer, player);
             }
 
             foreach (var (playerId, bar) in _headBars)
@@ -211,12 +211,15 @@ namespace SpellGame.Game
             }
         }
 
-        private void PlaceBar(Bar bar, Vector3 position, Vector3 viewer, float hp)
+        private float MaxHpOf(string playerId) =>
+            playerId != null && _players.TryGetValue(playerId, out var player) && player.MaxHp > 0f ? player.MaxHp : maxHp;
+
+        private void PlaceBar(Bar bar, Vector3 position, Vector3 viewer, PlayerSnapshot player)
         {
             var away = position - viewer;
             bar.Root.SetPositionAndRotation(position, away.sqrMagnitude > 1e-6f ? Quaternion.LookRotation(away) : Quaternion.identity);
 
-            var fraction = Mathf.Clamp01(hp / maxHp);
+            var fraction = Mathf.Clamp01(player.Hp / MaxHpOf(player.PlayerId));
             var width = bar.Size.x * fraction;
             bar.Fill.gameObject.SetActive(fraction > 0f);
             bar.Fill.localPosition = new Vector3((width - bar.Size.x) * 0.5f, 0f, -0.002f);

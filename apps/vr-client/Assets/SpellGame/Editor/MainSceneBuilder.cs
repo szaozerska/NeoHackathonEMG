@@ -37,6 +37,7 @@ namespace SpellGame.Editor
             CreateShieldView(client);
             CreateHealthView(client, trackingSpace.Find("CenterEyeAnchor"));
             CreateMatchMenu(client, rig);
+            CreateEndGameView(client, rig);
             CreateAiAvatarView(client);
             CreateSpellAudio(client);
             CreateHitCallouts(client);
@@ -284,6 +285,16 @@ namespace SpellGame.Editor
             var view = new GameObject("Hit Callouts").AddComponent<HitCalloutView>();
             var serializedView = new SerializedObject(view);
             serializedView.FindProperty("gameClient").objectReferenceValue = client;
+            serializedView.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void CreateEndGameView(GameClient client, OVRCameraRig rig)
+        {
+            var view = new GameObject("End Game View").AddComponent<EndGameView>();
+            var serializedView = new SerializedObject(view);
+            serializedView.FindProperty("gameClient").objectReferenceValue = client;
+            serializedView.FindProperty("cameraRig").objectReferenceValue = rig;
+            serializedView.FindProperty("baseMaterial").objectReferenceValue = UnlitMaterial("DebugSkeleton", new Color(0.2f, 1f, 0.4f));
             serializedView.ApplyModifiedPropertiesWithoutUndo();
         }
 

@@ -25,7 +25,7 @@ from .hitboxes import Contact, HitboxSizes, body_contact, body_hitboxes
 
 @dataclass
 class Tuning:
-    max_hp: float = 100.0
+    max_hp: float = 150.0
     hitboxes: HitboxSizes = field(default_factory=HitboxSizes)
     """Players are hit-tested per body part: head sphere, torso, shoulders, arms and legs."""
 
@@ -233,6 +233,7 @@ class GameState:
                 p.PlayerSnapshot(
                     player_id=player.player_id,
                     hp=player.hp,
+                    max_hp=self.tuning.max_hp,
                     connected=player.connected,
                     band_paired=player.band_paired,
                     sign=player.sign,
