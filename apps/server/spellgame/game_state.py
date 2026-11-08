@@ -38,6 +38,12 @@ class Tuning:
     """A fireball that hits nothing fizzles after flying this far."""
     fireball_hold_timeout_s: float = 8.0
     fireball_cooldown_s: float = 0.75
+    snap_replaces_sword_s: float = 1.0
+    """A snap this soon after drawing the sword sheathes it and conjures the fireball: the band often reads the snap's
+    wind-up as a fist."""
+    snap_sword_lock_s: float = 1.0
+    """After a snap the sword can't be drawn for this long: the band often reads the hand just after a snap as a
+    fist."""
     fireball_inertia_s: float = 0.05
     """Time constant of the held fireball following the hand: it picks up 63% of a steady hand velocity in this long,
     so a quick wrist flick barely moves it while a real throw does. Hand velocity is already smoothed by the server's
@@ -359,13 +365,20 @@ class GameState:
         ]
 
     def _on_snap(self, player: PlayerState) -> list[p.Message]:
-        if not player.alive or not player.connected or player.item != Item.NONE or self.time < player.cooldown_until:
+        if not player.alive or not player.connected or self.time < player.cooldown_until:
             return []
+        events: list[p.Message] = []
+        if player.item == Item.SWORD and self.time - player.item_since <= self.tuning.snap_replaces_sword_s:
+            events.append(self._sheathe(player))
+        if player.item != Item.NONE:
+            return events
         player.item = Item.FIREBALL
         player.item_since = self.time
         player.held_fireball_velocity = np.zeros(3)
         player.throw_velocity = None
-        return [self._spell_event(player, p.SpellState.CHARGING, None)]
+        player.sword_locked_until = max(player.sword_locked_until, self.time + self.tuning.snap_sword_lock_s)
+        events.append(self._spell_event(player, p.SpellState.CHARGING, None))
+        return events
 
     def _step_fireball(self, player: PlayerState, dt: float) -> list[p.Message]:
         events: list[p.Message] = []

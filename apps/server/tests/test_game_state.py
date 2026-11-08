@@ -320,6 +320,40 @@ def test_no_sword_without_a_fist():
     assert match.p1.item == Item.NONE
 
 
+def test_snap_right_after_drawing_the_sword_replaces_it_with_a_fireball():
+    match = sword_match()
+    match.draw_sword()
+    match.run(0.5, p1_hand=SWORD_DRAWN_HAND)
+    events = match.step(p1_hand=SWORD_DRAWN_HAND, snap=True)
+
+    assert match.p1.item == Item.FIREBALL
+    assert [(e.spell, e.state) for e in of_type(events, p.Spell)] == [
+        (Item.SWORD, p.SpellState.SHEATHED),
+        (Item.FIREBALL, p.SpellState.CHARGING),
+    ]
+
+
+def test_snap_while_holding_the_sword_for_long_is_ignored():
+    match = sword_match()
+    match.draw_sword()
+    match.run(match.game.tuning.snap_replaces_sword_s + 0.1, p1_hand=SWORD_DRAWN_HAND)
+    assert not of_type(match.step(p1_hand=SWORD_DRAWN_HAND, snap=True), p.Spell)
+    assert match.p1.item == Item.SWORD
+
+
+def test_no_sword_just_after_a_snap():
+    match = sword_match()
+    match.step(snap=True)
+    match.throw()
+    assert match.p1.item == Item.NONE
+    lock = match.game.tuning.snap_sword_lock_s
+    assert match.game.time < lock
+    match.run(lock - match.game.time - 2 * DT, p1_hand=SWORD_DRAWN_HAND, sign=p.Sign.FIST)
+    assert match.p1.item == Item.NONE
+    match.run(3 * DT, p1_hand=SWORD_DRAWN_HAND)
+    assert match.p1.item == Item.SWORD
+
+
 def test_releasing_the_fist_sheathes_the_sword_at_once():
     match = sword_match()
     match.draw_sword()
