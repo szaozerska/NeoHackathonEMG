@@ -11,7 +11,8 @@ namespace SpellGame.Editor
     /// <summary>
     /// Generates the <see cref="UiTheme"/> behind <see cref="UiStyle"/>: imports TMP Essential Resources if the project
     /// doesn't have them yet, makes dynamic SDF font assets from the Chakra Petch TTFs in <see cref="FontFolder"/>, the text
-    /// materials (outline + underlay) and the crystal panel material, and saves the theme into Resources.
+    /// materials (outline + underlay) and the crystal panel material, and saves the theme into Resources. Also makes the
+    /// plain black Midnight theme (<see cref="UiTheme.MidnightResourceName"/>) from the Cinzel and Inter TTFs.
     /// Called first thing by <see cref="MainSceneBuilder.Build"/>. Existing assets are reused, so tweaks to them survive.
     /// </summary>
     public static class UiThemeBuilder
@@ -52,8 +53,40 @@ namespace SpellGame.Editor
             serializedTheme.FindProperty("crystal").objectReferenceValue = CrystalMaterial();
             serializedTheme.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(theme);
+            EnsureMidnightTheme();
             AssetDatabase.SaveAssets();
             return true;
+        }
+
+        /// <summary>Palette and shape are set only when the asset is first made, so tweaks to them survive.</summary>
+        private static void EnsureMidnightTheme()
+        {
+            var display = FontAsset("Cinzel-Bold");
+            var body = FontAsset("Inter-Medium");
+
+            var path = $"{ResourcesFolder}/{UiTheme.MidnightResourceName}.asset";
+            var theme = AssetDatabase.LoadAssetAtPath<UiTheme>(path);
+            var created = theme == null;
+            if (created)
+            {
+                theme = ScriptableObject.CreateInstance<UiTheme>();
+                AssetDatabase.CreateAsset(theme, path);
+            }
+
+            var serializedTheme = new SerializedObject(theme);
+            if (created)
+            {
+                serializedTheme.FindProperty("displayName").stringValue = "Midnight";
+                serializedTheme.FindProperty("palette").boxedValue = UiPalette.Midnight;
+                serializedTheme.FindProperty("shape").boxedValue = UiShape.Plain;
+            }
+            serializedTheme.FindProperty("displayFont").objectReferenceValue = display;
+            serializedTheme.FindProperty("bodyFont").objectReferenceValue = body;
+            serializedTheme.FindProperty("displayMaterial").objectReferenceValue = TextMaterial(display, UiPalette.Midnight.Ink);
+            serializedTheme.FindProperty("bodyMaterial").objectReferenceValue = TextMaterial(body, UiPalette.Midnight.Ink);
+            serializedTheme.FindProperty("crystal").objectReferenceValue = CrystalMaterial();
+            serializedTheme.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(theme);
         }
 
         // ---------------------------------------------------------------- TMP Essential Resources

@@ -1,7 +1,8 @@
 """The AI opponent of a solo match: a scripted player that sends poses and band signs into `GameState` like any other.
 
 It stands in front of its target, strafes, throws fireballs on a timer with some aim error, and sometimes raises its
-shield against an incoming fireball. Outside `playing` it just stands and sways (and celebrates if it won). Caught in a
+shield against an incoming fireball. In a sword-only match it keeps its sword out, follows its target at arm's reach
+and slashes on a timer instead. Outside `playing` it just stands and sways (and celebrates if it won). Caught in a
 domain expansion (stunned), it freezes in its last pose.
 """
 
@@ -16,7 +17,15 @@ import numpy as np
 from . import protocol as p
 from .game_state import GameState, Item, PlayerInput
 from .geometry import body_forward, vec
-from .sim import HAND_IDLE, THROW_DURATION_S, standing_pose, throw_hand_offset
+from .sim import (
+    HAND_IDLE,
+    SWORD_DRAWN_HAND,
+    SWORD_SWING_TO,
+    THROW_DURATION_S,
+    standing_pose,
+    sword_swing_hand_offset,
+    throw_hand_offset,
+)
 
 SHIELD_HAND = np.array([0.0, 1.3, 0.35])
 VICTORY_HAND = np.array([0.2, 1.95, 0.1])
@@ -40,6 +49,13 @@ class AiTuning:
     """How long the shield stays up after the fireball it blocked is gone."""
     fallback_target: tuple[float, float] = (0.0, 0.0)
     """Floor point it faces when its target has no pose yet."""
+    sword_distance: float = 1.0
+    """Sword-only: metres from its target it keeps, within the blade's reach."""
+    sword_follow_speed: float = 1.0
+    """Sword-only: metres per second it walks to keep that distance."""
+    slash_s: float = 0.25
+    slash_recover_s: float = 0.5
+    slash_interval_s: tuple[float, float] = (1.2, 2.4)
 
 
 class AiOpponent:
@@ -48,6 +64,8 @@ class AiOpponent:
     ) -> None:
         self.player_id = player_id
         self.tuning = tuning or AiTuning()
+        self.sword_only = False
+        """Set by the server from the match: fight with the sword instead of fireballs."""
         self.rng = rng or random.Random()
         self.home = np.array([0.0, self.tuning.distance])
         self.facing_deg = 180.0
@@ -74,7 +92,8 @@ class AiOpponent:
             if np.linalg.norm(flat) > 1e-3:
                 forward = flat / np.linalg.norm(flat)
         origin = target if target is not None else np.array(self.tuning.fallback_target)
-        self.home = origin + forward * self.tuning.distance
+        distance = self.tuning.sword_distance if self.sword_only else self.tuning.distance
+        self.home = origin + forward * distance
         self.facing_deg = _yaw_towards(self.home, origin)
         self._attack = None
         self._shield_until = -math.inf
@@ -93,6 +112,8 @@ class AiOpponent:
 
         self._strafe_clock += elapsed_since_last
         target = self._target_head(game, target_id)
+        if fighting and self.sword_only and me is not None and me.alive:
+            return self._sword_input(now, target, elapsed_since_last)
         position = self.home.copy()
         if fighting:
             side = np.array([math.cos(math.radians(self.facing_deg)), -math.sin(math.radians(self.facing_deg))])
@@ -129,6 +150,38 @@ class AiOpponent:
         pose = standing_pose(self.player_id, now, (float(position[0]), float(position[1])), facing, hand)
         self._last_pose = pose
         return PlayerInput(pose=pose, sign=sign, snapped=snapped, band_paired=True, connected=True, aligned=True)
+
+    def _sword_input(self, now: float, target: np.ndarray | None, dt: float) -> PlayerInput:
+        """Sword out (fist held) all the time; slash right to left, recover, wait, repeat."""
+        tuning = self.tuning
+        if target is not None:
+            away = self.home - target
+            norm = float(np.linalg.norm(away))
+            goal = target + (away / norm if norm > 1e-3 else np.array([0.0, 1.0])) * tuning.sword_distance
+            step = goal - self.home
+            length = float(np.linalg.norm(step))
+            reach = tuning.sword_follow_speed * dt
+            self.home = self.home + (step * (reach / length) if length > reach else step)
+        facing = _yaw_towards(self.home, target) if target is not None else self.facing_deg
+
+        elapsed = now - self._attack_started
+        if self._attack == "slashing" and elapsed >= tuning.slash_s:
+            self._attack, self._attack_started, elapsed = "recovering", now, 0.0
+        if self._attack == "recovering" and elapsed >= tuning.slash_recover_s:
+            self._attack = None
+            self._next_attack = now + self.rng.uniform(*tuning.slash_interval_s)
+        if self._attack is None and now >= self._next_attack:
+            self._attack, self._attack_started, elapsed = "slashing", now, 0.0
+
+        if self._attack == "slashing":
+            hand = sword_swing_hand_offset(elapsed, tuning.slash_s)
+        elif self._attack == "recovering":
+            hand = SWORD_SWING_TO + (SWORD_DRAWN_HAND - SWORD_SWING_TO) * (elapsed / tuning.slash_recover_s)
+        else:
+            hand = SWORD_DRAWN_HAND
+        pose = standing_pose(self.player_id, now, (float(self.home[0]), float(self.home[1])), facing, hand)
+        self._last_pose = pose
+        return PlayerInput(pose=pose, sign=p.Sign.FIST, band_paired=True, connected=True, aligned=True)
 
     def _should_shield(self, game: GameState, position: np.ndarray, now: float) -> bool:
         me = np.array([position[0], 1.3, position[1]])

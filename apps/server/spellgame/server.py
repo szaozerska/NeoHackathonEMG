@@ -316,7 +316,8 @@ class GameServer:
 
     def _on_match_message(self, conn: ClientConnection, slot: PlayerSlot, message: p.Message) -> None:
         if isinstance(message, p.MatchSetup):
-            if (error := self.match.setup(slot.player_id, message.mode, message.duration_s)) is not None:
+            error = self.match.setup(slot.player_id, message.mode, message.duration_s, message.sword_only)
+            if error is not None:
                 conn.send(p.Error(message=error))
         elif isinstance(message, p.Ready):
             self.match.set_ready(slot.player_id, message.ready)
@@ -331,6 +332,7 @@ class GameServer:
         ai_id = self.match.ai_id
         if ai_id is not None and self.ai is None:
             self.ai = AiOpponent(ai_id)
+            self.ai.sword_only = self.match.sword_only
             self.game.add_player(ai_id)
             self.ai.place_facing(self.game, self.match.owner)
             log.info("AI opponent joined")
@@ -386,7 +388,7 @@ class GameServer:
         for slot in self.players.values():
             slot.input.aligned = slot.player_id in self.space.aligned
             inputs[slot.player_id] = (
-                slot.input
+                self.match.restrict(slot.input)
                 if self.match.can_cast(slot.player_id)
                 else replace(slot.input, sign=p.Sign.NONE, snapped=False, domain_expanded=False)
             )
@@ -394,7 +396,8 @@ class GameServer:
             match = self.match
             fighting = match.phase == p.MatchPhase.PLAYING
             won = match.phase == p.MatchPhase.ENDED and match.winner == self.ai.player_id
-            inputs[self.ai.player_id] = self.ai.input(self.game, match.owner, fighting, won)
+            self.ai.sword_only = match.sword_only
+            inputs[self.ai.player_id] = match.restrict(self.ai.input(self.game, match.owner, fighting, won))
         events = self.game.step(inputs, self.dt)
         self._step_match()
         outgoing: list[p.Message] = []
@@ -424,6 +427,7 @@ class GameServer:
         if after == before:
             return
         if after == p.MatchPhase.COUNTDOWN and self.ai is not None:
+            self.ai.sword_only = self.match.sword_only
             self.ai.place_facing(self.game, self.match.owner)
         buzz = {p.MatchPhase.PLAYING: MATCH_START_MS, p.MatchPhase.ENDED: MATCH_END_MS}.get(after)
         if buzz is not None:

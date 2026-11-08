@@ -40,6 +40,24 @@ namespace SpellGame.Game
             Confetti = new[] { Color.white, Rgba(200, 210, 255, 1f), Rgba(150, 156, 185, 1f) },
         };
 
+        /// <summary>"Midnight": plain see-through black with a faint white hairline and white text; no crystal facets.</summary>
+        public static UiPalette Midnight => new()
+        {
+            Fill = Rgba(0, 0, 0, 0.6f),
+            FacetLight = Rgba(0, 0, 0, 0.6f),
+            FacetDark = Rgba(0, 0, 0, 0.6f),
+            Rim = Rgba(255, 255, 255, 0.22f),
+            Ink = Rgba(0, 0, 0, 1f),
+            Text = Color.white,
+            TextDim = Rgba(200, 200, 200, 1f),
+            Accent = Color.white,
+            P1 = new Color(1f, 0.25f, 0.25f),
+            P2 = new Color(0.25f, 0.5f, 1f),
+            Pointer = Color.white,
+            Ash = new Color(0.35f, 0.35f, 0.35f),
+            Confetti = new[] { Color.white, Rgba(200, 200, 200, 1f), Rgba(120, 120, 120, 1f) },
+        };
+
         /// <summary>Warm amber glass.</summary>
         public static UiPalette EmberGlass
         {
@@ -113,11 +131,19 @@ namespace SpellGame.Game
         [Tooltip("Ink outline on selected / hovered cards.")] public float OutlineWidth;
         [Tooltip("Hard drop shadow below cards; 0 = none.")] public float ShadowDrop;
         [Tooltip("Strength of the two flat facet planes (0..1).")] [Range(0f, 1f)] public float Facets;
+        [Tooltip("Plain look: buttons in the card fill instead of accent glass, a thin text outline, no title shadow.")]
+        public bool Minimal;
 
         /// <summary>Plain 90° rectangles with two facets and a rim.</summary>
         public static UiShape Rectangles => new()
         {
             Skew = 0f, CornerCut = 0f, RimWidth = 0.003f, OutlineWidth = 0.004f, ShadowDrop = 0.005f, Facets = 1f,
+        };
+
+        /// <summary>Flat 90° rectangles with a hairline rim: no facets, no drop shadow.</summary>
+        public static UiShape Plain => new()
+        {
+            Skew = 0f, CornerCut = 0f, RimWidth = 0.0015f, OutlineWidth = 0.002f, ShadowDrop = 0f, Facets = 0f, Minimal = true,
         };
     }
 
@@ -139,6 +165,9 @@ namespace SpellGame.Game
     public sealed class UiTheme : ScriptableObject
     {
         public const string ResourceName = "SpellGameUiTheme";
+
+        /// <summary>The plain black theme (Cinzel titles, Inter body text), the default menu style.</summary>
+        public const string MidnightResourceName = "SpellGameUiThemeMidnight";
 
         [SerializeField] private string displayName = "Smoky Opal";
         [SerializeField] private UiPalette palette = UiPalette.SmokyOpal;
