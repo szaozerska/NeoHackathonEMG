@@ -60,6 +60,26 @@ def test_versus_waits_for_both_players_ready_then_counts_down_and_resets_the_fig
     assert match.snapshot().time_left == pytest.approx(50.0, abs=2 * DT)
 
 
+def test_versus_countdown_waits_for_both_fighters_to_be_aligned():
+    game, match = setup_versus()
+    for player_id in BOTH:
+        match.set_ready(player_id, True)
+    match.step(game, BOTH, DT, aligned={"P1"})
+    assert match.phase == p.MatchPhase.READY
+    assert match.snapshot().ready == BOTH
+    match.step(game, BOTH, DT, aligned=set(BOTH))
+    assert match.phase == p.MatchPhase.COUNTDOWN
+
+
+def test_solo_does_not_need_the_shared_frame():
+    game, match = GameState(), Match()
+    game.add_player("P1")
+    assert match.setup("P1", p.MatchMode.SOLO, 60.0) is None
+    match.set_ready("P1", True)
+    match.step(game, ["P1"], DT, aligned=set())
+    assert match.phase == p.MatchPhase.COUNTDOWN
+
+
 def test_unreadying_holds_the_countdown():
     game, match = setup_versus()
     match.step(game, BOTH, DT)
