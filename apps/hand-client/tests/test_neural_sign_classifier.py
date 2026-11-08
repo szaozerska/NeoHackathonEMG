@@ -60,3 +60,16 @@ def test_snap_threshold_overrides_only_the_event_task():
         "state": {"threshold": 0.55},
         "snap": {"threshold": 0.999, "event_class": "snap"},
     }
+
+
+def scores(**probabilities):
+    return {"kind": "neural_scores", "task": "state", "probabilities": probabilities}
+
+
+def test_an_unsure_reading_most_likely_void_counts_as_void():
+    outputs = [
+        [scores(none=0.3, open=0.1, fist=0.15, infinite_void=0.45), state("unknown", 0.45)],
+        [scores(none=0.5, open=0.1, fist=0.1, infinite_void=0.3), state("unknown", 0.5)],
+    ]
+    classifier = NeuralSignClassifier("unused", heartbeat_s=5.0, predictor=ScriptedPredictor(outputs))
+    assert [classifier.push(batch(i)).sign for i in range(2)] == [p.Sign.INFINITE_VOID, p.Sign.NONE]

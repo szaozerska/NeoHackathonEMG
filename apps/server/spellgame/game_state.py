@@ -110,7 +110,7 @@ class Tuning:
     """Infinite Void: how long the streaks take to reach the targets."""
     domain_stun_s: float = 5.0
     """After the streaks land, targets can't attack for this long."""
-    domain_void_hold_s: float = 2.0
+    domain_void_hold_s: float = 4.0
     domain_void_gap_s: float = 0.4
     """Gaps in the Infinite Void reading up to this long don't break the hold (the classifier flickers mid-hold)."""
     """Holding the band's Infinite Void sign this long expands the domain; brief misreads of the sign do nothing."""
@@ -297,6 +297,7 @@ class GameState:
                     if player.item == Item.SHIELD
                     else 0.0,
                     aligned=player.aligned,
+                    void_charge=round(self._void_charge(player), 3),
                 )
                 for player in self.players.values()
             ],
@@ -350,6 +351,12 @@ class GameState:
             return False
         player.void_cast = True
         return True
+
+    def _void_charge(self, player: PlayerState) -> float:
+        """0-1 progress of the current Infinite Void hold, for the headsets' charge-up meter; 0 once it has fired."""
+        if player.void_since is None or player.void_cast:
+            return 0.0
+        return min(1.0, (self.time - player.void_since) / self.tuning.domain_void_hold_s)
 
     def _expand_domain(self, caster: PlayerState) -> list[p.Message]:
         """Infinite Void: every opponent is stunned from now until the streaks land plus `domain_stun_s`."""

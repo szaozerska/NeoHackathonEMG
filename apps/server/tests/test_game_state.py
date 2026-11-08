@@ -706,3 +706,18 @@ def test_shield_hand_tension_caps_how_much_the_shield_blocks():
     assert tuning.shield_min_block < game._shield_block_fraction(shielder) < 1.0
     shielder.palm_tension = tuning.shield_full_block_tension
     assert game._shield_block_fraction(shielder) == 1.0
+
+
+def test_void_charge_fills_over_the_hold_and_empties_when_released():
+    match = Match()
+    tuning = match.game.tuning
+
+    def charge():
+        return next(player.void_charge for player in match.game.snapshot().players if player.player_id == "P1")
+
+    match.inputs["P1"].sign = p.Sign.INFINITE_VOID
+    match.run(tuning.domain_void_hold_s / 2)
+    assert 0.4 < charge() < 0.6
+    match.inputs["P1"].sign = p.Sign.NONE
+    match.run(tuning.domain_void_gap_s + 0.2)
+    assert charge() == 0.0

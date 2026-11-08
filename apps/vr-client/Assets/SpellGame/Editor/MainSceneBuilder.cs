@@ -50,6 +50,7 @@ namespace SpellGame.Editor
             CreateControllerBand(client);
             CreatePairingButton(client);
             CreateDomainExpansionButton(client);
+            CreateVoidChargeView(client);
             CreateMarkerTracking();
             var aligner = CreateSharedSpaceAligner(client, rig);
             CreateFireballView(client);
@@ -143,6 +144,16 @@ namespace SpellGame.Editor
             var serializedButton = new SerializedObject(button);
             serializedButton.FindProperty("gameClient").objectReferenceValue = client;
             serializedButton.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void CreateVoidChargeView(GameClient client)
+        {
+            var view = new GameObject("Void Charge").AddComponent<VoidChargeView>();
+            var serializedView = new SerializedObject(view);
+            serializedView.FindProperty("gameClient").objectReferenceValue = client;
+            serializedView.FindProperty("domainButton").objectReferenceValue = client.GetComponent<DomainExpansionButton>();
+            serializedView.FindProperty("ringMaterial").objectReferenceValue = UnlitMaterial("VoidCharge", Color.white);
+            serializedView.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void CreateDomainExpansionButton(GameClient client)
