@@ -167,13 +167,17 @@ Both headsets share one physical room, so every pose, projectile and hit has to 
 - **The server coordinates it:**
   - It picks the **anchor host**: the first connected headset. The host keeps the role until it disconnects; then the next headset in join order takes over.
   - It sends each headset a `space` message on join and whenever the host or anchor changes. The message has the Meta group UUID, the host, the current anchor (if any) and that player's floor spot.
-- **Anchor flow (primary):**
+- **Center calibration (default).** Needs no internet and no measuring. Anchors are off unless `useSharedAnchors` is set on `SharedSpaceAligner`.
+  - Both players meet in the middle of the room facing each other, touch their right controller tips together (each pointing at the other) and click the left thumbstick. They don't have to click at the same moment.
+  - Each headset averages its right controller's tip over 0.3 s. The tip, dropped to the floor, becomes the origin; the controller's horizontal pointing direction becomes the player's `spot_yaw` (P1 +z, P2 -z). The headset then sends `aligned` with `method: center`.
+  - The versus ready screen shows these steps, and **I'm ready!** stays unavailable until the headset is calibrated. Clicking again recalibrates; a system recenter clears it.
+- **Anchor flow (optional, `useSharedAnchors`):**
   1. The host creates an `OVRSpatialAnchor` on the floor between the players (its +z pointing from P1 towards P2), saves it, and calls `ShareAsync` with the `group_uuid` from `space`.
   2. The host sends `anchor_shared` with the anchor's UUID. The server announces it in `space` to every headset.
   3. Every headset, including the host, loads the anchor from the group and aligns its tracking space to it: Meta's `Alignment.cs` sample, or MRUK's `SetCustomWorldLockAnchor`. Then it sends `aligned` with `method: anchor` and the anchor's UUID.
      Alignment takes the anchor's full position (height too) and its yaw, so the host's floor becomes every headset's floor. A system recenter moves the tracking origin, so a headset that recenters aligns to the anchor again and re-sends `aligned`.
   4. The server rejects `anchor_shared` from a headset that isn't the host. It also rejects an `aligned` naming any anchor other than the current one. A newly shared anchor clears every headset's aligned flag.
-- **Fallback: marked floor spots.** Use this if anchor sharing fails (no internet, no Meta account, no Space Setup).
+- **Marked floor spots (server and `fake_vr` only).** Headsets no longer offer this method; use center calibration instead.
   - Mark the two spots on the floor `--spot-distance` apart (default 3 m). P1 stands at `(0, 0, -d/2)` facing +z; P2 stands at `(0, 0, +d/2)` facing -z.
   - Each player stands on their spot, faces the indicated way, and recenters. The headset offsets its tracking space by `spot_pos`/`spot_yaw` and sends `aligned` with `method: floor_spots`.
   - Mixing the two methods gives two different frames, so the server logs a warning when that happens.

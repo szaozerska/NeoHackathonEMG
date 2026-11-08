@@ -10,10 +10,12 @@ namespace SpellGame.Game
     /// Moves this headset's tracking space into the shared room frame (architecture.md §5.1), so every pose it streams
     /// and every spell it draws uses the same origin as the other headset.
     /// <list type="bullet">
-    /// <item>Host: creates an <see cref="OVRSpatialAnchor"/> at the frame's origin, saves it, shares it to the server's
+    /// <item>Default, center calibration: both players meet in the middle facing each other, touch right controller
+    /// tips together (each pointing at the other) and click the left thumbstick. The tip, on the floor, becomes the
+    /// origin and the controller's pointing direction becomes this player's <c>spot_yaw</c>. No internet or measuring.</item>
+    /// <item>With <see cref="useSharedAnchors"/>, host: creates an <see cref="OVRSpatialAnchor"/> at the frame's origin, saves it, shares it to the server's
     /// group UUID and sends <c>anchor_shared</c>.</item>
     /// <item>Everyone: loads that anchor, moves the camera rig so the anchor is the origin and sends <c>aligned</c>.</item>
-    /// <item>Fallback: stand on your marked floor spot facing the other player and click the left thumbstick.</item>
     /// </list>
     /// Clicking the right thumbstick sends <c>space_reset</c>: the host places a fresh anchor and everyone re-aligns.
     /// </summary>
@@ -22,8 +24,14 @@ namespace SpellGame.Game
         [SerializeField] private GameClient gameClient;
         [SerializeField] private OVRCameraRig cameraRig;
 
-        [Tooltip("Skip Shared Spatial Anchors: only align with the floor-spot fallback.")]
-        [SerializeField] private bool floorSpotsOnly;
+        [Tooltip("Also align through Meta Shared Spatial Anchors (needs internet). Center calibration always works.")]
+        [SerializeField] private bool useSharedAnchors;
+
+        [Tooltip("Metres from the controller anchor forward to the tip that touches the other player's.")]
+        [SerializeField] private float tipOffset = 0.06f;
+
+        [Tooltip("Seconds the controller pose is averaged over after the click.")]
+        [SerializeField] private float calibrationSeconds = 0.3f;
 
         [Tooltip("Time for the host to stand on their spot, facing the other player, before the anchor is placed.")]
         [SerializeField] private float placementDelaySeconds = 3f;
@@ -36,16 +44,10 @@ namespace SpellGame.Game
         private string _sharedInGroup;
         private string _alignedTo;
         private bool _busy;
+        private bool _calibrating;
 
-        /// <summary>
-        /// Called when the player says they're ready: they're standing on their spot facing the other player, so a
-        /// headset that isn't aligned yet (anchor still loading, or sharing failed offline) aligns to its floor spot.
-        /// </summary>
-        public void AlignToFloorSpotIfUnaligned()
-        {
-            if (_space != null && _alignedTo == null)
-                AlignToFloorSpot(force: true);
-        }
+        private const string CalibratePrompt =
+            "Calibrate: meet in the middle, touch right controller tips, click the left stick";
 
         private void OnEnable() => gameClient.SpaceReceived += OnSpace;
 
@@ -58,7 +60,7 @@ namespace SpellGame.Game
 
         /// <summary>
         /// A recenter moves the headset's tracking origin, so the offset from the last alignment no longer lands on the
-        /// shared frame: align again (to the anchor automatically; floor spots need the player back on their spot).
+        /// shared frame: align again (to the anchor automatically; center calibration needs the tips touched again).
         /// </summary>
         private void OnRecentered()
         {
@@ -75,7 +77,7 @@ namespace SpellGame.Game
                 return;
 
             if (OVRInput.GetDown(OVRInput.Button.PrimaryThumbstick, OVRInput.Controller.LTouch))
-                AlignToFloorSpot();
+                CalibrateAtCenter();
             if (OVRInput.GetDown(OVRInput.Button.PrimaryThumbstick, OVRInput.Controller.RTouch))
                 gameClient.Send(new SpaceResetMessage());
         }
@@ -99,10 +101,10 @@ namespace SpellGame.Game
                 return;
 
             var space = _space;
-            if (floorSpotsOnly)
+            if (!useSharedAnchors)
             {
-                if (_alignedTo != FloorSpotKey(space))
-                    gameClient.SetSpaceStatus("Stand on your spot facing the other player, then click the left thumbstick");
+                if (_alignedTo != CenterKey(space))
+                    gameClient.SetSpaceStatus(CalibratePrompt);
                 return;
             }
 
@@ -110,7 +112,7 @@ namespace SpellGame.Game
             {
                 if (space.HostId == gameClient.PlayerId && _sharedInGroup != space.GroupUuid)
                     await Run(() => ShareAnchorAsync(space), "Sharing the room anchor failed");
-                else if (_alignedTo != FloorSpotKey(space))
+                else if (_alignedTo != CenterKey(space))
                     gameClient.SetSpaceStatus($"Waiting for {space.HostId ?? "a host"} to share the room anchor…");
                 return;
             }
@@ -130,7 +132,7 @@ namespace SpellGame.Game
             catch (Exception exception)
             {
                 Debug.LogError($"[SpellGame] {failure}: {exception}");
-                gameClient.SetSpaceStatus($"{failure}. Stand on your spot and click the left thumbstick");
+                gameClient.SetSpaceStatus($"{failure}. {CalibratePrompt}");
                 return;
             }
             finally
@@ -237,16 +239,56 @@ namespace SpellGame.Game
             throw new InvalidOperationException($"anchor {anchorUuid} was not found in group {groupUuid}");
         }
 
-        /// <summary>The floor-spot fallback: this player is standing on their spot, facing <c>spot_yaw</c>.</summary>
-        private void AlignToFloorSpot(bool force = false)
+        /// <summary>
+        /// Center calibration: the right controller's tip touches the other player's at the room's center, pointing at
+        /// them. Averages the tip and its horizontal pointing direction for <see cref="calibrationSeconds"/>, then makes
+        /// the tip (on the floor) the origin and the pointing direction this player's <c>spot_yaw</c>.
+        /// </summary>
+        private async void CalibrateAtCenter()
         {
-            if ((_busy && !force) || _space == null)
+            if (_calibrating || _space == null)
                 return;
 
-            AlignTo(OriginFromFloorSpot(_space));
-            _alignedTo = FloorSpotKey(_space);
-            gameClient.Send(new AlignedMessage { Method = AlignMethod.FloorSpots });
-            gameClient.SetSpaceStatus("Aligned to your floor spot");
+            _calibrating = true;
+            try
+            {
+                gameClient.SetSpaceStatus("Hold still: calibrating…");
+                var controller = cameraRig.rightControllerAnchor;
+                var tip = Vector3.zero;
+                var pointing = Vector3.zero;
+                var samples = 0;
+                var until = Time.time + calibrationSeconds;
+                do
+                {
+                    var forward = controller.forward;
+                    tip += controller.position + forward * tipOffset;
+                    pointing += new Vector3(forward.x, 0f, forward.z).normalized;
+                    samples++;
+                    await Awaitable.NextFrameAsync(destroyCancellationToken);
+                } while (Time.time < until);
+
+                if (pointing.sqrMagnitude < 0.01f * samples * samples)
+                {
+                    gameClient.SetSpaceStatus("Point the right controller at the other player, then click the left stick again");
+                    return;
+                }
+
+                var space = _space;
+                tip /= samples;
+                var yaw = Mathf.Atan2(pointing.x, pointing.z) * Mathf.Rad2Deg;
+                var floorY = cameraRig.trackingSpace.position.y;
+                AlignTo(new Pose(new Vector3(tip.x, floorY, tip.z), Quaternion.Euler(0f, yaw - space.SpotYaw, 0f)));
+                _alignedTo = CenterKey(space);
+                gameClient.Send(new AlignedMessage { Method = AlignMethod.Center });
+                gameClient.SetSpaceStatus("Room calibrated: walk back to your side");
+                OVRInput.SetControllerVibration(1f, 0.6f, OVRInput.Controller.RTouch);
+                await Awaitable.WaitForSecondsAsync(0.15f, destroyCancellationToken);
+                OVRInput.SetControllerVibration(0f, 0f, OVRInput.Controller.RTouch);
+            }
+            finally
+            {
+                _calibrating = false;
+            }
         }
 
         /// <summary>
@@ -278,7 +320,7 @@ namespace SpellGame.Game
             cameraRig.transform.SetPositionAndRotation(rotation * -position, rotation);
         }
 
-        private static string FloorSpotKey(SpaceMessage space) => $"{AlignMethod.FloorSpots}:{space.GroupUuid}";
+        private static string CenterKey(SpaceMessage space) => $"{AlignMethod.Center}:{space.GroupUuid}";
 
         private void DestroyAnchor()
         {
