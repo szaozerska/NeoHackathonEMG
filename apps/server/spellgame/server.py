@@ -8,12 +8,14 @@ import logging
 import socket
 import time
 from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from . import protocol as p
+from .ai import AiOpponent
 from .discovery import run_beacon
 from .game_state import GameState, PlayerInput, Tuning
-from .haptics import haptics_for
+from .haptics import MATCH_END_MS, MATCH_START_MS, haptics_for
+from .match import Match
 from .shared_space import FLOOR_SPOT_DISTANCE_M, SharedSpace
 
 log = logging.getLogger(__name__)
@@ -87,6 +89,8 @@ class GameServer:
         self.beacon_address = beacon_address
         self.game = GameState(tuning=tuning or Tuning())
         self.space = SharedSpace(spot_distance=spot_distance)
+        self.match = Match()
+        self.ai: AiOpponent | None = None
         self.players: dict[str, PlayerSlot] = {}
         self.connections: set[ClientConnection] = set()
         self.prompted_player_id: str | None = None
@@ -252,6 +256,8 @@ class GameServer:
             self._on_anchor_shared(conn, slot, message)
         elif conn is slot.vr and isinstance(message, p.Aligned):
             self._on_aligned(conn, slot, message)
+        elif conn is slot.vr and isinstance(message, (p.MatchSetup, p.Ready, p.MatchQuit, p.Rematch)):
+            self._on_match_message(conn, slot, message)
         elif conn is slot.classifier and isinstance(message, p.SignMessage):
             if message.sign == p.Sign.SNAP and slot.input.sign != p.Sign.SNAP:
                 slot.input.snapped = True
@@ -260,6 +266,31 @@ class GameServer:
         elif conn is slot.classifier and isinstance(message, p.Gesture):
             message.player_id = slot.player_id
             self._broadcast([message])
+
+    def _on_match_message(self, conn: ClientConnection, slot: PlayerSlot, message: p.Message) -> None:
+        if isinstance(message, p.MatchSetup):
+            if (error := self.match.setup(slot.player_id, message.mode, message.duration_s)) is not None:
+                conn.send(p.Error(message=error))
+        elif isinstance(message, p.Ready):
+            self.match.set_ready(slot.player_id, message.ready)
+        elif isinstance(message, p.MatchQuit):
+            self.match.quit(slot.player_id)
+        elif isinstance(message, p.Rematch):
+            self.match.rematch()
+        self._sync_ai()
+
+    def _sync_ai(self) -> None:
+        """The AI opponent exists while a solo match is set up, from the ready screen to the results."""
+        ai_id = self.match.ai_id
+        if ai_id is not None and self.ai is None:
+            self.ai = AiOpponent(ai_id)
+            self.game.add_player(ai_id)
+            self.ai.place_facing(self.game, self.match.owner)
+            log.info("AI opponent joined")
+        elif ai_id is None and self.ai is not None:
+            self.game.players.pop(self.ai.player_id, None)
+            self.ai = None
+            log.info("AI opponent left")
 
     def reset_space(self) -> None:
         """Drops the shared anchor (§5.1): a new host creates a fresh one and every headset re-aligns."""
@@ -304,22 +335,53 @@ class GameServer:
             await asyncio.sleep(max(0.0, delay))
 
     def tick(self) -> None:
+        inputs: dict[str, PlayerInput] = {}
         for slot in self.players.values():
             slot.input.aligned = slot.player_id in self.space.aligned
-        events = self.game.step({slot.player_id: slot.input for slot in self.players.values()}, self.dt)
+            inputs[slot.player_id] = (
+                slot.input
+                if self.match.can_cast(slot.player_id)
+                else replace(slot.input, sign=p.Sign.NONE, snapped=False)
+            )
+        if self.ai is not None:
+            match = self.match
+            fighting = match.phase == p.MatchPhase.PLAYING
+            won = match.phase == p.MatchPhase.ENDED and match.winner == self.ai.player_id
+            inputs[self.ai.player_id] = self.ai.input(self.game, match.owner, fighting, won)
+        events = self.game.step(inputs, self.dt)
+        self._step_match()
         outgoing: list[p.Message] = []
         for slot in self.players.values():
             slot.input.snapped = False
             if slot.pose_dirty and slot.input.pose is not None:
                 outgoing.append(slot.input.pose)
                 slot.pose_dirty = False
-        outgoing.append(self.game.snapshot())
+        if self.ai is not None and (ai_pose := inputs[self.ai.player_id].pose) is not None:
+            outgoing.append(ai_pose)
+        state = self.game.snapshot()
+        state.match = self.match.snapshot()
+        outgoing.append(state)
         outgoing.extend(events)
         for event in events:
             log.info("event: %s", p.encode(event))
             for player_id, duration_ms in haptics_for(event):
                 self._send_haptic(player_id, duration_ms)
         self._broadcast(outgoing)
+
+    def _step_match(self) -> None:
+        headsets = [slot.player_id for slot in sorted(self.players.values(), key=lambda s: s.join_order) if slot.vr]
+        before = self.match.phase
+        self.match.step(self.game, headsets, self.dt)
+        after = self.match.phase
+        if after == before:
+            return
+        if after == p.MatchPhase.COUNTDOWN and self.ai is not None:
+            self.ai.place_facing(self.game, self.match.owner)
+        buzz = {p.MatchPhase.PLAYING: MATCH_START_MS, p.MatchPhase.ENDED: MATCH_END_MS}.get(after)
+        if buzz is not None:
+            for player_id in self.match.fighters:
+                self._send_haptic(player_id, buzz)
+        self._sync_ai()
 
     def _send_haptic(self, player_id: str, duration_ms: int) -> None:
         slot = self.players.get(player_id)

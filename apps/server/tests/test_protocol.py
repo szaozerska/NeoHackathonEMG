@@ -57,3 +57,14 @@ def test_hello_round_trip_keeps_device_and_accepts_unity_nulls():
     assert isinstance(decoded, p.Hello)
     assert decoded.device == p.DeviceInfo(name="Quest")
     assert p.decode('{"type":"hello","role":"classifier"}') == p.Hello(role=p.Role.CLASSIFIER)
+
+
+def test_state_round_trip_with_match_and_match_messages():
+    state = p.State(
+        tick=5,
+        match=p.MatchSnapshot(phase=p.MatchPhase.PLAYING, mode=p.MatchMode.SOLO, duration_s=60.0, time_left=41.5),
+    )
+    assert p.decode(p.encode(state)) == state
+    assert p.decode('{"type":"state","tick":1}') == p.State(tick=1)
+    for message in (p.MatchSetup(mode="versus", duration_s=120.0), p.Ready(ready=False), p.MatchQuit(), p.Rematch()):
+        assert p.decode(p.encode(message)) == message

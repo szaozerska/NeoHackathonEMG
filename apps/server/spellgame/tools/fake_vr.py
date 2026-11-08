@@ -2,6 +2,7 @@
 
 python -m spellgame.tools.fake_vr --position 0,0 --facing 0 --throw-every 3
 python -m spellgame.tools.fake_vr --position 0,3 --facing 180
+python -m spellgame.tools.fake_vr --match solo --duration 60
 
 It also plays its part in the shared room frame (architecture.md §5.1): as anchor host it "shares" a made-up anchor,
 then reports itself aligned to whatever anchor the server announces. Its poses are already in the shared frame.
@@ -60,9 +61,17 @@ async def run(args: argparse.Namespace) -> None:
     log.info("connected to %s:%d as %s", host, port, player_id)
 
     alignment = FakeAlignment(args.align)
+    if args.match:
+        conn.send(p.MatchSetup(mode=args.match, duration_s=args.duration))
+        conn.send(p.Ready(ready=True))
+    last_phase: str | None = None
 
     async def print_events() -> None:
+        nonlocal last_phase
         async for message in conn.messages():
+            if isinstance(message, p.State) and message.match is not None and message.match.phase != last_phase:
+                last_phase = message.match.phase
+                log.info("<- match %s", message.match.to_dict())
             if isinstance(message, p.Space):
                 for reply in alignment.replies(message, player_id):
                     log.info("-> %s", p.encode(reply))
@@ -111,6 +120,10 @@ def main() -> None:
         help="how to report joining the shared room frame",
     )
     parser.add_argument("--throw-every", type=float, default=0.0, help="seconds between throws; 0 = never")
+    parser.add_argument(
+        "--match", choices=[p.MatchMode.SOLO, p.MatchMode.VERSUS], help="set up a match of this mode and ready up"
+    )
+    parser.add_argument("--duration", type=float, default=60.0, help="match length in seconds, with --match")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
     with contextlib.suppress(KeyboardInterrupt):

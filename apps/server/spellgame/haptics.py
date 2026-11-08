@@ -8,6 +8,8 @@ CHARGING_MS = 40
 CAST_MS = 120
 HIT_TAKEN_MS = 300
 HIT_DEALT_MS = 60
+MATCH_START_MS = 250
+MATCH_END_MS = 500
 
 
 def haptics_for(event: p.Message) -> list[tuple[str, int]]:

@@ -84,7 +84,8 @@ about 12–14 hits a minute.
 | Shield | Fully blocks a frontal fireball. No extra cost: the band hand does one gesture at a time, so shielding means not attacking |
 | Match | 60 s. Lower HP at time-out loses; a tie goes to sudden death |
 
-- The server owns the match phase (`countdown` / `playing` / `ended`), the time left and the winner.
+- The server owns the match phase (`lobby` / `ready` / `countdown` / `playing` / `ended`), the mode (solo vs the AI, or
+  versus), the length (1, 2 or 5 min), the time left and the winner: see architecture.md §5.2.
 - **Display:**
   - The opponent's HP bar floats above their real head.
   - Your own HP and the timer sit on a small panel on your off-hand wrist (more comfortable than head-locked).
