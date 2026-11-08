@@ -191,8 +191,8 @@ def test_headset_starts_pairing_mode_bands_pair_by_pinch_and_fireball_deals_dama
                 damage = await until(vr2, lambda m: isinstance(m, p.Damage))
                 hp_after = Tuning().max_hp - Tuning().fireball_damage
                 assert (damage.target_id, damage.source_id, damage.hp_after) == ("P2", "P1", hp_after)
-                state = await until(vr1, lambda m: isinstance(m, p.State) and m.players[1].hp < 100.0)
-                assert {pl.player_id: pl.hp for pl in state.players} == {"P1": 100.0, "P2": hp_after}
+                state = await until(vr1, lambda m: isinstance(m, p.State) and m.players[1].hp < Tuning().max_hp)
+                assert {pl.player_id: pl.hp for pl in state.players} == {"P1": Tuning().max_hp, "P2": hp_after}
                 assert {pl.player_id: pl.band_hand for pl in state.players} == {"P1": "right", "P2": "right"}
                 assert all(pl.band_paired for pl in state.players)
                 caster_buzzes = [await until(band1, lambda m: isinstance(m, p.Haptic)) for _ in range(3)]

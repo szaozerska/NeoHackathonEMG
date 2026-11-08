@@ -38,6 +38,7 @@ namespace SpellGame.Editor
             CreateShieldView(client);
             CreateHealthView(client, trackingSpace.Find("CenterEyeAnchor"));
             CreateMatchMenu(client, rig);
+            CreateEndGameView(client, rig);
             CreateAiAvatarView(client);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -284,6 +285,16 @@ namespace SpellGame.Editor
             serializedMenu.FindProperty("cameraRig").objectReferenceValue = rig;
             serializedMenu.FindProperty("baseMaterial").objectReferenceValue = UnlitMaterial("DebugSkeleton", new Color(0.2f, 1f, 0.4f));
             serializedMenu.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void CreateEndGameView(GameClient client, OVRCameraRig rig)
+        {
+            var view = new GameObject("End Game View").AddComponent<EndGameView>();
+            var serializedView = new SerializedObject(view);
+            serializedView.FindProperty("gameClient").objectReferenceValue = client;
+            serializedView.FindProperty("cameraRig").objectReferenceValue = rig;
+            serializedView.FindProperty("baseMaterial").objectReferenceValue = UnlitMaterial("DebugSkeleton", new Color(0.2f, 1f, 0.4f));
+            serializedView.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void CreateAiAvatarView(GameClient client)

@@ -78,8 +78,8 @@ about 12–14 hits a minute.
 
 | | Default |
 |---|---|
-| HP | 100 |
-| Fireball | 8 damage (about 13 hits to win) |
+| HP | 150 (about 19 fireball hits) |
+| Fireball | 8 damage (about 19 hits to win) |
 | Sword | 6–15 damage by tip speed: close range, high risk, hard-countered by parry |
 | Shield | Fully blocks a frontal fireball. No extra cost: the band hand does one gesture at a time, so shielding means not attacking |
 | Match | 60 s. Lower HP at time-out loses; a tie goes to sudden death |

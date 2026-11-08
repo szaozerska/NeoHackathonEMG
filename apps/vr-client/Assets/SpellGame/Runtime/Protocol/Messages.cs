@@ -322,6 +322,9 @@ namespace SpellGame.Protocol
 
         /// <summary>The headset has reported its poses are in the shared room frame.</summary>
         public bool Aligned { get; set; }
+
+        /// <summary>Starting HP (server Tuning.max_hp); 0 from older servers.</summary>
+        public float MaxHp { get; set; }
     }
 
     public sealed class ProjectileSnapshot
