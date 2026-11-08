@@ -109,7 +109,10 @@ def main():
             for seed in config['seeds']:
                 print(f'Training {task}: {architecture}, seed {seed}, {len(training)} fitting windows', flush=True)
                 weak_bags = data.get('weak_bags', {}).get(task, [])
-                _, checkpoint, _, training_report = fit_classifier(training, validation, spec, architecture, config, seed, weak_bags)
+                # Event heads choose their epoch by event F1; cross-entropy rewarded an untrained warm-up epoch.
+                chooser = (selection_rows, lambda p: select_threshold(selection_rows, p, spec)[1]) if 'event_class' in spec else None
+                _, checkpoint, _, training_report = fit_classifier(training, validation, spec, architecture, config, seed,
+                                                                   weak_bags, chooser)
                 predictor = NeuralClassifier(checkpoint)
                 p = predictor.predict_rows(selection_rows)
                 threshold, score, validation_report = select_threshold(selection_rows, p, spec)

@@ -116,14 +116,19 @@ def rotate_channels(batch, max_shift):
     return batch.roll(shift, dims=1) if shift else batch
 
 
-def fit_classifier(train, validation, spec, architecture, config, seed, weak_bags=()):
-    """Only train fits normalization; only validation selects the epoch."""
+def fit_classifier(train, validation, spec, architecture, config, seed, weak_bags=(), selection=None):
+    """Only train fits normalization; only validation selects the epoch.
+
+    selection=(rows, score) picks the epoch by score(probabilities on rows), e.g. event F1,
+    after any warm-up, instead of weighted cross-entropy.
+    """
     torch.manual_seed(seed)
     x = input_array(train, architecture); vx = input_array(validation, architecture)
     bag_arrays = [input_array(b['rows'], architecture) for b in weak_bags]
     normalization_input = np.concatenate([x, *bag_arrays]) if bag_arrays else x
     mean, std = normalize_fit(normalization_input, architecture)
     bags = [torch.from_numpy((v-mean)/std) for v in bag_arrays]
+    sx = (input_array(selection[0], architecture)-mean)/std if selection else None
     if bags and 'event_class' not in spec:
         raise ValueError('Weak bags require an event head')
     x = (x-mean)/std; vx = (vx-mean)/std
@@ -153,7 +158,8 @@ def fit_classifier(train, validation, spec, architecture, config, seed, weak_bag
     loss_fn = nn.CrossEntropyLoss(reduction='none')
     tx = torch.from_numpy(x).to(device); tvx = torch.from_numpy(vx).to(device)
     tmean = torch.from_numpy(mean).to(device); tstd = torch.from_numpy(std).to(device)
-    best_loss = float('inf'); best = None; stale = 0; history = []
+    best_loss = best_metric = float('inf'); best = None; stale = 0; history = []; scores = []
+    warmup = hyper['warmup_epochs'] if hyper else 0
     started = time.monotonic()
     for epoch in range(config['epochs']):
         model.train(); order = torch.randperm(len(x), device=device)
@@ -201,8 +207,13 @@ def fit_classifier(train, validation, spec, architecture, config, seed, weak_bag
             losses = torch.cat([loss_fn(model(tvx[ix]), vy[ix]) for ix in torch.arange(len(vx)).split(512)])
             val_loss = float((losses*vw).sum()/vw.sum())
         history.append(val_loss)
-        if val_loss < best_loss-1e-5:
-            best_loss = val_loss; best = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+        metric = val_loss
+        if selection:
+            metric = -selection[1](probabilities(model, sx)) if epoch+1 > warmup or epoch+1 == config['epochs'] else float('inf')
+            scores.append(-metric)
+        if metric < best_metric-1e-5 or (metric == best_metric and val_loss < best_loss):
+            best_metric = metric; best_loss = val_loss
+            best = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
             best_epoch = epoch+1; stale = 0
         else:
             stale += 1
@@ -215,7 +226,7 @@ def fit_classifier(train, validation, spec, architecture, config, seed, weak_bag
                   'best_epoch': best_epoch}
     return model, checkpoint, probabilities(model, vx), {
         'best_epoch': best_epoch, 'validation_weighted_cross_entropy': best_loss,
-        'validation_loss_history': history, 'seconds': time.monotonic()-started,
+        'validation_loss_history': history, 'selection_history': scores, 'seconds': time.monotonic()-started,
         'parameters': sum(p.numel() for p in model.parameters())}
 
 
