@@ -1,0 +1,4545 @@
+{
+  "purpose": "Exploratory signal attribution, drift and cross-condition checks",
+  "live_model_replaced": false,
+  "participant_labels_changed": false,
+  "window_samples": 400,
+  "hop_samples": 100,
+  "sample_rate_hz": 2048,
+  "feature_families": {
+    "energy": [
+      0,
+      1
+    ],
+    "profile": [
+      1,
+      9
+    ],
+    "amplitude": [
+      9,
+      33
+    ],
+    "spectral": [
+      33,
+      57
+    ],
+    "temporal": [
+      57,
+      73
+    ]
+  },
+  "datasets": {
+    "static": {
+      "identity": {
+        "raw_sha256": "a6552679634e4a53f12d74f773ce932aa0725498d12dd8c74e40763f439c9149",
+        "truth_sha256": "9bbb588cb9c1a2f2eeabbd5a15df3794601c248ca22f1dffc1282e082bf3bf13",
+        "algorithm": "raw-causal-400x100-v1"
+      },
+      "session_id": "20261108-014551-cf745f65",
+      "wearing_session": "micah-wearing-01",
+      "condition": "static",
+      "duration_seconds": 602.4896774580702,
+      "counts": {
+        "emg": 77386,
+        "clock_sync": 20,
+        "stream_reset": 14,
+        "participant_interaction": 49,
+        "motion_selection": 8,
+        "intent_toggle": 26
+      },
+      "window_count": 12159,
+      "sequence_discontinuities": 14,
+      "clipped_adc_fraction": 0.0,
+      "delivery_lag_quantiles_seconds": [
+        0.27346381213283166,
+        0.4935487913026009,
+        0.518543268670328
+      ],
+      "clock_fits": [
+        {
+          "native_origin_seconds": 9352.427423,
+          "offset_intercept_seconds": 581263.6948470632,
+          "offset_drift_ppm": -9.20625882552892,
+          "drift_slope_interval_ppm": [
+            -11.507512569892173,
+            -7.235867117253391
+          ],
+          "method": "Theil-Sen affine fit to 10-second minimum receipt-minus-native offsets",
+          "absolute_radio_latency_known": false,
+          "physiological_event_times_verified": false
+        }
+      ],
+      "original_truth_intervals": 27,
+      "interior_definition": "At least 0.5 seconds inside both reported boundaries; sensitivity analysis only, no labels edited."
+    },
+    "dynamic": {
+      "identity": {
+        "raw_sha256": "b66faf8c6aab00ff9705f58deede46c3198bd990f23f87a118e0baf9dd99fb23",
+        "truth_sha256": "8b3803a864ccdd39cd8db1ef97c7ec74daf827e46186eca860410c3510ce0208",
+        "algorithm": "raw-causal-400x100-v1"
+      },
+      "session_id": "20261108-011407-c127f0d5",
+      "wearing_session": "micah-wearing-01",
+      "condition": null,
+      "duration_seconds": 1198.9724537921138,
+      "counts": {
+        "emg": 152131,
+        "clock_sync": 39,
+        "stream_reset": 217,
+        "participant_interaction": 848,
+        "motion_selection": 13,
+        "intent_toggle": 818
+      },
+      "window_count": 20183,
+      "sequence_discontinuities": 217,
+      "clipped_adc_fraction": 6.100827576233641e-05,
+      "delivery_lag_quantiles_seconds": [
+        0.2785020829178393,
+        0.4952966659911908,
+        0.5220977120450699
+      ],
+      "clock_fits": [
+        {
+          "native_origin_seconds": 7448.41961,
+          "offset_intercept_seconds": 581263.7090523888,
+          "offset_drift_ppm": -8.457389675550793,
+          "drift_slope_interval_ppm": [
+            -9.928433965784837,
+            -7.262015429463228
+          ],
+          "method": "Theil-Sen affine fit to 10-second minimum receipt-minus-native offsets",
+          "absolute_radio_latency_known": false,
+          "physiological_event_times_verified": false
+        }
+      ],
+      "original_truth_intervals": 819,
+      "interior_definition": "At least 0.5 seconds inside both reported boundaries; sensitivity analysis only, no labels edited."
+    }
+  },
+  "experiments": {
+    "intent/energy_only/lda/static_to_group_cv": {
+      "classes": [
+        "intended",
+        "non_intended"
+      ],
+      "interval_balanced_recall": 0.7866370704932605,
+      "window_balanced_accuracy": 0.617606163654046,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.7596381041731831,
+          0.24036189582681688
+        ],
+        [
+          0.18636396318666218,
+          0.8136360368133378
+        ]
+      ],
+      "intervals_per_class": {
+        "intended": 10,
+        "non_intended": 10
+      },
+      "recall_by_class": {
+        "intended": 0.7596381041731831,
+        "non_intended": 0.8136360368133378
+      },
+      "windows": 11712,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy",
+      "folds": [
+        {
+          "train_intervals": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26
+          ],
+          "test_intervals": [
+            0,
+            5,
+            7,
+            15
+          ]
+        },
+        {
+          "train_intervals": [
+            0,
+            3,
+            5,
+            7,
+            15,
+            16,
+            19,
+            21,
+            23
+          ],
+          "test_intervals": [
+            1,
+            2,
+            4,
+            6,
+            17,
+            18,
+            20,
+            22,
+            24,
+            25,
+            26
+          ]
+        },
+        {
+          "train_intervals": [
+            0,
+            1,
+            2,
+            4,
+            5,
+            6,
+            7,
+            15,
+            17,
+            18,
+            20,
+            22,
+            24,
+            25,
+            26
+          ],
+          "test_intervals": [
+            3,
+            16,
+            19,
+            21,
+            23
+          ]
+        }
+      ]
+    },
+    "intent/energy_only/lda/dynamic_to_group_cv": {
+      "classes": [
+        "intended",
+        "non_intended"
+      ],
+      "interval_balanced_recall": 0.8923377485823738,
+      "window_balanced_accuracy": 0.6137509327948729,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.9265419265419267,
+          0.07345807345807327
+        ],
+        [
+          0.14186642937717894,
+          0.858133570622821
+        ]
+      ],
+      "intervals_per_class": {
+        "intended": 13,
+        "non_intended": 46
+      },
+      "recall_by_class": {
+        "intended": 0.9265419265419267,
+        "non_intended": 0.858133570622821
+      },
+      "windows": 11109,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy",
+      "folds": [
+        {
+          "train_intervals": [
+            0,
+            4,
+            16,
+            56,
+            118,
+            136,
+            198,
+            240,
+            300,
+            325,
+            332,
+            336,
+            364,
+            368,
+            396,
+            432,
+            437,
+            450,
+            477,
+            484,
+            493,
+            502,
+            512,
+            548,
+            590,
+            603,
+            607,
+            609,
+            611,
+            613,
+            615,
+            617,
+            620,
+            624,
+            626,
+            668,
+            676,
+            682,
+            730,
+            734,
+            759,
+            776,
+            812,
+            818
+          ],
+          "test_intervals": [
+            2,
+            38,
+            244,
+            301,
+            320,
+            334,
+            438,
+            532,
+            570,
+            644,
+            656,
+            746,
+            766,
+            796,
+            808
+          ]
+        },
+        {
+          "train_intervals": [
+            2,
+            16,
+            38,
+            56,
+            198,
+            244,
+            301,
+            320,
+            325,
+            334,
+            364,
+            396,
+            432,
+            437,
+            438,
+            450,
+            484,
+            493,
+            532,
+            570,
+            590,
+            603,
+            609,
+            620,
+            626,
+            644,
+            656,
+            668,
+            682,
+            730,
+            746,
+            766,
+            776,
+            796,
+            808,
+            818
+          ],
+          "test_intervals": [
+            0,
+            4,
+            118,
+            136,
+            240,
+            300,
+            332,
+            336,
+            368,
+            477,
+            502,
+            512,
+            548,
+            607,
+            611,
+            613,
+            615,
+            617,
+            624,
+            676,
+            734,
+            759,
+            812
+          ]
+        },
+        {
+          "train_intervals": [
+            0,
+            2,
+            4,
+            38,
+            118,
+            136,
+            240,
+            244,
+            300,
+            301,
+            320,
+            332,
+            334,
+            336,
+            368,
+            438,
+            477,
+            502,
+            512,
+            532,
+            548,
+            570,
+            607,
+            611,
+            613,
+            615,
+            617,
+            624,
+            644,
+            656,
+            676,
+            734,
+            746,
+            759,
+            766,
+            796,
+            808,
+            812
+          ],
+          "test_intervals": [
+            16,
+            56,
+            198,
+            325,
+            364,
+            396,
+            432,
+            437,
+            450,
+            484,
+            493,
+            590,
+            603,
+            609,
+            620,
+            626,
+            668,
+            682,
+            730,
+            776,
+            818
+          ]
+        }
+      ]
+    },
+    "intent/energy_only/lda/dynamic_to_static": {
+      "classes": [
+        "intended",
+        "non_intended"
+      ],
+      "interval_balanced_recall": 0.7817098350699606,
+      "window_balanced_accuracy": 0.673279578282548,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.6967597591001383,
+          0.30324024089986173
+        ],
+        [
+          0.1333400889602171,
+          0.8666599110397829
+        ]
+      ],
+      "intervals_per_class": {
+        "intended": 10,
+        "non_intended": 10
+      },
+      "recall_by_class": {
+        "intended": 0.6967597591001383,
+        "non_intended": 0.8666599110397829
+      },
+      "windows": 11712,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    },
+    "intent/energy_only/lda/static_to_dynamic": {
+      "classes": [
+        "intended",
+        "non_intended"
+      ],
+      "interval_balanced_recall": 0.8497788008906833,
+      "window_balanced_accuracy": 0.5989269566744216,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.934857934857935,
+          0.06514206514206501
+        ],
+        [
+          0.2353003330765686,
+          0.7646996669234315
+        ]
+      ],
+      "intervals_per_class": {
+        "intended": 13,
+        "non_intended": 46
+      },
+      "recall_by_class": {
+        "intended": 0.934857934857935,
+        "non_intended": 0.7646996669234315
+      },
+      "windows": 11109,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    },
+    "intent/energy_only/trees/static_to_group_cv": {
+      "classes": [
+        "intended",
+        "non_intended"
+      ],
+      "interval_balanced_recall": 0.7302586607908428,
+      "window_balanced_accuracy": 0.6103821636398052,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.6979579826117611,
+          0.3020420173882388
+        ],
+        [
+          0.23744066103007555,
+          0.7625593389699244
+        ]
+      ],
+      "intervals_per_class": {
+        "intended": 10,
+        "non_intended": 10
+      },
+      "recall_by_class": {
+        "intended": 0.6979579826117611,
+        "non_intended": 0.7625593389699244
+      },
+      "windows": 11712,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy",
+      "folds": [
+        {
+          "train_intervals": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26
+          ],
+          "test_intervals": [
+            0,
+            5,
+            7,
+            15
+          ]
+        },
+        {
+          "train_intervals": [
+            0,
+            3,
+            5,
+            7,
+            15,
+            16,
+            19,
+            21,
+            23
+          ],
+          "test_intervals": [
+            1,
+            2,
+            4,
+            6,
+            17,
+            18,
+            20,
+            22,
+            24,
+            25,
+            26
+          ]
+        },
+        {
+          "train_intervals": [
+            0,
+            1,
+            2,
+            4,
+            5,
+            6,
+            7,
+            15,
+            17,
+            18,
+            20,
+            22,
+            24,
+            25,
+            26
+          ],
+          "test_intervals": [
+            3,
+            16,
+            19,
+            21,
+            23
+          ]
+        }
+      ]
+    },
+    "intent/energy_only/trees/dynamic_to_group_cv": {
+      "classes": [
+        "intended",
+        "non_intended"
+      ],
+      "interval_balanced_recall": 0.7760456506928829,
+      "window_balanced_accuracy": 0.5799940740090426,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.6585803559487771,
+          0.3414196440512228
+        ],
+        [
+          0.10648905456301125,
+          0.8935109454369887
+        ]
+      ],
+      "intervals_per_class": {
+        "intended": 13,
+        "non_intended": 46
+      },
+      "recall_by_class": {
+        "intended": 0.6585803559487771,
+        "non_intended": 0.8935109454369887
+      },
+      "windows": 11109,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy",
+      "folds": [
+        {
+          "train_intervals": [
+            0,
+            4,
+            16,
+            56,
+            118,
+            136,
+            198,
+            240,
+            300,
+            325,
+            332,
+            336,
+            364,
+            368,
+            396,
+            432,
+            437,
+            450,
+            477,
+            484,
+            493,
+            502,
+            512,
+            548,
+            590,
+            603,
+            607,
+            609,
+            611,
+            613,
+            615,
+            617,
+            620,
+            624,
+            626,
+            668,
+            676,
+            682,
+            730,
+            734,
+            759,
+            776,
+            812,
+            818
+          ],
+          "test_intervals": [
+            2,
+            38,
+            244,
+            301,
+            320,
+            334,
+            438,
+            532,
+            570,
+            644,
+            656,
+            746,
+            766,
+            796,
+            808
+          ]
+        },
+        {
+          "train_intervals": [
+            2,
+            16,
+            38,
+            56,
+            198,
+            244,
+            301,
+            320,
+            325,
+            334,
+            364,
+            396,
+            432,
+            437,
+            438,
+            450,
+            484,
+            493,
+            532,
+            570,
+            590,
+            603,
+            609,
+            620,
+            626,
+            644,
+            656,
+            668,
+            682,
+            730,
+            746,
+            766,
+            776,
+            796,
+            808,
+            818
+          ],
+          "test_intervals": [
+            0,
+            4,
+            118,
+            136,
+            240,
+            300,
+            332,
+            336,
+            368,
+            477,
+            502,
+            512,
+            548,
+            607,
+            611,
+            613,
+            615,
+            617,
+            624,
+            676,
+            734,
+            759,
+            812
+          ]
+        },
+        {
+          "train_intervals": [
+            0,
+            2,
+            4,
+            38,
+            118,
+            136,
+            240,
+            244,
+            300,
+            301,
+            320,
+            332,
+            334,
+            336,
+            368,
+            438,
+            477,
+            502,
+            512,
+            532,
+            548,
+            570,
+            607,
+            611,
+            613,
+            615,
+            617,
+            624,
+            644,
+            656,
+            676,
+            734,
+            746,
+            759,
+            766,
+            796,
+            808,
+            812
+          ],
+          "test_intervals": [
+            16,
+            56,
+            198,
+            325,
+            364,
+            396,
+            432,
+            437,
+            450,
+            484,
+            493,
+            590,
+            603,
+            609,
+            620,
+            626,
+            668,
+            682,
+            730,
+            776,
+            818
+          ]
+        }
+      ]
+    },
+    "intent/energy_only/trees/dynamic_to_static": {
+      "classes": [
+        "intended",
+        "non_intended"
+      ],
+      "interval_balanced_recall": 0.6831972748576254,
+      "window_balanced_accuracy": 0.6232505033231492,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.45884267020977937,
+          0.5411573297902206
+        ],
+        [
+          0.09244812049452858,
+          0.9075518795054713
+        ]
+      ],
+      "intervals_per_class": {
+        "intended": 10,
+        "non_intended": 10
+      },
+      "recall_by_class": {
+        "intended": 0.45884267020977937,
+        "non_intended": 0.9075518795054713
+      },
+      "windows": 11712,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    },
+    "intent/energy_only/trees/static_to_dynamic": {
+      "classes": [
+        "intended",
+        "non_intended"
+      ],
+      "interval_balanced_recall": 0.8384394975733096,
+      "window_balanced_accuracy": 0.5663089855581406,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.9245609475872636,
+          0.07543905241273646
+        ],
+        [
+          0.2476819524406443,
+          0.7523180475593557
+        ]
+      ],
+      "intervals_per_class": {
+        "intended": 13,
+        "non_intended": 46
+      },
+      "recall_by_class": {
+        "intended": 0.9245609475872636,
+        "non_intended": 0.7523180475593557
+      },
+      "windows": 11109,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    },
+    "intent/channel_profile_only/lda/static_to_group_cv": {
+      "classes": [
+        "intended",
+        "non_intended"
+      ],
+      "interval_balanced_recall": 0.6658344428158205,
+      "window_balanced_accuracy": 0.663948474425013,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.6449037262051622,
+          0.35509627379483777
+        ],
+        [
+          0.31323484057352124,
+          0.6867651594264788
+        ]
+      ],
+      "intervals_per_class": {
+        "intended": 10,
+        "non_intended": 10
+      },
+      "recall_by_class": {
+        "intended": 0.6449037262051622,
+        "non_intended": 0.6867651594264788
+      },
+      "windows": 11712,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy",
+      "folds": [
+        {
+          "train_intervals": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26
+          ],
+          "test_intervals": [
+            0,
+            5,
+            7,
+            15
+          ]
+        },
+        {
+          "train_intervals": [
+            0,
+            3,
+            5,
+            7,
+            15,
+            16,
+            19,
+            21,
+            23
+          ],
+          "test_intervals": [
+            1,
+            2,
+            4,
+            6,
+            17,
+            18,
+            20,
+            22,
+            24,
+            25,
+            26
+          ]
+        },
+        {
+          "train_intervals": [
+            0,
+            1,
+            2,
+            4,
+            5,
+            6,
+            7,
+            15,
+            17,
+            18,
+            20,
+            22,
+            24,
+            25,
+            26
+          ],
+          "test_intervals": [
+            3,
+            16,
+            19,
+            21,
+            23
+          ]
+        }
+      ]
+    },
+    "intent/channel_profile_only/lda/dynamic_to_group_cv": {
+      "classes": [
+        "intended",
+        "non_intended"
+      ],
+      "interval_balanced_recall": 0.6569405187851733,
+      "window_balanced_accuracy": 0.5173405469470173,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.5369323994323998,
+          0.46306760056760016
+        ],
+        [
+          0.2230513618620532,
+          0.7769486381379469
+        ]
+      ],
+      "intervals_per_class": {
+        "intended": 13,
+        "non_intended": 46
+      },
+      "recall_by_class": {
+        "intended": 0.5369323994323998,
+        "non_intended": 0.7769486381379469
+      },
+      "windows": 11109,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy",
+      "folds": [
+        {
+          "train_intervals": [
+            0,
+            4,
+            16,
+            56,
+            118,
+            136,
+            198,
+            240,
+            300,
+            325,
+            332,
+            336,
+            364,
+            368,
+            396,
+            432,
+            437,
+            450,
+            477,
+            484,
+            493,
+            502,
+            512,
+            548,
+            590,
+            603,
+            607,
+            609,
+            611,
+            613,
+            615,
+            617,
+            620,
+            624,
+            626,
+            668,
+            676,
+            682,
+            730,
+            734,
+            759,
+            776,
+            812,
+            818
+          ],
+          "test_intervals": [
+            2,
+            38,
+            244,
+            301,
+            320,
+            334,
+            438,
+            532,
+            570,
+            644,
+            656,
+            746,
+            766,
+            796,
+            808
+          ]
+        },
+        {
+          "train_intervals": [
+            2,
+            16,
+            38,
+            56,
+            198,
+            244,
+            301,
+            320,
+            325,
+            334,
+            364,
+            396,
+            432,
+            437,
+            438,
+            450,
+            484,
+            493,
+            532,
+            570,
+            590,
+            603,
+            609,
+            620,
+            626,
+            644,
+            656,
+            668,
+            682,
+            730,
+            746,
+            766,
+            776,
+            796,
+            808,
+            818
+          ],
+          "test_intervals": [
+            0,
+            4,
+            118,
+            136,
+            240,
+            300,
+            332,
+            336,
+            368,
+            477,
+            502,
+            512,
+            548,
+            607,
+            611,
+            613,
+            615,
+            617,
+            624,
+            676,
+            734,
+            759,
+            812
+          ]
+        },
+        {
+          "train_intervals": [
+            0,
+            2,
+            4,
+            38,
+            118,
+            136,
+            240,
+            244,
+            300,
+            301,
+            320,
+            332,
+            334,
+            336,
+            368,
+            438,
+            477,
+            502,
+            512,
+            532,
+            548,
+            570,
+            607,
+            611,
+            613,
+            615,
+            617,
+            624,
+            644,
+            656,
+            676,
+            734,
+            746,
+            759,
+            766,
+            796,
+            808,
+            812
+          ],
+          "test_intervals": [
+            16,
+            56,
+            198,
+            325,
+            364,
+            396,
+            432,
+            437,
+            450,
+            484,
+            493,
+            590,
+            603,
+            609,
+            620,
+            626,
+            668,
+            682,
+            730,
+            776,
+            818
+          ]
+        }
+      ]
+    },
+    "intent/channel_profile_only/lda/dynamic_to_static": {
+      "classes": [
+        "intended",
+        "non_intended"
+      ],
+      "interval_balanced_recall": 0.4556843042769354,
+      "window_balanced_accuracy": 0.4527289816228456,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.07017474380150884,
+          0.9298252561984912
+        ],
+        [
+          0.15880613524763804,
+          0.8411938647523619
+        ]
+      ],
+      "intervals_per_class": {
+        "intended": 10,
+        "non_intended": 10
+      },
+      "recall_by_class": {
+        "intended": 0.07017474380150884,
+        "non_intended": 0.8411938647523619
+      },
+      "windows": 11712,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    },
+    "intent/channel_profile_only/lda/static_to_dynamic": {
+      "classes": [
+        "intended",
+        "non_intended"
+      ],
+      "interval_balanced_recall": 0.5760966190733475,
+      "window_balanced_accuracy": 0.49522343180720774,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.4979232123968967,
+          0.5020767876031034
+        ],
+        [
+          0.34572997425020174,
+          0.6542700257497983
+        ]
+      ],
+      "intervals_per_class": {
+        "intended": 13,
+        "non_intended": 46
+      },
+      "recall_by_class": {
+        "intended": 0.4979232123968967,
+        "non_intended": 0.6542700257497983
+      },
+      "windows": 11109,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    },
+    "intent/channel_profile_only/trees/static_to_group_cv": {
+      "classes": [
+        "intended",
+        "non_intended"
+      ],
+      "interval_balanced_recall": 0.7611731871807923,
+      "window_balanced_accuracy": 0.7268968889200077,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.6598530071107228,
+          0.3401469928892772
+        ],
+        [
+          0.13750663274913802,
+          0.8624933672508619
+        ]
+      ],
+      "intervals_per_class": {
+        "intended": 10,
+        "non_intended": 10
+      },
+      "recall_by_class": {
+        "intended": 0.6598530071107228,
+        "non_intended": 0.8624933672508619
+      },
+      "windows": 11712,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy",
+      "folds": [
+        {
+          "train_intervals": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26
+          ],
+          "test_intervals": [
+            0,
+            5,
+            7,
+            15
+          ]
+        },
+        {
+          "train_intervals": [
+            0,
+            3,
+            5,
+            7,
+            15,
+            16,
+            19,
+            21,
+            23
+          ],
+          "test_intervals": [
+            1,
+            2,
+            4,
+            6,
+            17,
+            18,
+            20,
+            22,
+            24,
+            25,
+            26
+          ]
+        },
+        {
+          "train_intervals": [
+            0,
+            1,
+            2,
+            4,
+            5,
+            6,
+            7,
+            15,
+            17,
+            18,
+            20,
+            22,
+            24,
+            25,
+            26
+          ],
+          "test_intervals": [
+            3,
+            16,
+            19,
+            21,
+            23
+          ]
+        }
+      ]
+    },
+    "intent/channel_profile_only/trees/dynamic_to_group_cv": {
+      "classes": [
+        "intended",
+        "non_intended"
+      ],
+      "interval_balanced_recall": 0.6161947904880667,
+      "window_balanced_accuracy": 0.5970624643343136,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.28613199665831235,
+          0.7138680033416877
+        ],
+        [
+          0.053742415682179044,
+          0.946257584317821
+        ]
+      ],
+      "intervals_per_class": {
+        "intended": 13,
+        "non_intended": 46
+      },
+      "recall_by_class": {
+        "intended": 0.28613199665831235,
+        "non_intended": 0.946257584317821
+      },
+      "windows": 11109,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy",
+      "folds": [
+        {
+          "train_intervals": [
+            0,
+            4,
+            16,
+            56,
+            118,
+            136,
+            198,
+            240,
+            300,
+            325,
+            332,
+            336,
+            364,
+            368,
+            396,
+            432,
+            437,
+            450,
+            477,
+            484,
+            493,
+            502,
+            512,
+            548,
+            590,
+            603,
+            607,
+            609,
+            611,
+            613,
+            615,
+            617,
+            620,
+            624,
+            626,
+            668,
+            676,
+            682,
+            730,
+            734,
+            759,
+            776,
+            812,
+            818
+          ],
+          "test_intervals": [
+            2,
+            38,
+            244,
+            301,
+            320,
+            334,
+            438,
+            532,
+            570,
+            644,
+            656,
+            746,
+            766,
+            796,
+            808
+          ]
+        },
+        {
+          "train_intervals": [
+            2,
+            16,
+            38,
+            56,
+            198,
+            244,
+            301,
+            320,
+            325,
+            334,
+            364,
+            396,
+            432,
+            437,
+            438,
+            450,
+            484,
+            493,
+            532,
+            570,
+            590,
+            603,
+            609,
+            620,
+            626,
+            644,
+            656,
+            668,
+            682,
+            730,
+            746,
+            766,
+            776,
+            796,
+            808,
+            818
+          ],
+          "test_intervals": [
+            0,
+            4,
+            118,
+            136,
+            240,
+            300,
+            332,
+            336,
+            368,
+            477,
+            502,
+            512,
+            548,
+            607,
+            611,
+            613,
+            615,
+            617,
+            624,
+            676,
+            734,
+            759,
+            812
+          ]
+        },
+        {
+          "train_intervals": [
+            0,
+            2,
+            4,
+            38,
+            118,
+            136,
+            240,
+            244,
+            300,
+            301,
+            320,
+            332,
+            334,
+            336,
+            368,
+            438,
+            477,
+            502,
+            512,
+            532,
+            548,
+            570,
+            607,
+            611,
+            613,
+            615,
+            617,
+            624,
+            644,
+            656,
+            676,
+            734,
+            746,
+            759,
+            766,
+            796,
+            808,
+            812
+          ],
+          "test_intervals": [
+            16,
+            56,
+            198,
+            325,
+            364,
+            396,
+            432,
+            437,
+            450,
+            484,
+            493,
+            590,
+            603,
+            609,
+            620,
+            626,
+            668,
+            682,
+            730,
+            776,
+            818
+          ]
+        }
+      ]
+    },
+    "intent/channel_profile_only/trees/dynamic_to_static": {
+      "classes": [
+        "intended",
+        "non_intended"
+      ],
+      "interval_balanced_recall": 0.4787439284386443,
+      "window_balanced_accuracy": 0.48057134075318386,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.002666302390059345,
+          0.9973336976099407
+        ],
+        [
+          0.04517844551277086,
+          0.9548215544872292
+        ]
+      ],
+      "intervals_per_class": {
+        "intended": 10,
+        "non_intended": 10
+      },
+      "recall_by_class": {
+        "intended": 0.002666302390059345,
+        "non_intended": 0.9548215544872292
+      },
+      "windows": 11712,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    },
+    "intent/channel_profile_only/trees/static_to_dynamic": {
+      "classes": [
+        "intended",
+        "non_intended"
+      ],
+      "interval_balanced_recall": 0.4745185086618006,
+      "window_balanced_accuracy": 0.46127364909354285,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.05907830907830902,
+          0.9409216909216911
+        ],
+        [
+          0.11004129175470781,
+          0.8899587082452922
+        ]
+      ],
+      "intervals_per_class": {
+        "intended": 13,
+        "non_intended": 46
+      },
+      "recall_by_class": {
+        "intended": 0.05907830907830902,
+        "non_intended": 0.8899587082452922
+      },
+      "windows": 11109,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    },
+    "intent/full_time_spectral/lda/static_to_group_cv": {
+      "classes": [
+        "intended",
+        "non_intended"
+      ],
+      "interval_balanced_recall": 0.7412805274577781,
+      "window_balanced_accuracy": 0.7372367455270549,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.6494672993286219,
+          0.3505327006713781
+        ],
+        [
+          0.16690624441306587,
+          0.8330937555869342
+        ]
+      ],
+      "intervals_per_class": {
+        "intended": 10,
+        "non_intended": 10
+      },
+      "recall_by_class": {
+        "intended": 0.6494672993286219,
+        "non_intended": 0.8330937555869342
+      },
+      "windows": 11712,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy",
+      "folds": [
+        {
+          "train_intervals": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26
+          ],
+          "test_intervals": [
+            0,
+            5,
+            7,
+            15
+          ]
+        },
+        {
+          "train_intervals": [
+            0,
+            3,
+            5,
+            7,
+            15,
+            16,
+            19,
+            21,
+            23
+          ],
+          "test_intervals": [
+            1,
+            2,
+            4,
+            6,
+            17,
+            18,
+            20,
+            22,
+            24,
+            25,
+            26
+          ]
+        },
+        {
+          "train_intervals": [
+            0,
+            1,
+            2,
+            4,
+            5,
+            6,
+            7,
+            15,
+            17,
+            18,
+            20,
+            22,
+            24,
+            25,
+            26
+          ],
+          "test_intervals": [
+            3,
+            16,
+            19,
+            21,
+            23
+          ]
+        }
+      ]
+    },
+    "intent/full_time_spectral/lda/dynamic_to_group_cv": {
+      "classes": [
+        "intended",
+        "non_intended"
+      ],
+      "interval_balanced_recall": 0.8553961297026513,
+      "window_balanced_accuracy": 0.6534868969755498,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.7631930006930009,
+          0.23680699930699906
+        ],
+        [
+          0.05240074128769821,
+          0.9475992587123018
+        ]
+      ],
+      "intervals_per_class": {
+        "intended": 13,
+        "non_intended": 46
+      },
+      "recall_by_class": {
+        "intended": 0.7631930006930009,
+        "non_intended": 0.9475992587123018
+      },
+      "windows": 11109,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy",
+      "folds": [
+        {
+          "train_intervals": [
+            0,
+            4,
+            16,
+            56,
+            118,
+            136,
+            198,
+            240,
+            300,
+            325,
+            332,
+            336,
+            364,
+            368,
+            396,
+            432,
+            437,
+            450,
+            477,
+            484,
+            493,
+            502,
+            512,
+            548,
+            590,
+            603,
+            607,
+            609,
+            611,
+            613,
+            615,
+            617,
+            620,
+            624,
+            626,
+            668,
+            676,
+            682,
+            730,
+            734,
+            759,
+            776,
+            812,
+            818
+          ],
+          "test_intervals": [
+            2,
+            38,
+            244,
+            301,
+            320,
+            334,
+            438,
+            532,
+            570,
+            644,
+            656,
+            746,
+            766,
+            796,
+            808
+          ]
+        },
+        {
+          "train_intervals": [
+            2,
+            16,
+            38,
+            56,
+            198,
+            244,
+            301,
+            320,
+            325,
+            334,
+            364,
+            396,
+            432,
+            437,
+            438,
+            450,
+            484,
+            493,
+            532,
+            570,
+            590,
+            603,
+            609,
+            620,
+            626,
+            644,
+            656,
+            668,
+            682,
+            730,
+            746,
+            766,
+            776,
+            796,
+            808,
+            818
+          ],
+          "test_intervals": [
+            0,
+            4,
+            118,
+            136,
+            240,
+            300,
+            332,
+            336,
+            368,
+            477,
+            502,
+            512,
+            548,
+            607,
+            611,
+            613,
+            615,
+            617,
+            624,
+            676,
+            734,
+            759,
+            812
+          ]
+        },
+        {
+          "train_intervals": [
+            0,
+            2,
+            4,
+            38,
+            118,
+            136,
+            240,
+            244,
+            300,
+            301,
+            320,
+            332,
+            334,
+            336,
+            368,
+            438,
+            477,
+            502,
+            512,
+            532,
+            548,
+            570,
+            607,
+            611,
+            613,
+            615,
+            617,
+            624,
+            644,
+            656,
+            676,
+            734,
+            746,
+            759,
+            766,
+            796,
+            808,
+            812
+          ],
+          "test_intervals": [
+            16,
+            56,
+            198,
+            325,
+            364,
+            396,
+            432,
+            437,
+            450,
+            484,
+            493,
+            590,
+            603,
+            609,
+            620,
+            626,
+            668,
+            682,
+            730,
+            776,
+            818
+          ]
+        }
+      ]
+    },
+    "intent/full_time_spectral/lda/dynamic_to_static": {
+      "classes": [
+        "intended",
+        "non_intended"
+      ],
+      "interval_balanced_recall": 0.5743526799669044,
+      "window_balanced_accuracy": 0.5419708312886913,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.23630066460887397,
+          0.763699335391126
+        ],
+        [
+          0.08759530467506499,
+          0.912404695324935
+        ]
+      ],
+      "intervals_per_class": {
+        "intended": 10,
+        "non_intended": 10
+      },
+      "recall_by_class": {
+        "intended": 0.23630066460887397,
+        "non_intended": 0.912404695324935
+      },
+      "windows": 11712,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    },
+    "intent/full_time_spectral/lda/static_to_dynamic": {
+      "classes": [
+        "intended",
+        "non_intended"
+      ],
+      "interval_balanced_recall": 0.8445723161989249,
+      "window_balanced_accuracy": 0.631750801106185,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.7762960328749805,
+          0.22370396712501947
+        ],
+        [
+          0.08715140047713069,
+          0.9128485995228693
+        ]
+      ],
+      "intervals_per_class": {
+        "intended": 13,
+        "non_intended": 46
+      },
+      "recall_by_class": {
+        "intended": 0.7762960328749805,
+        "non_intended": 0.9128485995228693
+      },
+      "windows": 11109,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    },
+    "intent/full_time_spectral/trees/static_to_group_cv": {
+      "classes": [
+        "intended",
+        "non_intended"
+      ],
+      "interval_balanced_recall": 0.722405648459701,
+      "window_balanced_accuracy": 0.7355952860590317,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.6942387759656914,
+          0.30576122403430867
+        ],
+        [
+          0.24942747904628934,
+          0.7505725209537107
+        ]
+      ],
+      "intervals_per_class": {
+        "intended": 10,
+        "non_intended": 10
+      },
+      "recall_by_class": {
+        "intended": 0.6942387759656914,
+        "non_intended": 0.7505725209537107
+      },
+      "windows": 11712,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy",
+      "folds": [
+        {
+          "train_intervals": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26
+          ],
+          "test_intervals": [
+            0,
+            5,
+            7,
+            15
+          ]
+        },
+        {
+          "train_intervals": [
+            0,
+            3,
+            5,
+            7,
+            15,
+            16,
+            19,
+            21,
+            23
+          ],
+          "test_intervals": [
+            1,
+            2,
+            4,
+            6,
+            17,
+            18,
+            20,
+            22,
+            24,
+            25,
+            26
+          ]
+        },
+        {
+          "train_intervals": [
+            0,
+            1,
+            2,
+            4,
+            5,
+            6,
+            7,
+            15,
+            17,
+            18,
+            20,
+            22,
+            24,
+            25,
+            26
+          ],
+          "test_intervals": [
+            3,
+            16,
+            19,
+            21,
+            23
+          ]
+        }
+      ]
+    },
+    "intent/full_time_spectral/trees/dynamic_to_group_cv": {
+      "classes": [
+        "intended",
+        "non_intended"
+      ],
+      "interval_balanced_recall": 0.7256759884807147,
+      "window_balanced_accuracy": 0.6414376015100303,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.45536276588908187,
+          0.5446372341109181
+        ],
+        [
+          0.004010788927652371,
+          0.9959892110723476
+        ]
+      ],
+      "intervals_per_class": {
+        "intended": 13,
+        "non_intended": 46
+      },
+      "recall_by_class": {
+        "intended": 0.45536276588908187,
+        "non_intended": 0.9959892110723476
+      },
+      "windows": 11109,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy",
+      "folds": [
+        {
+          "train_intervals": [
+            0,
+            4,
+            16,
+            56,
+            118,
+            136,
+            198,
+            240,
+            300,
+            325,
+            332,
+            336,
+            364,
+            368,
+            396,
+            432,
+            437,
+            450,
+            477,
+            484,
+            493,
+            502,
+            512,
+            548,
+            590,
+            603,
+            607,
+            609,
+            611,
+            613,
+            615,
+            617,
+            620,
+            624,
+            626,
+            668,
+            676,
+            682,
+            730,
+            734,
+            759,
+            776,
+            812,
+            818
+          ],
+          "test_intervals": [
+            2,
+            38,
+            244,
+            301,
+            320,
+            334,
+            438,
+            532,
+            570,
+            644,
+            656,
+            746,
+            766,
+            796,
+            808
+          ]
+        },
+        {
+          "train_intervals": [
+            2,
+            16,
+            38,
+            56,
+            198,
+            244,
+            301,
+            320,
+            325,
+            334,
+            364,
+            396,
+            432,
+            437,
+            438,
+            450,
+            484,
+            493,
+            532,
+            570,
+            590,
+            603,
+            609,
+            620,
+            626,
+            644,
+            656,
+            668,
+            682,
+            730,
+            746,
+            766,
+            776,
+            796,
+            808,
+            818
+          ],
+          "test_intervals": [
+            0,
+            4,
+            118,
+            136,
+            240,
+            300,
+            332,
+            336,
+            368,
+            477,
+            502,
+            512,
+            548,
+            607,
+            611,
+            613,
+            615,
+            617,
+            624,
+            676,
+            734,
+            759,
+            812
+          ]
+        },
+        {
+          "train_intervals": [
+            0,
+            2,
+            4,
+            38,
+            118,
+            136,
+            240,
+            244,
+            300,
+            301,
+            320,
+            332,
+            334,
+            336,
+            368,
+            438,
+            477,
+            502,
+            512,
+            532,
+            548,
+            570,
+            607,
+            611,
+            613,
+            615,
+            617,
+            624,
+            644,
+            656,
+            676,
+            734,
+            746,
+            759,
+            766,
+            796,
+            808,
+            812
+          ],
+          "test_intervals": [
+            16,
+            56,
+            198,
+            325,
+            364,
+            396,
+            432,
+            437,
+            450,
+            484,
+            493,
+            590,
+            603,
+            609,
+            620,
+            626,
+            668,
+            682,
+            730,
+            776,
+            818
+          ]
+        }
+      ]
+    },
+    "intent/full_time_spectral/trees/dynamic_to_static": {
+      "classes": [
+        "intended",
+        "non_intended"
+      ],
+      "interval_balanced_recall": 0.5125729237407023,
+      "window_balanced_accuracy": 0.5105414232133288,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.02810748251478215,
+          0.9718925174852178
+        ],
+        [
+          0.0029616350333776446,
+          0.9970383649666223
+        ]
+      ],
+      "intervals_per_class": {
+        "intended": 10,
+        "non_intended": 10
+      },
+      "recall_by_class": {
+        "intended": 0.02810748251478215,
+        "non_intended": 0.9970383649666223
+      },
+      "windows": 11712,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    },
+    "intent/full_time_spectral/trees/static_to_dynamic": {
+      "classes": [
+        "intended",
+        "non_intended"
+      ],
+      "interval_balanced_recall": 0.7883451279699485,
+      "window_balanced_accuracy": 0.6021434528773979,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.6068427522374894,
+          0.39315724776251065
+        ],
+        [
+          0.03015249629759238,
+          0.9698475037024076
+        ]
+      ],
+      "intervals_per_class": {
+        "intended": 13,
+        "non_intended": 46
+      },
+      "recall_by_class": {
+        "intended": 0.6068427522374894,
+        "non_intended": 0.9698475037024076
+      },
+      "windows": 11109,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    },
+    "hold/energy_only/lda/static_to_group_cv": {
+      "classes": [
+        "shield_hold",
+        "sword_hold"
+      ],
+      "interval_balanced_recall": 0.45402402558401916,
+      "window_balanced_accuracy": 0.4901139579316064,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.5747474286806425,
+          0.4252525713193575
+        ],
+        [
+          0.6666993775126042,
+          0.3333006224873958
+        ]
+      ],
+      "intervals_per_class": {
+        "shield_hold": 4,
+        "sword_hold": 6
+      },
+      "recall_by_class": {
+        "shield_hold": 0.5747474286806425,
+        "sword_hold": 0.3333006224873958
+      },
+      "windows": 6622,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy",
+      "folds": [
+        {
+          "train_intervals": [
+            1,
+            5,
+            15,
+            17,
+            19,
+            21,
+            25
+          ],
+          "test_intervals": [
+            3,
+            7,
+            23
+          ]
+        },
+        {
+          "train_intervals": [
+            1,
+            3,
+            7,
+            17,
+            19,
+            21,
+            23
+          ],
+          "test_intervals": [
+            5,
+            15,
+            25
+          ]
+        },
+        {
+          "train_intervals": [
+            3,
+            5,
+            7,
+            15,
+            23,
+            25
+          ],
+          "test_intervals": [
+            1,
+            17,
+            19,
+            21
+          ]
+        }
+      ]
+    },
+    "hold/energy_only/lda/dynamic_to_group_cv": {
+      "classes": [
+        "shield_hold",
+        "sword_hold"
+      ],
+      "interval_balanced_recall": 0.43435150375939857,
+      "window_balanced_accuracy": 0.3612210288298474,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.6687030075187971,
+          0.3312969924812029
+        ],
+        [
+          0.7999999999999999,
+          0.2
+        ]
+      ],
+      "intervals_per_class": {
+        "shield_hold": 8,
+        "sword_hold": 5
+      },
+      "recall_by_class": {
+        "shield_hold": 0.6687030075187971,
+        "sword_hold": 0.2
+      },
+      "windows": 209,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy",
+      "folds": [
+        {
+          "train_intervals": [
+            325,
+            437,
+            477,
+            493,
+            603,
+            609,
+            613,
+            615
+          ],
+          "test_intervals": [
+            301,
+            607,
+            611,
+            617,
+            759
+          ]
+        },
+        {
+          "train_intervals": [
+            301,
+            477,
+            493,
+            603,
+            607,
+            611,
+            613,
+            615,
+            617,
+            759
+          ],
+          "test_intervals": [
+            325,
+            437,
+            609
+          ]
+        },
+        {
+          "train_intervals": [
+            301,
+            325,
+            437,
+            607,
+            609,
+            611,
+            617,
+            759
+          ],
+          "test_intervals": [
+            477,
+            493,
+            603,
+            613,
+            615
+          ]
+        }
+      ]
+    },
+    "hold/energy_only/lda/dynamic_to_static": {
+      "classes": [
+        "shield_hold",
+        "sword_hold"
+      ],
+      "interval_balanced_recall": 0.5169077494824484,
+      "window_balanced_accuracy": 0.5090765736056776,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.8903647562081202,
+          0.10963524379187985
+        ],
+        [
+          0.8565492572432233,
+          0.14345074275677674
+        ]
+      ],
+      "intervals_per_class": {
+        "shield_hold": 4,
+        "sword_hold": 6
+      },
+      "recall_by_class": {
+        "shield_hold": 0.8903647562081202,
+        "sword_hold": 0.14345074275677674
+      },
+      "windows": 6622,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    },
+    "hold/energy_only/lda/static_to_dynamic": {
+      "classes": [
+        "shield_hold",
+        "sword_hold"
+      ],
+      "interval_balanced_recall": 0.5811040481270742,
+      "window_balanced_accuracy": 0.899943470887507,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.9712171052631579,
+          0.0287828947368421
+        ],
+        [
+          0.8090090090090094,
+          0.1909909909909906
+        ]
+      ],
+      "intervals_per_class": {
+        "shield_hold": 8,
+        "sword_hold": 5
+      },
+      "recall_by_class": {
+        "shield_hold": 0.9712171052631579,
+        "sword_hold": 0.1909909909909906
+      },
+      "windows": 209,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    },
+    "hold/energy_only/trees/static_to_group_cv": {
+      "classes": [
+        "shield_hold",
+        "sword_hold"
+      ],
+      "interval_balanced_recall": 0.6066942017773704,
+      "window_balanced_accuracy": 0.6467344678889027,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.590779585999617,
+          0.409220414000383
+        ],
+        [
+          0.3773911824448761,
+          0.6226088175551239
+        ]
+      ],
+      "intervals_per_class": {
+        "shield_hold": 4,
+        "sword_hold": 6
+      },
+      "recall_by_class": {
+        "shield_hold": 0.590779585999617,
+        "sword_hold": 0.6226088175551239
+      },
+      "windows": 6622,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy",
+      "folds": [
+        {
+          "train_intervals": [
+            1,
+            5,
+            15,
+            17,
+            19,
+            21,
+            25
+          ],
+          "test_intervals": [
+            3,
+            7,
+            23
+          ]
+        },
+        {
+          "train_intervals": [
+            1,
+            3,
+            7,
+            17,
+            19,
+            21,
+            23
+          ],
+          "test_intervals": [
+            5,
+            15,
+            25
+          ]
+        },
+        {
+          "train_intervals": [
+            3,
+            5,
+            7,
+            15,
+            23,
+            25
+          ],
+          "test_intervals": [
+            1,
+            17,
+            19,
+            21
+          ]
+        }
+      ]
+    },
+    "hold/energy_only/trees/dynamic_to_group_cv": {
+      "classes": [
+        "shield_hold",
+        "sword_hold"
+      ],
+      "interval_balanced_recall": 0.6740625000000001,
+      "window_balanced_accuracy": 0.47531562087808554,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.828125,
+          0.17187499999999997
+        ],
+        [
+          0.47999999999999976,
+          0.5200000000000002
+        ]
+      ],
+      "intervals_per_class": {
+        "shield_hold": 8,
+        "sword_hold": 5
+      },
+      "recall_by_class": {
+        "shield_hold": 0.828125,
+        "sword_hold": 0.5200000000000002
+      },
+      "windows": 209,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy",
+      "folds": [
+        {
+          "train_intervals": [
+            325,
+            437,
+            477,
+            493,
+            603,
+            609,
+            613,
+            615
+          ],
+          "test_intervals": [
+            301,
+            607,
+            611,
+            617,
+            759
+          ]
+        },
+        {
+          "train_intervals": [
+            301,
+            477,
+            493,
+            603,
+            607,
+            611,
+            613,
+            615,
+            617,
+            759
+          ],
+          "test_intervals": [
+            325,
+            437,
+            609
+          ]
+        },
+        {
+          "train_intervals": [
+            301,
+            325,
+            437,
+            607,
+            609,
+            611,
+            617,
+            759
+          ],
+          "test_intervals": [
+            477,
+            493,
+            603,
+            613,
+            615
+          ]
+        }
+      ]
+    },
+    "hold/energy_only/trees/dynamic_to_static": {
+      "classes": [
+        "shield_hold",
+        "sword_hold"
+      ],
+      "interval_balanced_recall": 0.58128324580636,
+      "window_balanced_accuracy": 0.6517402857562402,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.8011560738348591,
+          0.19884392616514088
+        ],
+        [
+          0.638589582222139,
+          0.36141041777786104
+        ]
+      ],
+      "intervals_per_class": {
+        "shield_hold": 4,
+        "sword_hold": 6
+      },
+      "recall_by_class": {
+        "shield_hold": 0.8011560738348591,
+        "sword_hold": 0.36141041777786104
+      },
+      "windows": 6622,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    },
+    "hold/energy_only/trees/static_to_dynamic": {
+      "classes": [
+        "shield_hold",
+        "sword_hold"
+      ],
+      "interval_balanced_recall": 0.49845283253177985,
+      "window_balanced_accuracy": 0.6512624835123422,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.3719507101086048,
+          0.6280492898913952
+        ],
+        [
+          0.3750450450450452,
+          0.6249549549549549
+        ]
+      ],
+      "intervals_per_class": {
+        "shield_hold": 8,
+        "sword_hold": 5
+      },
+      "recall_by_class": {
+        "shield_hold": 0.3719507101086048,
+        "sword_hold": 0.6249549549549549
+      },
+      "windows": 209,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    },
+    "hold/channel_profile_only/lda/static_to_group_cv": {
+      "classes": [
+        "shield_hold",
+        "sword_hold"
+      ],
+      "interval_balanced_recall": 0.8460637575191595,
+      "window_balanced_accuracy": 0.9521700603688426,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.7236501814318922,
+          0.2763498185681078
+        ],
+        [
+          0.031522666393573186,
+          0.9684773336064268
+        ]
+      ],
+      "intervals_per_class": {
+        "shield_hold": 4,
+        "sword_hold": 6
+      },
+      "recall_by_class": {
+        "shield_hold": 0.7236501814318922,
+        "sword_hold": 0.9684773336064268
+      },
+      "windows": 6622,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy",
+      "folds": [
+        {
+          "train_intervals": [
+            1,
+            5,
+            15,
+            17,
+            19,
+            21,
+            25
+          ],
+          "test_intervals": [
+            3,
+            7,
+            23
+          ]
+        },
+        {
+          "train_intervals": [
+            1,
+            3,
+            7,
+            17,
+            19,
+            21,
+            23
+          ],
+          "test_intervals": [
+            5,
+            15,
+            25
+          ]
+        },
+        {
+          "train_intervals": [
+            3,
+            5,
+            7,
+            15,
+            23,
+            25
+          ],
+          "test_intervals": [
+            1,
+            17,
+            19,
+            21
+          ]
+        }
+      ]
+    },
+    "hold/channel_profile_only/lda/dynamic_to_group_cv": {
+      "classes": [
+        "shield_hold",
+        "sword_hold"
+      ],
+      "interval_balanced_recall": 0.8681081081081083,
+      "window_balanced_accuracy": 0.5737704918032787,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.2637837837837834,
+          0.7362162162162166
+        ]
+      ],
+      "intervals_per_class": {
+        "shield_hold": 8,
+        "sword_hold": 5
+      },
+      "recall_by_class": {
+        "shield_hold": 1.0,
+        "sword_hold": 0.7362162162162166
+      },
+      "windows": 209,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy",
+      "folds": [
+        {
+          "train_intervals": [
+            325,
+            437,
+            477,
+            493,
+            603,
+            609,
+            613,
+            615
+          ],
+          "test_intervals": [
+            301,
+            607,
+            611,
+            617,
+            759
+          ]
+        },
+        {
+          "train_intervals": [
+            301,
+            477,
+            493,
+            603,
+            607,
+            611,
+            613,
+            615,
+            617,
+            759
+          ],
+          "test_intervals": [
+            325,
+            437,
+            609
+          ]
+        },
+        {
+          "train_intervals": [
+            301,
+            325,
+            437,
+            607,
+            609,
+            611,
+            617,
+            759
+          ],
+          "test_intervals": [
+            477,
+            493,
+            603,
+            613,
+            615
+          ]
+        }
+      ]
+    },
+    "hold/channel_profile_only/lda/dynamic_to_static": {
+      "classes": [
+        "shield_hold",
+        "sword_hold"
+      ],
+      "interval_balanced_recall": 0.7608019870717376,
+      "window_balanced_accuracy": 0.7653958246858061,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.5434639435172569,
+          0.45653605648274315
+        ],
+        [
+          0.02185996937378164,
+          0.9781400306262183
+        ]
+      ],
+      "intervals_per_class": {
+        "shield_hold": 4,
+        "sword_hold": 6
+      },
+      "recall_by_class": {
+        "shield_hold": 0.5434639435172569,
+        "sword_hold": 0.9781400306262183
+      },
+      "windows": 6622,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    },
+    "hold/channel_profile_only/lda/static_to_dynamic": {
+      "classes": [
+        "shield_hold",
+        "sword_hold"
+      ],
+      "interval_balanced_recall": 0.5568725868725869,
+      "window_balanced_accuracy": 0.6319483700772565,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.9642857142857143,
+          0.035714285714285705
+        ],
+        [
+          0.8505405405405405,
+          0.14945945945945946
+        ]
+      ],
+      "intervals_per_class": {
+        "shield_hold": 8,
+        "sword_hold": 5
+      },
+      "recall_by_class": {
+        "shield_hold": 0.9642857142857143,
+        "sword_hold": 0.14945945945945946
+      },
+      "windows": 209,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    },
+    "hold/channel_profile_only/trees/static_to_group_cv": {
+      "classes": [
+        "shield_hold",
+        "sword_hold"
+      ],
+      "interval_balanced_recall": 0.8715579233535005,
+      "window_balanced_accuracy": 0.9875425831662823,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.749999999999994,
+          0.25000000000000605
+        ],
+        [
+          0.0068841532929930956,
+          0.9931158467070069
+        ]
+      ],
+      "intervals_per_class": {
+        "shield_hold": 4,
+        "sword_hold": 6
+      },
+      "recall_by_class": {
+        "shield_hold": 0.749999999999994,
+        "sword_hold": 0.9931158467070069
+      },
+      "windows": 6622,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy",
+      "folds": [
+        {
+          "train_intervals": [
+            1,
+            5,
+            15,
+            17,
+            19,
+            21,
+            25
+          ],
+          "test_intervals": [
+            3,
+            7,
+            23
+          ]
+        },
+        {
+          "train_intervals": [
+            1,
+            3,
+            7,
+            17,
+            19,
+            21,
+            23
+          ],
+          "test_intervals": [
+            5,
+            15,
+            25
+          ]
+        },
+        {
+          "train_intervals": [
+            3,
+            5,
+            7,
+            15,
+            23,
+            25
+          ],
+          "test_intervals": [
+            1,
+            17,
+            19,
+            21
+          ]
+        }
+      ]
+    },
+    "hold/channel_profile_only/trees/dynamic_to_group_cv": {
+      "classes": [
+        "shield_hold",
+        "sword_hold"
+      ],
+      "interval_balanced_recall": 0.9632882882882883,
+      "window_balanced_accuracy": 0.9426229508196722,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.07342342342342345,
+          0.9265765765765765
+        ]
+      ],
+      "intervals_per_class": {
+        "shield_hold": 8,
+        "sword_hold": 5
+      },
+      "recall_by_class": {
+        "shield_hold": 1.0,
+        "sword_hold": 0.9265765765765765
+      },
+      "windows": 209,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy",
+      "folds": [
+        {
+          "train_intervals": [
+            325,
+            437,
+            477,
+            493,
+            603,
+            609,
+            613,
+            615
+          ],
+          "test_intervals": [
+            301,
+            607,
+            611,
+            617,
+            759
+          ]
+        },
+        {
+          "train_intervals": [
+            301,
+            477,
+            493,
+            603,
+            607,
+            611,
+            613,
+            615,
+            617,
+            759
+          ],
+          "test_intervals": [
+            325,
+            437,
+            609
+          ]
+        },
+        {
+          "train_intervals": [
+            301,
+            325,
+            437,
+            607,
+            609,
+            611,
+            617,
+            759
+          ],
+          "test_intervals": [
+            477,
+            493,
+            603,
+            613,
+            615
+          ]
+        }
+      ]
+    },
+    "hold/channel_profile_only/trees/dynamic_to_static": {
+      "classes": [
+        "shield_hold",
+        "sword_hold"
+      ],
+      "interval_balanced_recall": 0.829989514267397,
+      "window_balanced_accuracy": 0.8989551252217247,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.6665528721252121,
+          0.3334471278747879
+        ],
+        [
+          0.006573843590418197,
+          0.9934261564095818
+        ]
+      ],
+      "intervals_per_class": {
+        "shield_hold": 4,
+        "sword_hold": 6
+      },
+      "recall_by_class": {
+        "shield_hold": 0.6665528721252121,
+        "sword_hold": 0.9934261564095818
+      },
+      "windows": 6622,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    },
+    "hold/channel_profile_only/trees/static_to_dynamic": {
+      "classes": [
+        "shield_hold",
+        "sword_hold"
+      ],
+      "interval_balanced_recall": 0.9230534105534105,
+      "window_balanced_accuracy": 0.9040889391369888,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.9821428571428571,
+          0.017857142857142853
+        ],
+        [
+          0.13603603603603603,
+          0.863963963963964
+        ]
+      ],
+      "intervals_per_class": {
+        "shield_hold": 8,
+        "sword_hold": 5
+      },
+      "recall_by_class": {
+        "shield_hold": 0.9821428571428571,
+        "sword_hold": 0.863963963963964
+      },
+      "windows": 209,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    },
+    "hold/full_time_spectral/lda/static_to_group_cv": {
+      "classes": [
+        "shield_hold",
+        "sword_hold"
+      ],
+      "interval_balanced_recall": 0.8621752219213666,
+      "window_balanced_accuracy": 0.9723198933822692,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.7413475475669207,
+          0.2586524524330794
+        ],
+        [
+          0.016997103724187404,
+          0.9830028962758126
+        ]
+      ],
+      "intervals_per_class": {
+        "shield_hold": 4,
+        "sword_hold": 6
+      },
+      "recall_by_class": {
+        "shield_hold": 0.7413475475669207,
+        "sword_hold": 0.9830028962758126
+      },
+      "windows": 6622,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy",
+      "folds": [
+        {
+          "train_intervals": [
+            1,
+            5,
+            15,
+            17,
+            19,
+            21,
+            25
+          ],
+          "test_intervals": [
+            3,
+            7,
+            23
+          ]
+        },
+        {
+          "train_intervals": [
+            1,
+            3,
+            7,
+            17,
+            19,
+            21,
+            23
+          ],
+          "test_intervals": [
+            5,
+            15,
+            25
+          ]
+        },
+        {
+          "train_intervals": [
+            3,
+            5,
+            7,
+            15,
+            23,
+            25
+          ],
+          "test_intervals": [
+            1,
+            17,
+            19,
+            21
+          ]
+        }
+      ]
+    },
+    "hold/full_time_spectral/lda/dynamic_to_group_cv": {
+      "classes": [
+        "shield_hold",
+        "sword_hold"
+      ],
+      "interval_balanced_recall": 0.9081081081081084,
+      "window_balanced_accuracy": 0.5819672131147541,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.18378378378378338,
+          0.8162162162162167
+        ]
+      ],
+      "intervals_per_class": {
+        "shield_hold": 8,
+        "sword_hold": 5
+      },
+      "recall_by_class": {
+        "shield_hold": 1.0,
+        "sword_hold": 0.8162162162162167
+      },
+      "windows": 209,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy",
+      "folds": [
+        {
+          "train_intervals": [
+            325,
+            437,
+            477,
+            493,
+            603,
+            609,
+            613,
+            615
+          ],
+          "test_intervals": [
+            301,
+            607,
+            611,
+            617,
+            759
+          ]
+        },
+        {
+          "train_intervals": [
+            301,
+            477,
+            493,
+            603,
+            607,
+            611,
+            613,
+            615,
+            617,
+            759
+          ],
+          "test_intervals": [
+            325,
+            437,
+            609
+          ]
+        },
+        {
+          "train_intervals": [
+            301,
+            325,
+            437,
+            607,
+            609,
+            611,
+            617,
+            759
+          ],
+          "test_intervals": [
+            477,
+            493,
+            603,
+            613,
+            615
+          ]
+        }
+      ]
+    },
+    "hold/full_time_spectral/lda/dynamic_to_static": {
+      "classes": [
+        "shield_hold",
+        "sword_hold"
+      ],
+      "interval_balanced_recall": 0.7132788886159891,
+      "window_balanced_accuracy": 0.7258972849368626,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.4267112456174907,
+          0.5732887543825094
+        ],
+        [
+          0.00015346838551258475,
+          0.9998465316144874
+        ]
+      ],
+      "intervals_per_class": {
+        "shield_hold": 4,
+        "sword_hold": 6
+      },
+      "recall_by_class": {
+        "shield_hold": 0.4267112456174907,
+        "sword_hold": 0.9998465316144874
+      },
+      "windows": 6622,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    },
+    "hold/full_time_spectral/lda/static_to_dynamic": {
+      "classes": [
+        "shield_hold",
+        "sword_hold"
+      ],
+      "interval_balanced_recall": 0.6062612612612611,
+      "window_balanced_accuracy": 0.7868852459016393,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.7874774774774776,
+          0.2125225225225223
+        ]
+      ],
+      "intervals_per_class": {
+        "shield_hold": 8,
+        "sword_hold": 5
+      },
+      "recall_by_class": {
+        "shield_hold": 1.0,
+        "sword_hold": 0.2125225225225223
+      },
+      "windows": 209,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    },
+    "hold/full_time_spectral/trees/static_to_group_cv": {
+      "classes": [
+        "shield_hold",
+        "sword_hold"
+      ],
+      "interval_balanced_recall": 0.8692644594550053,
+      "window_balanced_accuracy": 0.9839860009842856,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.7470073664824987,
+          0.25299263351750134
+        ],
+        [
+          0.008478447572488007,
+          0.9915215524275119
+        ]
+      ],
+      "intervals_per_class": {
+        "shield_hold": 4,
+        "sword_hold": 6
+      },
+      "recall_by_class": {
+        "shield_hold": 0.7470073664824987,
+        "sword_hold": 0.9915215524275119
+      },
+      "windows": 6622,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy",
+      "folds": [
+        {
+          "train_intervals": [
+            1,
+            5,
+            15,
+            17,
+            19,
+            21,
+            25
+          ],
+          "test_intervals": [
+            3,
+            7,
+            23
+          ]
+        },
+        {
+          "train_intervals": [
+            1,
+            3,
+            7,
+            17,
+            19,
+            21,
+            23
+          ],
+          "test_intervals": [
+            5,
+            15,
+            25
+          ]
+        },
+        {
+          "train_intervals": [
+            3,
+            5,
+            7,
+            15,
+            23,
+            25
+          ],
+          "test_intervals": [
+            1,
+            17,
+            19,
+            21
+          ]
+        }
+      ]
+    },
+    "hold/full_time_spectral/trees/dynamic_to_group_cv": {
+      "classes": [
+        "shield_hold",
+        "sword_hold"
+      ],
+      "interval_balanced_recall": 0.8546171171171173,
+      "window_balanced_accuracy": 0.5999623139250047,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.875,
+          0.12499999999999999
+        ],
+        [
+          0.16576576576576543,
+          0.8342342342342346
+        ]
+      ],
+      "intervals_per_class": {
+        "shield_hold": 8,
+        "sword_hold": 5
+      },
+      "recall_by_class": {
+        "shield_hold": 0.875,
+        "sword_hold": 0.8342342342342346
+      },
+      "windows": 209,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy",
+      "folds": [
+        {
+          "train_intervals": [
+            325,
+            437,
+            477,
+            493,
+            603,
+            609,
+            613,
+            615
+          ],
+          "test_intervals": [
+            301,
+            607,
+            611,
+            617,
+            759
+          ]
+        },
+        {
+          "train_intervals": [
+            301,
+            477,
+            493,
+            603,
+            607,
+            611,
+            613,
+            615,
+            617,
+            759
+          ],
+          "test_intervals": [
+            325,
+            437,
+            609
+          ]
+        },
+        {
+          "train_intervals": [
+            301,
+            325,
+            437,
+            607,
+            609,
+            611,
+            617,
+            759
+          ],
+          "test_intervals": [
+            477,
+            493,
+            603,
+            613,
+            615
+          ]
+        }
+      ]
+    },
+    "hold/full_time_spectral/trees/dynamic_to_static": {
+      "classes": [
+        "shield_hold",
+        "sword_hold"
+      ],
+      "interval_balanced_recall": 0.8475677733513364,
+      "window_balanced_accuracy": 0.9341044830532433,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.6960220715253679,
+          0.30397792847463206
+        ],
+        [
+          0.0008865248226950374,
+          0.9991134751773049
+        ]
+      ],
+      "intervals_per_class": {
+        "shield_hold": 4,
+        "sword_hold": 6
+      },
+      "recall_by_class": {
+        "shield_hold": 0.6960220715253679,
+        "sword_hold": 0.9991134751773049
+      },
+      "windows": 6622,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    },
+    "hold/full_time_spectral/trees/static_to_dynamic": {
+      "classes": [
+        "shield_hold",
+        "sword_hold"
+      ],
+      "interval_balanced_recall": 0.8900900900900901,
+      "window_balanced_accuracy": 0.9508196721311475,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.21981981981981988,
+          0.7801801801801801
+        ]
+      ],
+      "intervals_per_class": {
+        "shield_hold": 8,
+        "sword_hold": 5
+      },
+      "recall_by_class": {
+        "shield_hold": 1.0,
+        "sword_hold": 0.7801801801801801
+      },
+      "windows": 209,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    },
+    "intent/full_time_spectral/trees/dynamic_to_static_untrimmed": {
+      "classes": [
+        "intended",
+        "non_intended"
+      ],
+      "interval_balanced_recall": 0.7007104541334617,
+      "window_balanced_accuracy": 0.6669221249926911,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.5679191179790745,
+          0.43208088202092565
+        ],
+        [
+          0.16649820971215104,
+          0.833501790287849
+        ]
+      ],
+      "intervals_per_class": {
+        "intended": 12,
+        "non_intended": 13
+      },
+      "recall_by_class": {
+        "intended": 0.5679191179790745,
+        "non_intended": 0.833501790287849
+      },
+      "windows": 12159,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    },
+    "hold/full_time_spectral/trees/dynamic_to_static_untrimmed": {
+      "classes": [
+        "shield_hold",
+        "sword_hold"
+      ],
+      "interval_balanced_recall": 0.7270756853549666,
+      "window_balanced_accuracy": 0.9212418300653595,
+      "interval_weighted_confusion_row_fractions": [
+        [
+          0.4541513707099331,
+          0.545848629290067
+        ],
+        [
+          0.0,
+          1.0
+        ]
+      ],
+      "intervals_per_class": {
+        "shield_hold": 6,
+        "sword_hold": 6
+      },
+      "recall_by_class": {
+        "shield_hold": 0.4541513707099331,
+        "sword_hold": 1.0
+      },
+      "windows": 6832,
+      "accuracy_scope": "Agreement with weak Spacebar reports; not verified event accuracy"
+    }
+  },
+  "static_effort_validation_support": {
+    "whole_intervals_with_interior_windows": {
+      "shield_hold:low": 1,
+      "shield_hold:medium": 1,
+      "shield_hold:high": 2,
+      "sword_hold:low": 2,
+      "sword_hold:medium": 2,
+      "sword_hold:high": 2
+    },
+    "six_class_validation_supported": false,
+    "note": "A single sustained trial does not provide independent train/test repetitions. Effort selections are not calibrated force."
+  },
+  "static_hold_summaries": [
+    {
+      "original_interval": 1,
+      "start": 180.2941313330084,
+      "end": 253.9143563748803,
+      "selected_motion": {
+        "motion": "shield_hold",
+        "effort": "low",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "original_label_retained": true,
+      "interior_windows": 1484,
+      "median_rms_adc": 63.56264114379883,
+      "rms_p10_p90": [
+        52.94958076477051,
+        84.71274337768556
+      ],
+      "median_rms_first_middle_last_third": [
+        70.04105377197266,
+        59.6019287109375,
+        63.04804229736328
+      ],
+      "last_to_first_third_ratio": 0.9001583914288898,
+      "normalized_channel_profile_median": [
+        0.1169334203004837,
+        0.10164720565080643,
+        0.10488261282444,
+        0.20358896255493164,
+        0.21306246519088745,
+        0.4160124659538269,
+        0.26489290595054626,
+        0.7915587425231934
+      ],
+      "five_second_amplitude_trajectory": [
+        {
+          "seconds_into_hold": 0,
+          "median_rms_adc": 110.50212097167969
+        },
+        {
+          "seconds_into_hold": 5,
+          "median_rms_adc": 69.55703735351562
+        },
+        {
+          "seconds_into_hold": 10,
+          "median_rms_adc": 73.62507629394531
+        },
+        {
+          "seconds_into_hold": 15,
+          "median_rms_adc": 67.46855926513672
+        },
+        {
+          "seconds_into_hold": 20,
+          "median_rms_adc": 54.23700714111328
+        },
+        {
+          "seconds_into_hold": 25,
+          "median_rms_adc": 56.944236755371094
+        },
+        {
+          "seconds_into_hold": 30,
+          "median_rms_adc": 66.90174865722656
+        },
+        {
+          "seconds_into_hold": 35,
+          "median_rms_adc": 60.20563888549805
+        },
+        {
+          "seconds_into_hold": 40,
+          "median_rms_adc": 60.2263298034668
+        },
+        {
+          "seconds_into_hold": 45,
+          "median_rms_adc": 58.566734313964844
+        },
+        {
+          "seconds_into_hold": 50,
+          "median_rms_adc": 55.25405502319336
+        },
+        {
+          "seconds_into_hold": 55,
+          "median_rms_adc": 58.320838928222656
+        },
+        {
+          "seconds_into_hold": 60,
+          "median_rms_adc": 66.63429260253906
+        },
+        {
+          "seconds_into_hold": 65,
+          "median_rms_adc": 67.12264251708984
+        },
+        {
+          "seconds_into_hold": 70,
+          "median_rms_adc": 72.69139099121094
+        }
+      ],
+      "note": "Amplitude change can reflect effort drift, pose/contact change or fatigue; not measured force."
+    },
+    {
+      "original_interval": 3,
+      "start": 257.2689563749591,
+      "end": 275.8133563748561,
+      "selected_motion": {
+        "motion": "shield_hold",
+        "effort": "medium",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "original_label_retained": true,
+      "interior_windows": 355,
+      "median_rms_adc": 133.55438232421875,
+      "rms_p10_p90": [
+        111.97563018798829,
+        215.60462341308596
+      ],
+      "median_rms_first_middle_last_third": [
+        189.68580627441406,
+        125.7961196899414,
+        131.74948120117188
+      ],
+      "last_to_first_third_ratio": 0.6945668934794886,
+      "normalized_channel_profile_median": [
+        0.08876967430114746,
+        0.07896456867456436,
+        0.08287036418914795,
+        0.15725262463092804,
+        0.18920479714870453,
+        0.36221814155578613,
+        0.3201095461845398,
+        0.8218894004821777
+      ],
+      "five_second_amplitude_trajectory": [
+        {
+          "seconds_into_hold": 0,
+          "median_rms_adc": 201.9427947998047
+        },
+        {
+          "seconds_into_hold": 5,
+          "median_rms_adc": 122.88626098632812
+        },
+        {
+          "seconds_into_hold": 10,
+          "median_rms_adc": 131.52845764160156
+        },
+        {
+          "seconds_into_hold": 15,
+          "median_rms_adc": 147.7171630859375
+        }
+      ],
+      "note": "Amplitude change can reflect effort drift, pose/contact change or fatigue; not measured force."
+    },
+    {
+      "original_interval": 5,
+      "start": 277.6203665828798,
+      "end": 331.8464305829257,
+      "selected_motion": {
+        "motion": "shield_hold",
+        "effort": "high",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "original_label_retained": true,
+      "interior_windows": 1086,
+      "median_rms_adc": 128.67897033691406,
+      "rms_p10_p90": [
+        99.57315826416016,
+        212.4602813720703
+      ],
+      "median_rms_first_middle_last_third": [
+        156.0419921875,
+        117.66561889648438,
+        124.76345825195312
+      ],
+      "last_to_first_third_ratio": 0.7995505344615019,
+      "normalized_channel_profile_median": [
+        0.14629265666007996,
+        0.10750368237495422,
+        0.08840421587228775,
+        0.13128416240215302,
+        0.15960213541984558,
+        0.2789914608001709,
+        0.42980819940567017,
+        0.7593071460723877
+      ],
+      "five_second_amplitude_trajectory": [
+        {
+          "seconds_into_hold": 0,
+          "median_rms_adc": 213.44287109375
+        },
+        {
+          "seconds_into_hold": 5,
+          "median_rms_adc": 156.59304809570312
+        },
+        {
+          "seconds_into_hold": 10,
+          "median_rms_adc": 141.50387573242188
+        },
+        {
+          "seconds_into_hold": 15,
+          "median_rms_adc": 104.945556640625
+        },
+        {
+          "seconds_into_hold": 20,
+          "median_rms_adc": 132.95388793945312
+        },
+        {
+          "seconds_into_hold": 25,
+          "median_rms_adc": 126.2588119506836
+        },
+        {
+          "seconds_into_hold": 30,
+          "median_rms_adc": 112.68216705322266
+        },
+        {
+          "seconds_into_hold": 35,
+          "median_rms_adc": 125.23385620117188
+        },
+        {
+          "seconds_into_hold": 40,
+          "median_rms_adc": 105.13707733154297
+        },
+        {
+          "seconds_into_hold": 45,
+          "median_rms_adc": 112.41818237304688
+        },
+        {
+          "seconds_into_hold": 50,
+          "median_rms_adc": 172.43984985351562
+        }
+      ],
+      "note": "Amplitude change can reflect effort drift, pose/contact change or fatigue; not measured force."
+    },
+    {
+      "original_interval": 7,
+      "start": 333.49803058302496,
+      "end": 337.0516130409669,
+      "selected_motion": {
+        "motion": "shield_hold",
+        "effort": "high",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "original_label_retained": true,
+      "interior_windows": 48,
+      "median_rms_adc": 61.33008575439453,
+      "rms_p10_p90": [
+        46.29843864440918,
+        75.77110366821289
+      ],
+      "median_rms_first_middle_last_third": [
+        59.53327941894531,
+        67.28297424316406,
+        59.78462600708008
+      ],
+      "last_to_first_third_ratio": 1.004221950992587,
+      "normalized_channel_profile_median": [
+        0.16385048627853394,
+        0.30626028776168823,
+        0.5342922806739807,
+        0.2880061864852905,
+        0.2140119969844818,
+        0.310846209526062,
+        0.5746783018112183,
+        0.17732727527618408
+      ],
+      "five_second_amplitude_trajectory": [
+        {
+          "seconds_into_hold": 0,
+          "median_rms_adc": 61.33008575439453
+        }
+      ],
+      "note": "Amplitude change can reflect effort drift, pose/contact change or fatigue; not measured force."
+    },
+    {
+      "original_interval": 9,
+      "start": 337.5951130409958,
+      "end": 337.8777130410308,
+      "selected_motion": {
+        "motion": "shield_hold",
+        "effort": "high",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "original_label_retained": true,
+      "review_note": "Too short or no complete interior window; retained in raw data."
+    },
+    {
+      "original_interval": 11,
+      "start": 337.8923130410258,
+      "end": 338.28621304105036,
+      "selected_motion": {
+        "motion": "shield_hold",
+        "effort": "high",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "original_label_retained": true,
+      "review_note": "Too short or no complete interior window; retained in raw data."
+    },
+    {
+      "original_interval": 13,
+      "start": 339.19641304109246,
+      "end": 339.351813041023,
+      "selected_motion": {
+        "motion": "shield_hold",
+        "effort": "high",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "original_label_retained": true,
+      "review_note": "Too short or no complete interior window; retained in raw data."
+    },
+    {
+      "original_interval": 15,
+      "start": 340.4993130409857,
+      "end": 394.67991616600193,
+      "selected_motion": {
+        "motion": "sword_hold",
+        "effort": "low",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "original_label_retained": true,
+      "interior_windows": 1086,
+      "median_rms_adc": 10.347478866577148,
+      "rms_p10_p90": [
+        9.95758056640625,
+        16.16899871826172
+      ],
+      "median_rms_first_middle_last_third": [
+        11.993717193603516,
+        10.30386734008789,
+        10.243500709533691
+      ],
+      "last_to_first_third_ratio": 0.8540722233301241,
+      "normalized_channel_profile_median": [
+        0.3077276349067688,
+        0.31699249148368835,
+        0.3230366110801697,
+        0.3516309857368469,
+        0.3672788143157959,
+        0.3774888515472412,
+        0.3543693721294403,
+        0.37876904010772705
+      ],
+      "five_second_amplitude_trajectory": [
+        {
+          "seconds_into_hold": 0,
+          "median_rms_adc": 11.199552536010742
+        },
+        {
+          "seconds_into_hold": 5,
+          "median_rms_adc": 14.580240249633789
+        },
+        {
+          "seconds_into_hold": 10,
+          "median_rms_adc": 10.919532775878906
+        },
+        {
+          "seconds_into_hold": 15,
+          "median_rms_adc": 10.204169273376465
+        },
+        {
+          "seconds_into_hold": 20,
+          "median_rms_adc": 10.17843246459961
+        },
+        {
+          "seconds_into_hold": 25,
+          "median_rms_adc": 10.322953224182129
+        },
+        {
+          "seconds_into_hold": 30,
+          "median_rms_adc": 10.469922065734863
+        },
+        {
+          "seconds_into_hold": 35,
+          "median_rms_adc": 10.301814079284668
+        },
+        {
+          "seconds_into_hold": 40,
+          "median_rms_adc": 10.62356948852539
+        },
+        {
+          "seconds_into_hold": 45,
+          "median_rms_adc": 10.124897003173828
+        },
+        {
+          "seconds_into_hold": 50,
+          "median_rms_adc": 10.096014022827148
+        }
+      ],
+      "note": "Amplitude change can reflect effort drift, pose/contact change or fatigue; not measured force."
+    },
+    {
+      "original_interval": 17,
+      "start": 438.5622535829898,
+      "end": 466.4438114160439,
+      "selected_motion": {
+        "motion": "sword_hold",
+        "effort": "low",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "original_label_retained": true,
+      "interior_windows": 546,
+      "median_rms_adc": 10.458864212036133,
+      "rms_p10_p90": [
+        10.024350643157959,
+        12.7023024559021
+      ],
+      "median_rms_first_middle_last_third": [
+        10.479646682739258,
+        10.44265365600586,
+        10.446044921875
+      ],
+      "last_to_first_third_ratio": 0.9967936170100465,
+      "normalized_channel_profile_median": [
+        0.30434226989746094,
+        0.3063894808292389,
+        0.30877500772476196,
+        0.35080790519714355,
+        0.36283189058303833,
+        0.3704991340637207,
+        0.35717880725860596,
+        0.3801113963127136
+      ],
+      "five_second_amplitude_trajectory": [
+        {
+          "seconds_into_hold": 0,
+          "median_rms_adc": 11.450508117675781
+        },
+        {
+          "seconds_into_hold": 5,
+          "median_rms_adc": 10.2752685546875
+        },
+        {
+          "seconds_into_hold": 10,
+          "median_rms_adc": 10.30766487121582
+        },
+        {
+          "seconds_into_hold": 15,
+          "median_rms_adc": 10.889303207397461
+        },
+        {
+          "seconds_into_hold": 20,
+          "median_rms_adc": 10.353673934936523
+        },
+        {
+          "seconds_into_hold": 25,
+          "median_rms_adc": 10.42526626586914
+        }
+      ],
+      "note": "Amplitude change can reflect effort drift, pose/contact change or fatigue; not measured force."
+    },
+    {
+      "original_interval": 19,
+      "start": 467.931411416037,
+      "end": 496.58849683299195,
+      "selected_motion": {
+        "motion": "sword_hold",
+        "effort": "medium",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "original_label_retained": true,
+      "interior_windows": 563,
+      "median_rms_adc": 117.99748229980469,
+      "rms_p10_p90": [
+        99.16550903320312,
+        140.3278778076172
+      ],
+      "median_rms_first_middle_last_third": [
+        108.6106185913086,
+        128.06698608398438,
+        115.77813720703125
+      ],
+      "last_to_first_third_ratio": 1.0659927980218338,
+      "normalized_channel_profile_median": [
+        0.19141672551631927,
+        0.38189056515693665,
+        0.5031633973121643,
+        0.28013741970062256,
+        0.20280174911022186,
+        0.27081096172332764,
+        0.1655128300189972,
+        0.5716720819473267
+      ],
+      "five_second_amplitude_trajectory": [
+        {
+          "seconds_into_hold": 0,
+          "median_rms_adc": 108.72093963623047
+        },
+        {
+          "seconds_into_hold": 5,
+          "median_rms_adc": 108.9332046508789
+        },
+        {
+          "seconds_into_hold": 10,
+          "median_rms_adc": 132.3623504638672
+        },
+        {
+          "seconds_into_hold": 15,
+          "median_rms_adc": 127.20536804199219
+        },
+        {
+          "seconds_into_hold": 20,
+          "median_rms_adc": 124.49676513671875
+        },
+        {
+          "seconds_into_hold": 25,
+          "median_rms_adc": 108.04925537109375
+        }
+      ],
+      "note": "Amplitude change can reflect effort drift, pose/contact change or fatigue; not measured force."
+    },
+    {
+      "original_interval": 21,
+      "start": 498.7266968329204,
+      "end": 504.3190968328854,
+      "selected_motion": {
+        "motion": "sword_hold",
+        "effort": "medium",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "original_label_retained": true,
+      "interior_windows": 90,
+      "median_rms_adc": 125.7435302734375,
+      "rms_p10_p90": [
+        95.48000106811523,
+        172.47973327636723
+      ],
+      "median_rms_first_middle_last_third": [
+        159.46437072753906,
+        127.35589599609375,
+        100.42992401123047
+      ],
+      "last_to_first_third_ratio": 0.62979538032872,
+      "normalized_channel_profile_median": [
+        0.18210414052009583,
+        0.3661181330680847,
+        0.6138508319854736,
+        0.34985512495040894,
+        0.21744698286056519,
+        0.18368488550186157,
+        0.1528051197528839,
+        0.45970022678375244
+      ],
+      "five_second_amplitude_trajectory": [
+        {
+          "seconds_into_hold": 0,
+          "median_rms_adc": 125.7435302734375
+        }
+      ],
+      "note": "Amplitude change can reflect effort drift, pose/contact change or fatigue; not measured force."
+    },
+    {
+      "original_interval": 23,
+      "start": 506.0676968329353,
+      "end": 564.6486968331737,
+      "selected_motion": {
+        "motion": "sword_hold",
+        "effort": "high",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "original_label_retained": true,
+      "interior_windows": 1176,
+      "median_rms_adc": 157.73126220703125,
+      "rms_p10_p90": [
+        112.58017349243164,
+        222.71046447753906
+      ],
+      "median_rms_first_middle_last_third": [
+        141.53958129882812,
+        164.17041015625,
+        157.22854614257812
+      ],
+      "last_to_first_third_ratio": 1.1108450703314316,
+      "normalized_channel_profile_median": [
+        0.1686512678861618,
+        0.3142191767692566,
+        0.5397802591323853,
+        0.34767717123031616,
+        0.21021659672260284,
+        0.2570146322250366,
+        0.21774029731750488,
+        0.5224453806877136
+      ],
+      "five_second_amplitude_trajectory": [
+        {
+          "seconds_into_hold": 0,
+          "median_rms_adc": 293.9676513671875
+        },
+        {
+          "seconds_into_hold": 5,
+          "median_rms_adc": 160.9997100830078
+        },
+        {
+          "seconds_into_hold": 10,
+          "median_rms_adc": 130.11660766601562
+        },
+        {
+          "seconds_into_hold": 15,
+          "median_rms_adc": 111.9305191040039
+        },
+        {
+          "seconds_into_hold": 20,
+          "median_rms_adc": 143.0552978515625
+        },
+        {
+          "seconds_into_hold": 25,
+          "median_rms_adc": 173.82785034179688
+        },
+        {
+          "seconds_into_hold": 30,
+          "median_rms_adc": 187.78489685058594
+        },
+        {
+          "seconds_into_hold": 35,
+          "median_rms_adc": 156.75399780273438
+        },
+        {
+          "seconds_into_hold": 40,
+          "median_rms_adc": 165.40771484375
+        },
+        {
+          "seconds_into_hold": 45,
+          "median_rms_adc": 165.45523071289062
+        },
+        {
+          "seconds_into_hold": 50,
+          "median_rms_adc": 112.95223999023438
+        },
+        {
+          "seconds_into_hold": 55,
+          "median_rms_adc": 164.1898651123047
+        }
+      ],
+      "note": "Amplitude change can reflect effort drift, pose/contact change or fatigue; not measured force."
+    },
+    {
+      "original_interval": 25,
+      "start": 567.8747968330281,
+      "end": 578.2616740410449,
+      "selected_motion": {
+        "motion": "sword_hold",
+        "effort": "high",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "original_label_retained": true,
+      "interior_windows": 188,
+      "median_rms_adc": 176.03436279296875,
+      "rms_p10_p90": [
+        140.0505599975586,
+        244.50055389404298
+      ],
+      "median_rms_first_middle_last_third": [
+        219.6489715576172,
+        171.70980834960938,
+        153.23011779785156
+      ],
+      "last_to_first_third_ratio": 0.6976136364820494,
+      "normalized_channel_profile_median": [
+        0.15103492140769958,
+        0.2649741768836975,
+        0.49599868059158325,
+        0.384376585483551,
+        0.23296266794204712,
+        0.25369447469711304,
+        0.2512757480144501,
+        0.5508022308349609
+      ],
+      "five_second_amplitude_trajectory": [
+        {
+          "seconds_into_hold": 0,
+          "median_rms_adc": 207.35043334960938
+        },
+        {
+          "seconds_into_hold": 5,
+          "median_rms_adc": 151.77804565429688
+        }
+      ],
+      "note": "Amplitude change can reflect effort drift, pose/contact change or fatigue; not measured force."
+    }
+  ],
+  "limitations": [
+    "Both recordings share a wearing-session identifier; transfer is across conditions, not independent wearing sessions.",
+    "Static holds are sequentially blocked by class/effort; elapsed-time/contact drift can confound classification.",
+    "Interior windows are a sensitivity subset, not automatic boundary correction. Raw labels remain unchanged.",
+    "No static snaps or relaxed open-fireball trials; shield tension is not a verified relaxed-open baseline.",
+    "Requested effort can drift. ADC amplitude is not calibrated force or a measurement of individual muscles.",
+    "No gyro/orientation was recorded; continuous orientation invariance cannot be evaluated here.",
+    "Multiple model comparisons are exploratory development, not reserved final evaluation.",
+    "Binary intent predicts report-associated patterns; a hard gate may suppress subtle true snaps."
+  ]
+}

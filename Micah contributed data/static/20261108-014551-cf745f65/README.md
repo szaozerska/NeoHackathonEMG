@@ -9,3 +9,5 @@ Completed EMG-only static contribution: 602.49 seconds, 77,386 eight-channel EMG
 ```sh
 python3 -c "import gzip,shutil; shutil.copyfileobj(gzip.open('streams.jsonl.gz','rb'),open('streams.jsonl','wb'))"
 ```
+
+Exploratory results and strength-drift traces: [analysis/REPORT.md](analysis/REPORT.md). Public model compatibility and signal-processing review: [research note](../../../docs/metaband-pattern-research.md).
