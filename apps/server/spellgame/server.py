@@ -14,6 +14,7 @@ from . import protocol as p
 from .discovery import run_beacon
 from .game_state import GameState, PlayerInput, Tuning
 from .haptics import haptics_for
+from .shared_space import FLOOR_SPOT_DISTANCE_M, SharedSpace
 
 log = logging.getLogger(__name__)
 
@@ -77,6 +78,7 @@ class GameServer:
         discovery_port: int = p.DISCOVERY_PORT,
         beacon_address: str | None = "255.255.255.255",
         tuning: Tuning | None = None,
+        spot_distance: float = FLOOR_SPOT_DISTANCE_M,
     ) -> None:
         self.host = host
         self.port = port
@@ -84,6 +86,7 @@ class GameServer:
         self.discovery_port = discovery_port
         self.beacon_address = beacon_address
         self.game = GameState(tuning=tuning or Tuning())
+        self.space = SharedSpace(spot_distance=spot_distance)
         self.players: dict[str, PlayerSlot] = {}
         self.connections: set[ClientConnection] = set()
         self.prompted_player_id: str | None = None
@@ -168,6 +171,7 @@ class GameServer:
         log.info("%s joined as %s (headset)", conn.peer, slot.player_id)
         if slot.classifier is not None:
             conn.send(p.Paired(player_id=slot.player_id))
+        self._announce_space()
 
     def _join_classifier(self, conn: ClientConnection, requested_id: str | None) -> None:
         conn.send(p.Welcome(player_id=None))
@@ -219,6 +223,8 @@ class GameServer:
             log.info("%s headset disconnected", slot.player_id)
             if slot.player_id == self.prompted_player_id:
                 self._prompt_next_player()
+            self.space.forget(slot.player_id)
+            self._announce_space()
         elif slot.classifier is conn:
             slot.classifier = None
             slot.input.band_paired = False
@@ -228,6 +234,9 @@ class GameServer:
     def _on_message(self, conn: ClientConnection, message: p.Message) -> None:
         if isinstance(message, p.PairStart):
             self.start_pairing()
+            return
+        if isinstance(message, p.SpaceReset):
+            self.reset_space()
             return
         if isinstance(message, p.Pinch) and conn.role == p.Role.CLASSIFIER and conn.player_id is None:
             self._on_pinch(conn)
@@ -239,6 +248,10 @@ class GameServer:
             message.player_id = slot.player_id
             slot.input.pose = message
             slot.pose_dirty = True
+        elif conn is slot.vr and isinstance(message, p.AnchorShared):
+            self._on_anchor_shared(conn, slot, message)
+        elif conn is slot.vr and isinstance(message, p.Aligned):
+            self._on_aligned(conn, slot, message)
         elif conn is slot.classifier and isinstance(message, p.SignMessage):
             if message.sign == p.Sign.SNAP and slot.input.sign != p.Sign.SNAP:
                 slot.input.snapped = True
@@ -247,6 +260,37 @@ class GameServer:
         elif conn is slot.classifier and isinstance(message, p.Gesture):
             message.player_id = slot.player_id
             self._broadcast([message])
+
+    def reset_space(self) -> None:
+        """Drops the shared anchor (§5.1): a new host creates a fresh one and every headset re-aligns."""
+        log.info("shared space reset: re-anchoring")
+        self.space.reset()
+        self._announce_space()
+
+    def _announce_space(self) -> None:
+        headsets = sorted((slot for slot in self.players.values() if slot.vr is not None), key=lambda s: s.join_order)
+        previous_host = self.space.host_id
+        self.space.choose_host([slot.player_id for slot in headsets])
+        if self.space.host_id != previous_host and self.space.host_id is not None:
+            log.info("%s hosts the shared anchor", self.space.host_id)
+        for slot in headsets:
+            slot.vr.send(self.space.message_for(slot.join_order))  # type: ignore[union-attr]
+
+    def _on_anchor_shared(self, conn: ClientConnection, slot: PlayerSlot, message: p.AnchorShared) -> None:
+        if not self.space.share_anchor(slot.player_id, message.anchor_uuid):
+            conn.send(p.Error(message=f"only the anchor host ({self.space.host_id}) can share the anchor"))
+            return
+        log.info("%s shared anchor %s", slot.player_id, message.anchor_uuid)
+        self._announce_space()
+
+    def _on_aligned(self, conn: ClientConnection, slot: PlayerSlot, message: p.Aligned) -> None:
+        if not self.space.mark_aligned(slot.player_id, message.method, message.anchor_uuid):
+            reason = f"{message.method} to anchor {message.anchor_uuid}, current anchor is {self.space.anchor_uuid}"
+            conn.send(p.Error(message=f"aligned rejected: {reason}"))
+            return
+        log.info("%s aligned to the shared frame (%s)", slot.player_id, message.method)
+        if self.space.mixed_methods():
+            log.warning("headsets aligned by different methods do not share a frame: %s", self.space.aligned)
 
     async def _tick_loop(self) -> None:
         loop = asyncio.get_running_loop()
@@ -260,6 +304,8 @@ class GameServer:
             await asyncio.sleep(max(0.0, delay))
 
     def tick(self) -> None:
+        for slot in self.players.values():
+            slot.input.aligned = slot.player_id in self.space.aligned
         events = self.game.step({slot.player_id: slot.input for slot in self.players.values()}, self.dt)
         outgoing: list[p.Message] = []
         for slot in self.players.values():

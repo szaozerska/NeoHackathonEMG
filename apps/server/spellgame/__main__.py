@@ -9,6 +9,7 @@ import logging
 
 from . import protocol as p
 from .server import GameServer
+from .shared_space import FLOOR_SPOT_DISTANCE_M
 from .tui import ServerMonitor
 
 
@@ -28,6 +29,9 @@ def main() -> None:
     parser.add_argument("--discovery-port", type=int, default=p.DISCOVERY_PORT)
     parser.add_argument("--beacon-address", default="255.255.255.255")
     parser.add_argument("--no-beacon", action="store_true")
+    parser.add_argument(
+        "--spot-distance", type=float, default=FLOOR_SPOT_DISTANCE_M, help="metres between the marked floor spots"
+    )
     parser.add_argument("--no-tui", action="store_true", help="log to stderr instead of showing the live monitor")
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
@@ -37,6 +41,7 @@ def main() -> None:
         tick_hz=args.tick_hz,
         discovery_port=args.discovery_port,
         beacon_address=None if args.no_beacon else args.beacon_address,
+        spot_distance=args.spot_distance,
     )
     level = logging.DEBUG if args.verbose else logging.INFO
     if not args.no_tui:

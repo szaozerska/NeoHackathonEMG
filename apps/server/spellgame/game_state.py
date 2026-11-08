@@ -101,6 +101,7 @@ class PlayerInput:
     """A snap started since the previous tick. The network layer sets it; the server clears it after `step`."""
     band_paired: bool = False
     connected: bool = True
+    aligned: bool = False
 
 
 class Item:
@@ -152,6 +153,7 @@ class PlayerState:
     pose: p.Pose | None = None
     connected: bool = True
     band_paired: bool = False
+    aligned: bool = False
     sign: str = p.Sign.NONE
     band_hand: str = p.Hand.RIGHT
     item: str = Item.NONE
@@ -245,6 +247,7 @@ class GameState:
                     band_hand=player.band_hand,
                     cooldown=round(max(0.0, player.cooldown_until - self.time), 3),
                     shield_boost=round(player.shield_boost, 3),
+                    aligned=player.aligned,
                 )
                 for player in self.players.values()
             ],
@@ -263,6 +266,7 @@ class GameState:
     def _apply_input(self, player: PlayerState, player_input: PlayerInput) -> list[p.Message]:
         player.connected = player_input.connected
         player.band_paired = player_input.band_paired
+        player.aligned = player_input.aligned
         player.sign = player_input.sign
         player.band_hand = player_input.hand if player_input.hand in player.hands else p.Hand.RIGHT
         if player_input.pose is not None:

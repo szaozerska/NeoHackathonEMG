@@ -16,6 +16,7 @@ from textual.widgets import Footer, Header, RichLog, Static
 
 from . import protocol as p
 from .server import ClientConnection, GameServer
+from .shared_space import SharedSpace
 
 PACKETS_SHOWN = 8
 REFRESH_S = 0.2
@@ -25,11 +26,13 @@ def _clock(unix_time: float) -> str:
     return datetime.fromtimestamp(unix_time).strftime("%H:%M:%S.%f")[:-3]
 
 
-def _metadata(conn: ClientConnection) -> Table:
+def _metadata(conn: ClientConnection, space: SharedSpace | None = None) -> Table:
     grid = Table.grid(padding=(0, 1))
     grid.add_column(style="dim")
     grid.add_column()
     grid.add_row("player", conn.player_id or Text("unpaired", style="yellow"))
+    if space is not None and conn.role == p.Role.VR:
+        grid.add_row("space", _space_status(conn.player_id, space))
     grid.add_row("peer", f"{conn.peer[0]}:{conn.peer[1]}")
     if conn.device is None:
         grid.add_row("device", Text("not reported", style="dim italic"))
@@ -43,6 +46,14 @@ def _metadata(conn: ClientConnection) -> Table:
     return grid
 
 
+def _space_status(player_id: str | None, space: SharedSpace) -> Text:
+    host = " · anchor host" if player_id is not None and player_id == space.host_id else ""
+    method = space.aligned.get(player_id) if player_id else None
+    if method is None:
+        return Text(f"not aligned{host}", style="yellow")
+    return Text(f"aligned ({method}){host}", style="green")
+
+
 def _recent_packets(conn: ClientConnection) -> Table:
     table = Table(show_edge=False, box=None, padding=(0, 1), expand=True, header_style="bold dim")
     table.add_column("time", no_wrap=True)
@@ -54,18 +65,20 @@ def _recent_packets(conn: ClientConnection) -> Table:
     return table
 
 
-def render_client(conn: ClientConnection, prompted: bool) -> Panel:
-    body = Group(_metadata(conn), _recent_packets(conn))
+def render_client(conn: ClientConnection, prompted: bool, space: SharedSpace | None = None) -> Panel:
+    body = Group(_metadata(conn, space), _recent_packets(conn))
     title = conn.player_id or "unpaired"
     if not prompted:
         return Panel(body, title=title, title_align="left")
     return Panel(body, title=f"{title} · pinch now", title_align="left", border_style="bold yellow")
 
 
-def render_clients(connections: list[ClientConnection], prompted_player_id: str | None) -> RenderableType:
+def render_clients(
+    connections: list[ClientConnection], prompted_player_id: str | None, space: SharedSpace | None = None
+) -> RenderableType:
     if not connections:
         return Text("none connected", style="dim italic")
-    return Group(*(render_client(conn, _is_prompted(conn, prompted_player_id)) for conn in connections))
+    return Group(*(render_client(conn, _is_prompted(conn, prompted_player_id), space) for conn in connections))
 
 
 def _is_prompted(conn: ClientConnection, prompted_player_id: str | None) -> bool:
@@ -82,7 +95,7 @@ class ClientList(Static):
         connections = sorted(
             (conn for conn in self._server.connections if conn.role == self._role), key=lambda c: c.connected_at
         )
-        self.update(render_clients(connections, self._server.prompted_player_id))
+        self.update(render_clients(connections, self._server.prompted_player_id, self._server.space))
 
 
 class PairingBanner(Static):
@@ -114,7 +127,7 @@ class ServerMonitor(App[None]):
     .column { width: 1fr; border: round $primary; }
     #log { height: 1fr; border: round $secondary; }
     """
-    BINDINGS = [("p", "start_pairing", "Pairing mode"), ("q", "quit", "Quit")]
+    BINDINGS = [("p", "start_pairing", "Pairing mode"), ("a", "reset_space", "Re-anchor"), ("q", "quit", "Quit")]
 
     def __init__(self, server: GameServer) -> None:
         super().__init__()
@@ -149,6 +162,10 @@ class ServerMonitor(App[None]):
 
     def action_start_pairing(self) -> None:
         self._server.start_pairing()
+        self._show_latest()
+
+    def action_reset_space(self) -> None:
+        self._server.reset_space()
         self._show_latest()
 
     def _show_latest(self) -> None:

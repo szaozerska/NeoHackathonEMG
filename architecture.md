@@ -159,6 +159,26 @@ The first message on every TCP connection:
   - A `pinch` outside pairing mode is ignored.
 - Classifier clients connect **unpaired** and receive their player ID from the server once paired. A classifier that reconnects with its `player_id` in `hello` pairs straight back to that player.
 
+### 5.1 Shared room frame
+
+Both headsets share one physical room, so every pose, projectile and hit has to be in one coordinate frame. Each Quest tracks in its own frame, with its own origin wherever it booted. Co-located Quest games handle this with Meta's **Shared Spatial Anchors**: one headset places an anchor and shares it, every headset localizes that same physical anchor, and each one moves its tracking space so the anchor becomes its origin ([Meta: Shared Spatial Anchors](https://developers.meta.com/horizon/documentation/unity/unity-shared-spatial-anchors/), [Colocation Discovery](https://developers.meta.com/horizon/documentation/unity/unity-colocation-discovery/)).
+
+- **Alignment happens on the headset; the server never transforms poses.** Every `pose` the server receives is already in the shared frame (Unity's: left-handed, +y up, +z forward, metres, origin at the anchor on the floor).
+- **The server coordinates it:**
+  - It picks the **anchor host**: the first connected headset. The host keeps the role until it disconnects; then the next headset in join order takes over.
+  - It sends each headset a `space` message on join and whenever the host or anchor changes. The message has the Meta group UUID, the host, the current anchor (if any) and that player's floor spot.
+- **Anchor flow (primary):**
+  1. The host creates an `OVRSpatialAnchor` on the floor between the players (its +z pointing from P1 towards P2), saves it, and calls `ShareAsync` with the `group_uuid` from `space`.
+  2. The host sends `anchor_shared` with the anchor's UUID. The server announces it in `space` to every headset.
+  3. Every headset, including the host, loads the anchor from the group and aligns its tracking space to it: Meta's `Alignment.cs` sample, or MRUK's `SetCustomWorldLockAnchor`. Then it sends `aligned` with `method: anchor` and the anchor's UUID.
+  4. The server rejects `anchor_shared` from a headset that isn't the host. It also rejects an `aligned` naming any anchor other than the current one. A newly shared anchor clears every headset's aligned flag.
+- **Fallback: marked floor spots.** Use this if anchor sharing fails (no internet, no Meta account, no Space Setup).
+  - Mark the two spots on the floor `--spot-distance` apart (default 3 m). P1 stands at `(0, 0, -d/2)` facing +z; P2 stands at `(0, 0, +d/2)` facing -z.
+  - Each player stands on their spot, faces the indicated way, and recenters. The headset offsets its tracking space by `spot_pos`/`spot_yaw` and sends `aligned` with `method: floor_spots`.
+  - Mixing the two methods gives two different frames, so the server logs a warning when that happens.
+- **Re-anchoring:** press `a` in the server monitor, or have any client send `space_reset`. This drops the anchor, makes a new group UUID, clears every aligned flag and announces a fresh `space`. Use it after a headset lost tracking or the anchor drifted.
+- `state.players[].aligned` shows each headset whether the others are aligned. Until both players are aligned, their poses aren't comparable, and fireball and sword hits between them are meaningless.
+
 ## 6. Message types (default schema)
 
 | Type | Direction | Fields |
@@ -167,11 +187,15 @@ The first message on every TCP connection:
 | `pinch` | classifier → server | `t`, `hand` (sent while unpaired; acted on only during pairing mode, §5) |
 | `pair_start` | any client → server, server → VR and classifier | starts pairing mode (§5); the server echoes it to every client when pairing mode starts |
 | `pair_prompt` / `paired` | server → VR and classifier | `pair_prompt`: `player_id` currently being prompted (sent to every client); `paired`: `player_id` (sent to every headset and to the newly paired classifier) |
+| `space` | server → VR | `group_uuid` (Meta colocation group to share and load the anchor through), `host_id` (the headset that creates and shares the anchor), `anchor_uuid` (null until shared), `spot_pos:[x,y,z]` and `spot_yaw` (degrees, 0 = +z): this headset's floor spot for the fallback (§5.1) |
+| `anchor_shared` | VR (anchor host) → server | `anchor_uuid` |
+| `aligned` | VR → server | `method` (`anchor` or `floor_spots`), `anchor_uuid` (required for `anchor`): this headset now sends poses in the shared frame |
+| `space_reset` | any client → server | re-anchor from scratch (§5.1) |
 | `pose` | VR → server, server → VR | `player_id`, `t`, `joints{head, chest, hips, l/r_shoulder, l/r_elbow, l/r_wrist, l/r_hand, l/r_knee, l/r_ankle, l/r_foot}` each `{pos:[x,y,z], rot:[w,x,y,z], vel?:[x,y,z]}`. `hips` is needed for the sword draw; legs come from full-body tracking (estimated by the Quest runtime) and are for debugging and display only; `vel` (optional, measured on the headset) gives cleaner hand speed than the server's finite difference |
 | `sign` | classifier → server | `player_id`, `t`, `hand` (`left`/`right`, the hand wearing the band), `sign` (`fist`, `open_palm`, `snap` or `none`), `confidence`. `snap` is momentary: the server acts on the transition into it |
 | `wrist` *(optional)* | classifier → server | `player_id`, `t`, `hand`, `rot:[w,x,y,z]` |
 | `spell` | server → VR | `caster_id`, `spell`, `state` (`charging`/`cast`/`cancelled`/`sheathed`), `charge` (0–1), `origin`, `direction`. Lifecycle events; continuous state is in `state`. Fireball: `charging` on snap, `cast` on throw, `cancelled` on fizzle. Sword: `cast` on draw, `sheathed` on release |
-| `state` | server → VR, every tick | `tick`, `players[{player_id, hp, connected, band_paired, sign, item, band_hand, cooldown, shield_boost}]` (`cooldown`: seconds until the player can conjure again; `shield_boost`: 0–1 push power, a sword contact at ≥ 0.3 is a parry), `projectiles[{id, kind, owner_id, pos, vel}]` |
+| `state` | server → VR, every tick | `tick`, `players[{player_id, hp, connected, band_paired, sign, item, band_hand, cooldown, shield_boost, aligned}]` (`aligned`: the headset reported it is in the shared room frame, §5.1; `cooldown`: seconds until the player can conjure again; `shield_boost`: 0–1 push power, a sword contact at ≥ 0.3 is a parry), `projectiles[{id, kind, owner_id, pos, vel}]` |
 | `impact` | server → VR | `projectile_id` (0 for sword contacts), `kind`, `owner_id`, `pos`, `reason` (`hit`/`blocked`/`expired` for fireballs; `blocked`/`parried` for swords), `target_id` (player hit or shielding) |
 | `damage` | server → VR | `target_id`, `source_id`, `amount`, `hp_after`, `kind` (`fireball`/`sword`), `pos` (where the hit landed) |
 | `haptic` | server → one player's classifier | `duration_ms` (1–2000). The hand-sign client forwards it to Kinesis's `POST /haptics`, which buzzes that player's band once. Sent on spell `charging` (40 ms) and `cast` (120 ms) to the caster, and on `damage` to the target (300 ms) and the source (60 ms); durations live in `spellgame/haptics.py` |
@@ -197,7 +221,7 @@ Timestamps (`t`) are sender-local and used only for ordering within one stream. 
 ## 9. Gestures (default)
 
 - The band hand does one gesture at a time. Finger and wrist state comes from the band (`sign`); arm motion comes from the Quest (`pose`).
-- Players share one physical room, so both headsets must agree on one coordinate frame (Meta colocation + Shared Spatial Anchors; fallback: recenter on marked floor spots). The server assumes poses arrive in that shared frame.
+- Players share one physical room, so both headsets must agree on one coordinate frame. See §5.1: a Shared Spatial Anchor hosted by the first headset, with marked floor spots as the fallback. The server assumes poses arrive in that shared frame.
 - Each gesture is a server-side state machine over the band sign and a short history of the band hand's pose.
 
 | Gesture | Band | Quest | Server behaviour |
