@@ -29,6 +29,8 @@ namespace SpellGame.Protocol
             [SignMessage.TypeName] = typeof(SignMessage),
             [SpellMessage.TypeName] = typeof(SpellMessage),
             [DamageMessage.TypeName] = typeof(DamageMessage),
+            [ImpactMessage.TypeName] = typeof(ImpactMessage),
+            [StateMessage.TypeName] = typeof(StateMessage),
         };
 
         public static string Encode(Message message) => JsonConvert.SerializeObject(message, Settings);

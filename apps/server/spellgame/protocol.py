@@ -77,6 +77,8 @@ class SpellState:
     CHARGING = "charging"
     CAST = "cast"
     CANCELLED = "cancelled"
+    SHEATHED = "sheathed"
+    """The sword was put away (the fist was released)."""
 
 
 class ProtocolError(ValueError):
@@ -253,7 +255,10 @@ class Wrist(Message):
 
 @dataclass
 class Spell(Message):
-    """Spell lifecycle event. For a fireball: `charging` on snap, `cast` on throw, `cancelled` on fizzle."""
+    """Spell lifecycle event.
+
+    Fireball: `charging` on snap, `cast` on throw, `cancelled` on fizzle. Sword: `cast` on draw, `sheathed` on release.
+    """
 
     TYPE: ClassVar[str] = "spell"
     caster_id: str
@@ -271,6 +276,10 @@ class Damage(Message):
     source_id: str
     amount: float
     hp_after: float
+    kind: str | None = None
+    """What dealt the damage: `fireball` or `sword`."""
+    pos: list[float] | None = None
+    """Where the hit landed, e.g. for damage numbers."""
 
 
 @dataclass
@@ -294,7 +303,11 @@ class PlayerSnapshot:
     band_paired: bool
     sign: str
     item: str
-    """What the player currently holds: `none` or `fireball`."""
+    """What the player currently holds: `none`, `fireball` or `sword`."""
+    band_hand: str = Hand.RIGHT
+    """The hand wearing the Neural Band, where held spells are drawn."""
+    cooldown: float = 0.0
+    """Seconds until the player can conjure again."""
 
     def to_dict(self) -> dict[str, Any]:
         return {f.name: getattr(self, f.name) for f in fields(self)}

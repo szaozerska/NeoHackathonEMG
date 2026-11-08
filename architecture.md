@@ -171,10 +171,10 @@ The first message on every TCP connection:
 | `pose` | VR → server, server → VR | `player_id`, `t`, `joints{head, chest, hips, l/r_shoulder, l/r_elbow, l/r_wrist, l/r_hand, l/r_knee, l/r_ankle, l/r_foot}` each `{pos:[x,y,z], rot:[w,x,y,z], vel?:[x,y,z]}`. `hips` is needed for the sword draw; legs come from full-body tracking (estimated by the Quest runtime) and are for debugging and display only; `vel` (optional, measured on the headset) gives cleaner hand speed than the server's finite difference |
 | `sign` | classifier → server | `player_id`, `t`, `hand` (`left`/`right`, the hand wearing the band), `sign` (`fist`, `open_palm`, `snap` or `none`), `confidence`. `snap` is momentary: the server acts on the transition into it |
 | `wrist` *(optional)* | classifier → server | `player_id`, `t`, `hand`, `rot:[w,x,y,z]` |
-| `spell` | server → VR | `caster_id`, `spell`, `state` (`charging`/`cast`/`cancelled`), `charge` (0–1), `origin`, `direction`. Lifecycle events; continuous state is in `state` |
-| `state` | server → VR, every tick | `tick`, `players[{player_id, hp, connected, band_paired, sign, item}]`, `projectiles[{id, kind, owner_id, pos, vel}]` |
+| `spell` | server → VR | `caster_id`, `spell`, `state` (`charging`/`cast`/`cancelled`/`sheathed`), `charge` (0–1), `origin`, `direction`. Lifecycle events; continuous state is in `state`. Fireball: `charging` on snap, `cast` on throw, `cancelled` on fizzle. Sword: `cast` on draw, `sheathed` on release |
+| `state` | server → VR, every tick | `tick`, `players[{player_id, hp, connected, band_paired, sign, item, band_hand, cooldown}]` (`cooldown`: seconds until the player can conjure again), `projectiles[{id, kind, owner_id, pos, vel}]` |
 | `impact` | server → VR | `projectile_id`, `kind`, `owner_id`, `pos`, `reason` (`hit`/`expired`), `target_id` |
-| `damage` | server → VR | `target_id`, `source_id`, `amount`, `hp_after` |
+| `damage` | server → VR | `target_id`, `source_id`, `amount`, `hp_after`, `kind` (`fireball`/`sword`), `pos` (where the hit landed) |
 | `haptic` | server → one player's classifier | `duration_ms` (1–2000). The hand-sign client forwards it to Kinesis's `POST /haptics`, which buzzes that player's band once. Sent on spell `charging` (40 ms) and `cast` (120 ms) to the caster, and on `damage` to the target (300 ms) and the source (60 ms); durations live in `spellgame/haptics.py` |
 
 Timestamps (`t`) are sender-local and used only for ordering within one stream. Never compare the band's clock, a Mac clock, and the Quest clock directly.
@@ -209,3 +209,9 @@ Timestamps (`t`) are sender-local and used only for ordering within one stream. 
 | **Shield** | `open_palm` held | Palm facing away from the player; push impulse = peak push speed | Raised shield blocks; a forceful push gives a short power boost, and a sword contact during the boost is a parry |
 
 Tuning values live in `apps/server/spellgame/game_state.py` (`Tuning`).
+
+**Starting balance (default):** 100 HP; fireball 8 damage, flying at 6–10 m/s so it can be seen, dodged or blocked across a 3–5 m room. That is roughly 13 hits, or about a minute of steady exchange.
+
+**Later versions:**
+- Spells take time to charge up (e.g. holding a conjured fireball longer makes it stronger), driving `spell.charge`.
+- Difficulty settings: selectable `Tuning` presets (HP, damage, spell speed, aim assist, cooldowns).
