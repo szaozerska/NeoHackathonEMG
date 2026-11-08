@@ -40,6 +40,66 @@ namespace SpellGame.Game
             Confetti = new[] { Color.white, Rgba(200, 210, 255, 1f), Rgba(150, 156, 185, 1f) },
         };
 
+        /// <summary>Warm amber glass.</summary>
+        public static UiPalette EmberGlass
+        {
+            get
+            {
+                var p = SmokyOpal;
+                p.Fill = Rgba(92, 52, 38, 0.72f);
+                p.FacetLight = Rgba(125, 72, 50, 0.70f);
+                p.FacetDark = Rgba(55, 28, 20, 0.66f);
+                p.Rim = Rgba(255, 214, 170, 1f);
+                p.Ink = Rgba(30, 14, 8, 1f);
+                p.TextDim = Rgba(245, 222, 205, 1f);
+                p.Accent = Rgba(255, 170, 90, 1f);
+                p.Confetti = new[] { Color.white, Rgba(255, 170, 90, 1f), Rgba(255, 214, 170, 1f) };
+                return p;
+            }
+        }
+
+        /// <summary>Deep violet glass.</summary>
+        public static UiPalette ArcaneViolet
+        {
+            get
+            {
+                var p = SmokyOpal;
+                p.Fill = Rgba(62, 44, 98, 0.72f);
+                p.FacetLight = Rgba(88, 66, 132, 0.70f);
+                p.FacetDark = Rgba(34, 22, 60, 0.66f);
+                p.Rim = Rgba(225, 205, 255, 1f);
+                p.Ink = Rgba(18, 10, 32, 1f);
+                p.TextDim = Rgba(225, 215, 245, 1f);
+                p.Accent = Rgba(200, 160, 255, 1f);
+                p.Confetti = new[] { Color.white, Rgba(200, 160, 255, 1f), Rgba(225, 205, 255, 1f) };
+                return p;
+            }
+        }
+
+        /// <summary>Icy teal glass.</summary>
+        public static UiPalette Frost
+        {
+            get
+            {
+                var p = SmokyOpal;
+                p.Fill = Rgba(40, 80, 100, 0.72f);
+                p.FacetLight = Rgba(60, 110, 135, 0.70f);
+                p.FacetDark = Rgba(20, 45, 60, 0.66f);
+                p.Rim = Rgba(210, 245, 255, 1f);
+                p.Ink = Rgba(8, 24, 32, 1f);
+                p.TextDim = Rgba(210, 235, 245, 1f);
+                p.Accent = Rgba(140, 225, 255, 1f);
+                p.Confetti = new[] { Color.white, Rgba(140, 225, 255, 1f), Rgba(210, 245, 255, 1f) };
+                return p;
+            }
+        }
+
+        /// <summary>Menu colour choices in Settings. Only the menu look changes; P1 / P2 stay red / blue.</summary>
+        public static readonly (string Name, UiPalette Palette)[] Presets =
+        {
+            ("Smoky Opal", SmokyOpal), ("Ember", EmberGlass), ("Arcane", ArcaneViolet), ("Frost", Frost),
+        };
+
         private static Color Rgba(int r, int g, int b, float a) => new(r / 255f, g / 255f, b / 255f, a);
     }
 
@@ -105,6 +165,15 @@ namespace SpellGame.Game
         public Material DisplayMaterial => displayMaterial;
         public Material BodyMaterial => bodyMaterial;
         public Material Crystal => crystal;
+
+        /// <summary>A runtime copy of this theme (fonts, shape, sounds) with another palette.</summary>
+        public UiTheme WithPalette(string name, UiPalette newPalette)
+        {
+            var copy = Instantiate(this);
+            copy.displayName = name;
+            copy.palette = newPalette;
+            return copy;
+        }
 
         /// <summary>A theme from Resources by asset name, e.g. <see cref="ResourceName"/>; null if missing.</summary>
         public static UiTheme Load(string resourceName) => Resources.Load<UiTheme>(resourceName);
