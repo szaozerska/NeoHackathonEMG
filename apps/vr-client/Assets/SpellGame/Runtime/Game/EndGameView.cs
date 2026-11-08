@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using SpellGame.Protocol;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -8,15 +9,16 @@ namespace SpellGame.Game
 {
     /// <summary>
     /// The end-of-match moment in the room, above the results panel (<see cref="MatchMenu"/> keeps the Rematch and Main menu
-    /// buttons): a big VICTORY / DEFEAT / DRAW banner about 2 m away with the reason and each fighter's match stats,
-    /// confetti bursts for a win, falling ash for a loss, and a gold crown ring over the winner's head. Stats are counted
+    /// buttons): a big VICTORY / DEFEAT / DRAW crystal banner (<see cref="UiStyle"/>) about 2 m away with the reason and a
+    /// result card per fighter (stats and award badges), confetti bursts for a win, falling ash for a loss, and a crown
+    /// ring over the winner's head. Stats are counted
     /// on the client from the server's `damage`, `impact` and `spell` events between the countdown and the end.
     /// </summary>
     public sealed class EndGameView : MonoBehaviour
     {
         [SerializeField] private GameClient gameClient;
         [SerializeField] private OVRCameraRig cameraRig;
-        [Tooltip("Unlit material the banner and particle materials are copied from (only its colour is changed).")]
+        [Tooltip("Unlit material the particle and crown materials are copied from (only its colour is changed).")]
         [SerializeField] private Material baseMaterial;
 
         [Header("Placement")]
@@ -31,14 +33,10 @@ namespace SpellGame.Game
         [SerializeField] private int confettiBursts = 6;
         [SerializeField] private float crownHeight = 0.62f;
 
-        private static readonly Color VictoryColor = new(1f, 0.8f, 0.25f);
-        private static readonly Color DefeatColor = new(0.85f, 0.25f, 0.25f);
-        private static readonly Color NeutralColor = new(0.75f, 0.85f, 1f);
-        private static readonly Color BannerBack = new(0.05f, 0.06f, 0.11f);
-        private static readonly Color[] ConfettiColors =
-        {
-            new(1f, 0.8f, 0.25f), new(1f, 0.35f, 0.3f), new(0.3f, 0.6f, 1f), new(0.35f, 1f, 0.6f), new(0.9f, 0.45f, 1f),
-        };
+        private const float BannerWidth = 1.5f;
+        private const float BannerPad = 0.06f;
+        private const float CardGap = 0.04f;
+        private const float CardPad = 0.035f;
 
         private sealed class Stats
         {
@@ -48,6 +46,7 @@ namespace SpellGame.Game
             public int FireballHits;
             public int Blocks;
             public float BiggestHit;
+            public float Taken;
         }
 
         private readonly Dictionary<string, Stats> _stats = new();
@@ -57,11 +56,11 @@ namespace SpellGame.Game
         private bool _counting;
 
         private Transform _banner;
-        private Material _bannerBackMaterial;
-        private Material _accentMaterial;
-        private TextMesh _title;
-        private TextMesh _subtitle;
-        private TextMesh _body;
+        private UiStyle.Crystal _bannerBack;
+        private TextMeshPro _title;
+        private TextMeshPro _subtitle;
+        private Transform _cards;
+        private readonly List<Material> _cardMaterials = new();
         private Vector3 _bannerTarget;
         private float _shownAt;
         private Color _titleColor;
@@ -72,31 +71,16 @@ namespace SpellGame.Game
         private Transform _crown;
         private Material[] _confettiMaterials;
 
-        private static Mesh _quadMesh;
-
-        private static Mesh QuadMesh
-        {
-            get
-            {
-                if (_quadMesh != null)
-                    return _quadMesh;
-                var primitive = GameObject.CreatePrimitive(PrimitiveType.Quad);
-                _quadMesh = primitive.GetComponent<MeshFilter>().sharedMesh;
-                Destroy(primitive);
-                return _quadMesh;
-            }
-        }
-
         private Transform Eye => cameraRig != null ? cameraRig.centerEyeAnchor : Camera.main.transform;
 
         private string Me => gameClient.PlayerId;
 
         private void Awake()
         {
-            _confettiMaterials = ConfettiColors.Select(Tinted).ToArray();
+            _confettiMaterials = UiStyle.Confetti.Select(Tinted).ToArray();
             CreateBanner();
             CreateCrown();
-            _ash = CreateParticles("Ash", transform, Tinted(new Color(0.35f, 0.35f, 0.4f)));
+            _ash = CreateParticles("Ash", transform, Tinted(UiStyle.Ash));
             ConfigureAsh(_ash);
         }
 
@@ -127,7 +111,11 @@ namespace SpellGame.Game
 
         private void OnDamage(DamageMessage damage)
         {
-            if (!_counting || damage.SourceId == null)
+            if (!_counting)
+                return;
+            if (damage.TargetId != null)
+                StatsFor(damage.TargetId).Taken += damage.Amount;
+            if (damage.SourceId == null)
                 return;
             var stats = StatsFor(damage.SourceId);
             stats.Dealt += damage.Amount;
@@ -176,15 +164,15 @@ namespace SpellGame.Game
             var isFighter = Me != null && _match.Fighters.Contains(Me);
             string title;
             if (_match.Reason == MatchEndReason.Quit)
-                (title, _titleColor) = ("MATCH ENDED", NeutralColor);
+                (title, _titleColor) = ("MATCH ENDED", UiStyle.Text);
             else if (_match.Winner == null)
-                (title, _titleColor) = ("DRAW", NeutralColor);
+                (title, _titleColor) = ("DRAW", UiStyle.Text);
             else if (_match.Winner == Me)
-                (title, _titleColor) = ("VICTORY!", VictoryColor);
+                (title, _titleColor) = ("VICTORY!", UiStyle.Text);
             else if (isFighter)
-                (title, _titleColor) = ("DEFEAT", DefeatColor);
+                (title, _titleColor) = ("DEFEAT", UiStyle.TextDim);
             else
-                (title, _titleColor) = ($"{NameOf(_match.Winner)} WINS", VictoryColor);
+                (title, _titleColor) = ($"{NameOf(_match.Winner)} WINS", UiStyle.Text);
             _won = _match.Winner != null && (_match.Winner == Me || !isFighter);
 
             _title.text = title;
@@ -197,8 +185,7 @@ namespace SpellGame.Game
                 MatchEndReason.Disconnect => "OPPONENT DISCONNECTED",
                 _ => "",
             };
-            _body.text = string.Join("\n", _match.Fighters.Select(StatsLine));
-            _accentMaterial.SetColor("_BaseColor", _titleColor);
+            LayoutBanner(BuildCards());
 
             _bannerTarget = BannerSpot();
             _banner.position = _bannerTarget;
@@ -223,13 +210,113 @@ namespace SpellGame.Game
         private string NameOf(string playerId) =>
             playerId == null ? "?" : playerId == Me ? "You" : playerId == _match.AiId ? "AI mage" : playerId;
 
-        private string StatsLine(string fighter)
+        // ---------------------------------------------------------------- result cards
+
+        /// <summary>One crystal card per fighter (name in their colour, HP left, stats, award badges); returns the cards' height.</summary>
+        private float BuildCards()
+        {
+            foreach (Transform child in _cards)
+                Destroy(child.gameObject);
+            UiStyle.DestroyAll(_cardMaterials);
+            var fighters = _match.Fighters.ToList();
+            if (fighters.Count == 0)
+                return 0f;
+
+            var awards = Awards(fighters);
+            var width = Mathf.Min(0.62f, (BannerWidth - 2f * BannerPad - CardGap * (fighters.Count - 1)) / fighters.Count);
+            var cards = new List<(Transform Root, string Fighter)>();
+            var height = 0f;
+            for (var i = 0; i < fighters.Count; i++)
+            {
+                var card = new GameObject($"Card {fighters[i]}").transform;
+                card.SetParent(_cards, false);
+                card.localPosition = new Vector3((i - (fighters.Count - 1) * 0.5f) * (width + CardGap), 0f, -0.002f);
+                height = Mathf.Max(height, FillCard(card, fighters[i], width, awards[fighters[i]]));
+                cards.Add((card, fighters[i]));
+            }
+            foreach (var (root, fighter) in cards)
+            {
+                var style = fighter == _match.Winner ? UiStyle.Pulsing(UiStyle.Card, 0.5f) : UiStyle.Card;
+                UiStyle.CreateCrystal("Back", root, new Vector2(width, height), style, new Vector3(0f, -height * 0.5f, 0f),
+                    UiStyle.SortSurface, _cardMaterials);
+            }
+            return height;
+        }
+
+        /// <summary>Lays a card's contents out downwards from its top edge (the card's origin); returns the height used.</summary>
+        private float FillCard(Transform card, string fighter, float width, List<string> awards)
         {
             var stats = StatsFor(fighter);
-            var hp = _state?.Players.FirstOrDefault(p => p.PlayerId == fighter)?.Hp ?? 0f;
-            var accuracy = stats.Throws > 0 ? $"  ·  {Mathf.RoundToInt(100f * stats.FireballHits / stats.Throws)}% aim" : "";
-            return $"{NameOf(fighter)}:  {Mathf.Max(0f, hp):0} HP left  ·  {stats.Dealt:0} dmg in {stats.Hits} hits" +
-                   $"{accuracy}  ·  {stats.Blocks} blocks  ·  best {stats.BiggestHit:0}";
+            var hp = Mathf.Max(0f, _state?.Players.FirstOrDefault(p => p.PlayerId == fighter)?.Hp ?? 0f);
+            var inner = width - 2f * CardPad;
+            var left = -width * 0.5f + CardPad;
+            var y = -CardPad;
+
+            TextMeshPro Row(string name, string text, float size, Color color, bool display, TextAlignmentOptions alignment, Color? glow = null)
+            {
+                var label = UiStyle.CreateText(name, card, text, Vector3.zero, size, color, display, glow, alignment, inner);
+                label.transform.localPosition = new Vector3(0f, y - UiStyle.Height(label) * 0.5f, -0.004f);
+                return label;
+            }
+
+            var nameLabel = Row("Name", NameOf(fighter).ToUpperInvariant(), 0.05f, UiStyle.PlayerColor(fighter), true, TextAlignmentOptions.Left);
+            if (fighter == _match.Winner)
+                Row("Winner", "WINNER", 0.032f, UiStyle.Accent, true, TextAlignmentOptions.Right).characterSpacing = 8f;
+            y -= UiStyle.Height(nameLabel);
+
+            var hpLabel = Row("HP", $"{hp:0}<size=40%>  HP LEFT</size>", 0.085f, UiStyle.Text, true, TextAlignmentOptions.Left, UiStyle.Accent);
+            y -= UiStyle.Height(hpLabel) + 0.01f;
+
+            var aim = stats.Throws > 0 ? $"{Mathf.RoundToInt(100f * stats.FireballHits / stats.Throws)}%" : "–";
+            Row("Stat Values", string.Join("\n", $"{stats.Dealt:0}  <size=75%>in {stats.Hits} hits</size>", aim, stats.Blocks.ToString(), $"{stats.BiggestHit:0}"),
+                0.03f, UiStyle.Text, true, TextAlignmentOptions.Right);
+            var statNames = Row("Stat Names", "DAMAGE\nAIM\nBLOCKS\nBEST HIT", 0.03f, UiStyle.TextDim, false, TextAlignmentOptions.Left);
+            y -= UiStyle.Height(statNames);
+
+            if (awards.Count > 0)
+            {
+                const float badgeHeight = 0.042f;
+                const float badgeGap = 0.012f;
+                y -= 0.02f;
+                var x = left;
+                foreach (var award in awards)
+                {
+                    var text = UiStyle.CreateText("Award", card, award, Vector3.zero, 0.024f, UiStyle.Text, display: true, spacing: 6f);
+                    var badgeWidth = UiStyle.Width(text) + 0.035f;
+                    if (x > left && x + badgeWidth > left + inner)
+                    {
+                        x = left;
+                        y -= badgeHeight + badgeGap;
+                    }
+                    var center = new Vector3(x + badgeWidth * 0.5f, y - badgeHeight * 0.5f, 0f);
+                    text.transform.localPosition = center + new Vector3(0f, 0.002f, -0.006f);
+                    UiStyle.CreateCrystal("Badge", card, new Vector2(badgeWidth, badgeHeight), UiStyle.Badge, center + new Vector3(0f, 0f, -0.003f),
+                        UiStyle.SortBar, _cardMaterials);
+                    x += badgeWidth + badgeGap;
+                }
+                y -= badgeHeight;
+            }
+            return CardPad - y;
+        }
+
+        /// <summary>Cheap awards from the counted stats: best aim (3+ throws), most blocks, and no damage taken in a full match.</summary>
+        private Dictionary<string, List<string>> Awards(List<string> fighters)
+        {
+            var awards = fighters.ToDictionary(f => f, _ => new List<string>());
+
+            void Best(string award, System.Func<Stats, float> score)
+            {
+                var ranked = fighters.Select(f => (Fighter: f, Score: score(StatsFor(f)))).OrderByDescending(r => r.Score).ToList();
+                if (ranked[0].Score > 0f && (ranked.Count == 1 || ranked[1].Score < ranked[0].Score))
+                    awards[ranked[0].Fighter].Add(award);
+            }
+
+            Best("SHARPSHOOTER", s => s.Throws >= 3 ? (float)s.FireballHits / s.Throws : 0f);
+            Best("IRON WALL", s => s.Blocks);
+            if (_match.Reason is MatchEndReason.Ko or MatchEndReason.Time)
+                foreach (var fighter in fighters.Where(f => StatsFor(f).Taken <= 0f))
+                    awards[fighter].Add("UNTOUCHABLE");
+            return awards;
         }
 
         // ---------------------------------------------------------------- per frame
@@ -244,7 +331,7 @@ namespace SpellGame.Game
             var pop = age < 0.5f ? EaseOutBack(age / 0.5f) : 1f;
             _banner.localScale = Vector3.one * Mathf.Max(0.01f, pop);
             var shimmer = _won ? 0.15f * Mathf.Sin(Time.time * 4f) : 0f;
-            _title.color = Color.Lerp(_titleColor, Color.white, Mathf.Max(0f, shimmer));
+            _title.color = Color.Lerp(_titleColor, UiStyle.Accent, Mathf.Max(0f, shimmer) * 2f);
             _ash.transform.position = Eye.position + Vector3.up * 1.2f;
 
             if (_burstsLeft > 0 && Time.time >= _nextBurst)
@@ -314,31 +401,36 @@ namespace SpellGame.Game
         {
             _banner = new GameObject("End Banner").transform;
             _banner.SetParent(transform, false);
-            _bannerBackMaterial = Tinted(BannerBack);
-            _accentMaterial = Tinted(VictoryColor);
-
-            var back = CreateQuad("Back", _banner, _bannerBackMaterial);
-            back.localScale = new Vector3(1.5f, 0.5f, 1f);
-            var top = CreateQuad("Accent Top", _banner, _accentMaterial);
-            top.localPosition = new Vector3(0f, 0.25f, -0.001f);
-            top.localScale = new Vector3(1.5f, 0.012f, 1f);
-            var bottom = CreateQuad("Accent Bottom", _banner, _accentMaterial);
-            bottom.localPosition = new Vector3(0f, -0.25f, -0.001f);
-            bottom.localScale = new Vector3(1.5f, 0.012f, 1f);
-
-            _title = CreateText("Title", _banner, new Vector3(0f, 0.13f, -0.004f), 0.034f, FontStyle.Bold);
-            _subtitle = CreateText("Reason", _banner, new Vector3(0f, 0.02f, -0.004f), 0.011f, FontStyle.Bold);
-            _subtitle.color = new Color(0.85f, 0.88f, 0.95f);
-            _body = CreateText("Stats", _banner, new Vector3(0f, -0.13f, -0.004f), 0.0085f, FontStyle.Normal);
-            _body.color = Color.white;
+            _bannerBack = UiStyle.CreateCrystal("Back", _banner, new Vector2(BannerWidth, 0.5f), UiStyle.Panel, Vector3.zero);
+            _title = UiStyle.CreateText("Title", _banner, "", new Vector3(0f, 0f, -0.004f), 0.15f, UiStyle.Text, display: true,
+                glow: UiStyle.Accent, width: BannerWidth, spacing: 8f);
+            _subtitle = UiStyle.CreateText("Reason", _banner, "", new Vector3(0f, 0f, -0.004f), 0.042f, UiStyle.TextDim, display: true,
+                width: BannerWidth, spacing: 12f);
+            _cards = new GameObject("Cards").transform;
+            _cards.SetParent(_banner, false);
             _banner.gameObject.SetActive(false);
+        }
+
+        /// <summary>Title, reason, then the cards, top to bottom; the crystal back is sized to fit.</summary>
+        private void LayoutBanner(float cardsHeight)
+        {
+            var titleHeight = UiStyle.Height(_title);
+            var subtitleHeight = UiStyle.Height(_subtitle);
+            var height = BannerPad + titleHeight + subtitleHeight + (cardsHeight > 0f ? CardGap + cardsHeight : 0f) + BannerPad;
+            _bannerBack.Resize(new Vector2(BannerWidth, height));
+            var y = height * 0.5f - BannerPad;
+            _title.transform.localPosition = new Vector3(0f, y - titleHeight * 0.5f, -0.004f);
+            y -= titleHeight;
+            _subtitle.transform.localPosition = new Vector3(0f, y - subtitleHeight * 0.5f, -0.004f);
+            y -= subtitleHeight + CardGap;
+            _cards.localPosition = new Vector3(0f, y, 0f);
         }
 
         private void CreateCrown()
         {
             _crown = new GameObject("Winner Crown").transform;
             _crown.SetParent(transform, false);
-            var gold = Tinted(VictoryColor);
+            var gold = Tinted(UiStyle.Rim);
             const int points = 7;
             for (var i = 0; i < points; i++)
             {
@@ -410,33 +502,6 @@ namespace SpellGame.Game
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
             return particles;
-        }
-
-        private TextMesh CreateText(string name, Transform parent, Vector3 localPosition, float size, FontStyle style)
-        {
-            var label = new GameObject(name).AddComponent<TextMesh>();
-            label.transform.SetParent(parent, false);
-            label.transform.localPosition = localPosition;
-            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            label.GetComponent<MeshRenderer>().sharedMaterial = label.font.material;
-            label.anchor = TextAnchor.MiddleCenter;
-            label.alignment = TextAlignment.Center;
-            label.characterSize = size;
-            label.fontSize = 64;
-            label.fontStyle = style;
-            return label;
-        }
-
-        private static Transform CreateQuad(string name, Transform parent, Material material)
-        {
-            var go = new GameObject(name);
-            go.transform.SetParent(parent, false);
-            go.AddComponent<MeshFilter>().sharedMesh = QuadMesh;
-            var renderer = go.AddComponent<MeshRenderer>();
-            renderer.sharedMaterial = material;
-            renderer.shadowCastingMode = ShadowCastingMode.Off;
-            renderer.receiveShadows = false;
-            return go.transform;
         }
 
         private Material Tinted(Color color)

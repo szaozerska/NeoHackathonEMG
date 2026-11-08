@@ -22,6 +22,9 @@ namespace SpellGame.Editor
         [MenuItem("SpellGame/Rebuild Main Scene")]
         public static void Build()
         {
+            if (!UiThemeBuilder.EnsureTheme())
+                return;
+
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             var rig = CreateCameraRig();
