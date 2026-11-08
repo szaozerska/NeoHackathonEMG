@@ -16,28 +16,26 @@ from .geometry import (
     UP,
     body_forward,
     body_right,
-    closest_point_on_segment,
     normalize,
     segment_disc_contact,
-    segment_distance,
     vec,
 )
+from .hitboxes import Contact, HitboxSizes, body_contact, body_hitboxes
 
 
 @dataclass
 class Tuning:
     max_hp: float = 100.0
-    body_radius: float = 0.2
-    """Players are hit-tested as one capsule from head to hips."""
-    torso_length: float = 0.65
-    """Head-to-hips distance used when the pose has no hips joint."""
+    hitboxes: HitboxSizes = field(default_factory=HitboxSizes)
+    """Players are hit-tested per body part: head sphere, torso, shoulders, arms and legs."""
 
     velocity_window_s: float = 0.04
     hand_history_s: float = 0.3
 
     fireball_damage: float = 8.0
     """100 HP / 8 is about 13 hits, roughly a minute of steady fireball exchange."""
-    fireball_radius: float = 0.15
+    fireball_radius: float = 0.1
+    """Collision radius; the drawn orb may be larger."""
     fireball_lifetime_s: float = 4.0
     fireball_hold_timeout_s: float = 8.0
     fireball_cooldown_s: float = 0.75
@@ -177,16 +175,11 @@ class PlayerState:
     def band_hand_tracker(self) -> HandTracker:
         return self.hands[self.band_hand]
 
-    def body_capsule(self, tuning: Tuning) -> tuple[np.ndarray, np.ndarray] | None:
+    def contact(self, a: np.ndarray, b: np.ndarray, radius: float, tuning: Tuning) -> Contact | None:
+        """The body part a capsule a-b of `radius` hits, if any."""
         if self.pose is None:
             return None
-        joints = self.pose.joints
-        top_joint = joints.get("head") or joints.get("chest")
-        if top_joint is None:
-            return None
-        top = vec(top_joint.pos)
-        bottom = vec(joints["hips"].pos) if "hips" in joints else top - np.array([0.0, tuning.torso_length, 0.0])
-        return top, bottom
+        return body_contact(body_hitboxes(self.pose.joints, tuning.hitboxes), a, b, radius)
 
     def chest_position(self) -> np.ndarray | None:
         if self.pose is None:
@@ -379,13 +372,15 @@ class GameState:
         for projectile in self.projectiles:
             start, end = projectile.pos, projectile.pos + projectile.vel * dt
             blocked = self._shield_contact(projectile.owner_id, start, end, tuning.fireball_radius, projectile.vel)
-            target = self._first_hit(projectile, start, end) if blocked is None else None
+            hit = self._first_hit(projectile, start, end) if blocked is None else None
             if blocked is not None:
                 shielder, contact = blocked
                 events.append(self._impact(projectile, contact, "blocked", shielder.player_id))
-            elif target is not None:
-                events.append(self._damage(target, projectile.owner_id, tuning.fireball_damage, Item.FIREBALL, end))
-                events.append(self._impact(projectile, end, "hit", target.player_id))
+            elif hit is not None:
+                target, body = hit
+                damage = tuning.fireball_damage
+                events.append(self._damage(target, projectile.owner_id, damage, Item.FIREBALL, body.pos, body.zone))
+                events.append(self._impact(projectile, body.pos, "hit", target.player_id))
             elif self.time - projectile.born >= tuning.fireball_lifetime_s:
                 events.append(self._impact(projectile, end, "expired", None))
             else:
@@ -474,7 +469,6 @@ class GameState:
         fast = tip_speed >= tuning.sword_min_tip_speed
 
         events: list[p.Message] = []
-        reach = tuning.sword_radius + tuning.body_radius
         for target in self._targets(player.player_id):
             last_hit = player.sword_hits.get(target.player_id)
             rehit_ready = last_hit is None or self.time - last_hit >= tuning.sword_rehit_s
@@ -491,16 +485,14 @@ class GameState:
                 continue
             if not fast or not rehit_ready:
                 continue
-            capsule = target.body_capsule(tuning)
-            if capsule is None or segment_distance(hilt, tip, *capsule) > reach:
+            body = target.contact(hilt, tip, tuning.sword_radius, tuning)
+            if body is None:
                 continue
             player.sword_hits[target.player_id] = self.time
             speed_range = tuning.sword_full_damage_tip_speed - tuning.sword_min_tip_speed
             strength = float(np.clip((tip_speed - tuning.sword_min_tip_speed) / speed_range, 0.0, 1.0))
             amount = round(tuning.sword_min_damage + (tuning.sword_max_damage - tuning.sword_min_damage) * strength, 1)
-            on_body = closest_point_on_segment((hilt + tip) / 2.0, *capsule)
-            contact = closest_point_on_segment(on_body, hilt, tip)
-            events.append(self._damage(target, player.player_id, amount, Item.SWORD, contact))
+            events.append(self._damage(target, player.player_id, amount, Item.SWORD, body.pos, body.zone))
         return events
 
     def _step_shield(self, player: PlayerState, dt: float) -> list[p.Message]:
@@ -571,7 +563,9 @@ class GameState:
             target_id=target_id,
         )
 
-    def _damage(self, target: PlayerState, source_id: str, amount: float, kind: str, pos: np.ndarray) -> p.Damage:
+    def _damage(
+        self, target: PlayerState, source_id: str, amount: float, kind: str, pos: np.ndarray, zone: str
+    ) -> p.Damage:
         target.hp = max(0.0, target.hp - amount)
         return p.Damage(
             target_id=target.player_id,
@@ -580,14 +574,16 @@ class GameState:
             hp_after=target.hp,
             kind=kind,
             pos=_round(pos),
+            zone=zone,
         )
 
-    def _first_hit(self, projectile: Projectile, start: np.ndarray, end: np.ndarray) -> PlayerState | None:
-        reach = self.tuning.fireball_radius + self.tuning.body_radius
+    def _first_hit(
+        self, projectile: Projectile, start: np.ndarray, end: np.ndarray
+    ) -> tuple[PlayerState, Contact] | None:
         for target in self._targets(projectile.owner_id):
-            capsule = target.body_capsule(self.tuning)
-            if capsule is not None and segment_distance(start, end, *capsule) <= reach:
-                return target
+            contact = target.contact(start, end, self.tuning.fireball_radius, self.tuning)
+            if contact is not None:
+                return target, contact
         return None
 
     def _targets(self, attacker_id: str) -> list[PlayerState]:

@@ -26,7 +26,7 @@ namespace SpellGame.Game
         [SerializeField] private int discoveryPort = 47777;
 
         [Header("Pose stream")]
-        [SerializeField, Range(1f, 90f)] private float poseSendRateHz = 30f;
+        [SerializeField, Range(1f, 90f)] private float poseSendRateHz = 72f;
 
         private BodyPoseSampler _poseSampler;
         private ServerConnection _connection;

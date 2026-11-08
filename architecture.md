@@ -97,7 +97,7 @@ There is one Quest, one Neural Band, and one classification Mac per player, plus
   - Everything is single-threaded, so no locks are needed.
   - Game logic is a pure function `game_state.step(inputs, dt) -> events`, kept separate from networking, so spell and charge logic can be unit-tested with fake inputs.
 - **Libraries:**
-  - `numpy` for vector math in hit detection (e.g. a ray or sphere from the caster's hand tested against the target's chest capsule).
+  - `numpy` for vector math in hit detection (swept spheres and capsules tested against the target's per-body-part hitboxes, §9.1).
   - `dataclasses` or `pydantic` for the message schema.
 - **Alternatives:**
   - **C# / .NET console app:** lets the server share message classes with the Unity client, but loses code sharing with the classifier.
@@ -197,7 +197,7 @@ Both headsets share one physical room, so every pose, projectile and hit has to 
 | `spell` | server → VR | `caster_id`, `spell`, `state` (`charging`/`cast`/`cancelled`/`sheathed`), `charge` (0–1), `origin`, `direction`. Lifecycle events; continuous state is in `state`. Fireball: `charging` on snap, `cast` on throw, `cancelled` on fizzle. Sword: `cast` on draw, `sheathed` on release |
 | `state` | server → VR, every tick | `tick`, `players[{player_id, hp, connected, band_paired, sign, item, band_hand, cooldown, shield_boost, aligned}]` (`aligned`: the headset reported it is in the shared room frame, §5.1; `cooldown`: seconds until the player can conjure again; `shield_boost`: 0–1 push power, a sword contact at ≥ 0.3 is a parry), `projectiles[{id, kind, owner_id, pos, vel}]` |
 | `impact` | server → VR | `projectile_id` (0 for sword contacts), `kind`, `owner_id`, `pos`, `reason` (`hit`/`blocked`/`expired` for fireballs; `blocked`/`parried` for swords), `target_id` (player hit or shielding) |
-| `damage` | server → VR | `target_id`, `source_id`, `amount`, `hp_after`, `kind` (`fireball`/`sword`), `pos` (where the hit landed) |
+| `damage` | server → VR | `target_id`, `source_id`, `amount`, `hp_after`, `kind` (`fireball`/`sword`), `pos` (where the hit landed), `zone` (`head`/`torso`/`arm`/`leg`) |
 | `haptic` | server → one player's classifier | `duration_ms` (1–2000). The hand-sign client forwards it to Kinesis's `POST /haptics`, which buzzes that player's band once. Sent on spell `charging` (40 ms) and `cast` (120 ms) to the caster, and on `damage` to the target (300 ms) and the source (60 ms); durations live in `spellgame/haptics.py` |
 
 Timestamps (`t`) are sender-local and used only for ordering within one stream. Never compare the band's clock, a Mac clock, and the Quest clock directly.
@@ -226,11 +226,15 @@ Timestamps (`t`) are sender-local and used only for ordering within one stream. 
 
 | Gesture | Band | Quest | Server behaviour |
 |---|---|---|---|
-| **Fireball** (implemented) | `snap` | Throw: hand speed ≥ 2.5 m/s, mostly along the body's facing | Snap conjures a held fireball. The throw releases it at the hand with the peak hand velocity's direction (light aim assist), as a projectile hit-tested against a head-to-hips capsule. Held fireballs fizzle after 8 s |
+| **Fireball** (implemented) | `snap` | Throw: hand speed ≥ 2.5 m/s, mostly along the body's facing | Snap conjures a held fireball. The throw releases it at the hand with the peak hand velocity's direction (light aim assist), as a projectile hit-tested against the target's hitboxes (§9.1). Held fireballs fizzle after 8 s |
 | **Sword** | `fist` held | Fist starts near the left hip, then pulls up diagonally | Drawn while the fist is held, gone on release. Blade capsule along the hand; damage scales with tip speed |
 | **Shield** | `open_palm` held | Palm facing away from the player; push impulse = peak push speed | Raised shield blocks; a forceful push gives a short power boost, and a sword contact during the boost is a parry |
 
 Tuning values live in `apps/server/spellgame/game_state.py` (`Tuning`).
+
+### 9.1 Hitboxes
+
+Players are hit-tested per body part, built each tick from their latest pose (`spellgame/hitboxes.py`), the way ragdoll/physics-asset hitboxes work in Source, Unreal and Unity. A sphere for the head, about 8 cm above the `head` joint; a capsule from `chest` to `hips` and one across the shoulders (zone `torso`); capsules for upper arms, forearms and a sphere per hand (`arm`); capsules for thighs and shins (`leg`, estimated by the Quest but still hittable). Radii live in `Tuning.hitboxes`. A fireball (collision radius 0.1 m) or blade hits the part it overlaps most deeply, and `damage.zone` names it. All zones currently take equal damage. Hits are judged against the victim's freshest pose with no rewind: spells are slow and simulated on the server, so rewinding would favour the attacker over a dodge.
 
 **Starting balance (default):** 100 HP; fireball 8 damage, flying at 6–10 m/s so it can be seen, dodged or blocked across a 3–5 m room. That is roughly 13 hits, or about a minute of steady exchange.
 
