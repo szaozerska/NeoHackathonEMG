@@ -24,3 +24,7 @@ contains the original EMG stream and unchanged Spacebar classifications:
 98.03 intended seconds and 108.46 non-intended seconds. The contributor reports
 possible gesture contamination in red; signal-review candidates are separate
 from original labels and are not confirmed corrections or certified negatives.
+
+## Disregarded isolated-component attempt
+
+**Session `20261108-024600-0df8f41b` is DO NOT USE.** Micah used the wrong portal for isolated Animation Gesture component trials and explicitly rejected the entire recording (33.4 intended seconds, 62.0 non-intended seconds). Do not use any portion for training, validation, evaluation, analysis or negative baselines. Approximate thirds are not approved component labels. Only the [disregard notice](dynamic/20261108-024600-0df8f41b/DO_NOT_USE.md) is published; raw data stays local for audit.

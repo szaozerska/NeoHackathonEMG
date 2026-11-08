@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "session_id": "20261108-024600-0df8f41b",
+  "status": "rejected",
+  "do_not_use": true,
+  "excluded_from": [
+    "training",
+    "validation",
+    "evaluation",
+    "analysis",
+    "non_intended_baseline"
+  ],
+  "reason": "Explicit contributor disregard: wrong portal used for isolated Animation Gesture component trials. DO NOT USE ANY PART AS DATA.",
+  "intended_task": "isolated Animation Gesture components: crossing fingers, curling ring/pinky, thumb approach; approximate thirds are not approved labels",
+  "reported_intended_seconds": 33.4,
+  "reported_non_intended_seconds": 62.0,
+  "rejected_at_utc": "2026-11-08T10:49:08.971802+00:00",
+  "raw_data_preserved": true,
+  "original_labels_preserved": true,
+  "original_metadata_sha256": "fced02d4364bf957980a1175e66ea809f0368cc9f9915c0185e3b885481633b5"
+}

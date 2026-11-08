@@ -171,6 +171,7 @@ namespace SpellGame.Editor
             var serializedAligner = new SerializedObject(aligner);
             serializedAligner.FindProperty("gameClient").objectReferenceValue = client;
             serializedAligner.FindProperty("cameraRig").objectReferenceValue = rig;
+            serializedAligner.FindProperty("ringMaterial").objectReferenceValue = UnlitMaterial("CalibrationRing", new Color(0.3f, 0.95f, 1f));
             serializedAligner.ApplyModifiedPropertiesWithoutUndo();
             return aligner;
         }

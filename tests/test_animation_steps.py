@@ -10,7 +10,7 @@ def start_steps(tmp_path):
     tester.animation_root = tmp_path/'animation'
     tester.collection_action('start', {'profile':'micah_emg','test_condition':'animation_steps',
         'animation_condition':'static','wearing_session':'micah-steps-01','focus':'live_intent',
-        'initial_intent':'non_intended','capture_mode':'emg_only'})
+        'initial_intent':'non_intended','capture_mode':'emg_only','phase_reporting':True})
     return tester, clock
 
 
@@ -64,3 +64,21 @@ def test_phase_report_uses_browser_event_time_instead_of_http_receipt(tmp_path):
         'client_t':event_host-50,'alignment':{'host_offset_seconds':50,'uncertainty_seconds':.001}})
     assert marker['capture_t'] == pytest.approx(event_host-tester.capture.start)
     assert marker['browser_clock_alignment']['server_received_host_uptime'] == clock[0]
+
+
+def test_simple_collector_records_action_and_space_without_inventing_internal_phases(tmp_path):
+    tester,predictor,clock=setup(tmp_path);pump(tester,predictor,clock,'none')
+    tester.animation_root=tmp_path/'animation'
+    tester.collection_action('start',{'profile':'micah_emg','test_condition':'animation_steps',
+        'wearing_session':'simple-01','focus':'live_intent','initial_intent':'non_intended','capture_mode':'emg_only'})
+    tester.collection_action('select-motion',{'motion':'animation_sequence'})
+    clock[0]+=1;tester.collection.mark_intent('intended')
+    clock[0]+=3
+    with pytest.raises(ValueError,match='Space only'):tester.collection.mark_animation_phase('thumb_approach')
+    tester.collection.mark_intent('non_intended');directory=tester.capture.directory
+    tester.collection_action('finish',{})
+    assert json.loads((directory/'animation-phase-markers.json').read_text())['markers']==[]
+    truth=json.loads((directory/'truth-values.json').read_text())
+    intended=[v for v in truth['intervals'] if v['intended']]
+    assert len(intended)==1 and intended[0]['end']-intended[0]['start']==pytest.approx(3)
+    assert intended[0]['selected_motion']['motion']=='animation_sequence'

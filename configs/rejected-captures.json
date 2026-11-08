@@ -6,9 +6,17 @@
       "session_id": "20261108-021109-c4c1082d",
       "relative_directory": "Micah contributed data/animation/20261108-021109-c4c1082d",
       "do_not_use": true,
-      "reason": "Explicit contributor rejection: BAD DATA — DO NOT USE BY ANYONE.",
+      "reason": "Explicit contributor rejection: BAD DATA \u2014 DO NOT USE BY ANYONE.",
       "intended_seconds": 0.0,
       "non_intended_seconds": 158.2697090000147
+    },
+    {
+      "session_id": "20261108-024600-0df8f41b",
+      "relative_directory": "Micah contributed data/animation/dynamic/20261108-024600-0df8f41b",
+      "do_not_use": true,
+      "reason": "Explicit contributor disregard: wrong portal used for isolated Animation Gesture component trials. DO NOT USE ANY PART AS DATA.",
+      "intended_seconds": 33.4,
+      "non_intended_seconds": 62.0
     }
   ]
 }

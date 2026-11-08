@@ -5,6 +5,30 @@ import pytest
 from test_live_test import setup,pump
 
 
+@pytest.mark.parametrize('with_gyro',[False,True])
+def test_optional_gyro_report_never_requires_motion_data_or_changes_emg_labels(tmp_path,with_gyro):
+    tester,predictor,clock=setup(tmp_path);pump(tester,predictor,clock,'none')
+    tester.contribution_root=tmp_path/'captures'
+    tester.collection_action('start',{'profile':'micah_emg','wearing_session':'optional-gyro',
+        'focus':'live_intent','initial_intent':'non_intended','capture_mode':'emg_only'})
+    if with_gyro:
+        for i,xyz in enumerate(([1,2,3],[-1,4,2])):
+            clock[0]+=.01
+            tester.band_event('gyro',{'schema_version':1,'type':'gyro','host_time_s':clock[0],
+                'band_timestamp_us':1000000+i*10000,'payload':{'values':xyz}})
+    directory=tester.capture.directory;tester.collection_action('finish',{})
+    report=json.loads((directory/'gyro-report.json').read_text())
+    assert report['available'] is with_gyro and report['required_for_collection'] is False
+    assert report['used_for_classification'] is False
+    assert report['samples']==(2 if with_gyro else 0)
+    if with_gyro:
+        assert report['min_xyz']==[-1,2,2] and report['max_xyz']==[1,4,3]
+        assert report['measured_native_hz']==pytest.approx(100)
+    else:assert report['measured_native_hz'] is None
+    manifest=json.loads((directory/'guided-manifest.json').read_text())
+    assert 'gyro-report.json' in manifest['source_hashes']
+
+
 def motion_context(tester,clock):
     tester.band_event('status',{'schema_version':1,'type':'status','host_time_s':clock[0],
         'payload':{'hand':'right','band_connection_id':'test-band'}})

@@ -35,7 +35,7 @@ participant-reported beginning/end; it does not establish the exact crossing or
 thumb-tap time. No fixed onset trimming is applied to this collection, and
 substep labels are not invented from signal change points.
 
-1. Click **Start EMG-only session** (or full sensor session when available).
+1. Click **Start session**.
    Animation Gesture is selected automatically. Recording begins in red,
    non-intended mode.
 2. Hold **Space** and maintain the new gesture for roughly 30 seconds. Green

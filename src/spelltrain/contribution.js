@@ -20,18 +20,16 @@
   if(animationMode&&active&&live.collection_test_condition)$('animationCondition').value=live.collection_test_condition;
   $('signal').dataset.live=String(!!live.connected);$('signal').textContent=live.connected?'EMG connected · 8 channels · 2,048 Hz nominal':'Waiting for fresh EMG from Kinesis';
   $('setup').hidden=active;$('recording').hidden=!active;
-  $('start').disabled=busy||!live.connected||!!live.recording?.active;$('start').textContent=motionReady?'Start full sensor session':'Start EMG-only session';$('connect').disabled=busy||!!live.recording?.active;
+  $('start').disabled=busy||!live.connected||!!live.recording?.active;$('start').textContent='Start session';$('connect').disabled=busy||!!live.recording?.active;
   $('stop').disabled=busy||pending>0||spaceHeld;
   $('intent').className=intended?'intended':'';$('intentTitle').textContent=intended?'Intended · GREEN':'Non-intended · RED';
   $('intentInstruction').textContent=animationMode?(intended?(dynamicAnimation()?'Cross your fingers, then tap thumb to pinky. Maintain the gesture while moving and rotating your arm naturally.':'Maintain Animation Gesture. Release Space when finished.'):(dynamicAnimation()?'Move and rotate your arm without the gesture. Hold Space at your first finger interaction.':'Rest normally. Hold Space when ready for Animation Gesture.')):(intended?(staticMode?'Keep your arm still and maintain the selected hold. Release when finished.':'Perform the selected motion while holding Space. Release when finished.'):(staticMode?'Rest with your arm still. Select Shield or Sword effort before holding Space.':'Rest or move naturally. Hold Space when ready for the selected action.'));
   if($('animationModeHint'))$('animationModeHint').textContent=dynamicAnimation()?'Dynamic: press Space at the first finger movement, cross the fingers, then tap thumb to pinky. Keep the entire sequence green. Move your arm and rotate through varied angles; release after undoing the gesture. In red, repeat arm/rotation movements without forming the gesture.':'Static: hold your arm comfortably steady. Press Space at the first finger interaction and keep the complete sequence green.';
   if(stepsMode){
-   $('phaseStatus').textContent='Reported phase: '+(live.collection?.animation_phase?.phase?.replaceAll('_',' ')||'none')+' · '+(live.collection?.animation_phase_reports||0)+' phase reports saved';
-   const instructions={animation_cross_fingers:'Start with fingers relaxed. Cross only the two fingers, pause, then undo. Do not add the curl or thumb movement.',animation_curl_ring_pinky:'Prepare with the two fingers crossed before pressing Space. Then curl only ring and pinky down, pause, then undo that curl.',animation_thumb_approach:'Prepare with fingers crossed and ring/pinky curled before Space. Then move only the thumb toward them, pause, then undo the thumb movement.',animation_sequence:'Space starts crossing. Press 2 at ring/pinky curl onset, 3 at thumb movement onset, and 4 when the final pose is held. Undo the gesture before releasing Space.'};
-   $('stepInstruction').textContent=instructions[motion?.motion]||'Choose one of the four action buttons. Record each component several times, then the combined sequence.';
-   $('intentInstruction').textContent=intended?'Perform the selected action. Report step changes with your other hand.':'Non-intended: prepare the indicated starting pose; do not perform the selected action yet.';
-   $('animationModeHint').textContent='Keep preparation context in red, then press Space at the selected action onset. Labels are participant reports. '+(dynamicAnimation()?'Dynamic condition: add natural arm movement and rotation.':'Static condition: keep your arm comfortably steady.');
-   for(const b of document.querySelectorAll('[data-phase]'))b.disabled=!active||!intended||busy||pending>0||(motion?.motion!=='animation_sequence'&&b.dataset.phase!=='hold');
+   const instructions={animation_cross_fingers:'Cross your fingers, then bring them back out.',animation_curl_ring_pinky:'Bring the last two fingers down, then bring them back out.',animation_thumb_approach:'Bring your thumb down, then bring it back out.',animation_sequence:'Perform each process in order: cross fingers, last two fingers down, thumb down. Then bring them back out.'};
+   $('stepInstruction').textContent=instructions[motion?.motion]||'Choose one of the four actions, then hold Space while doing and undoing it.';
+   $('intentInstruction').textContent=intended?'Make the motion, bring your fingers back out, then release Space.':'Choose an action. Hold Space when you start; release when finished.';
+   $('animationModeHint').textContent=dynamicAnimation()?'Dynamic: move and rotate your arm naturally during your trials.':'Static: keep your arm comfortably steady during your trials.';
   }
   if($('holdElapsed')){const seconds=holdStarted===null?lastHoldSeconds:performance.now()/1000-holdStarted;$('holdElapsed').textContent=seconds.toFixed(1)+(stepsMode?' seconds':' / 30 seconds'+(seconds>=30?' · target reached; release when ready':''));}
   for(const button of document.querySelectorAll('[data-motion]')){
@@ -39,7 +37,7 @@
    button.setAttribute('aria-pressed',String(chosen));button.style.background=chosen?'#365b7f':'';
    button.disabled=busy||pending>0||spaceHeld||intended;
   }
-  $('selectedMotion').textContent=stepsMode?(motion?'Selected: '+motion.motion.replaceAll('_',' '):'Choose an isolated component or the full sequence.'):animationMode?'Animation Gesture · selected automatically':motion?'Next motion: '+motion.motion.replace('_',' ')+(motion.effort?' · '+motion.effort+' relative effort':''):staticMode?'Select a Shield/Sword effort before holding Space.':'Select a motion before holding Space.';
+  $('selectedMotion').textContent=stepsMode?(motion?'Selected: '+({animation_cross_fingers:'Cross fingers',animation_curl_ring_pinky:'Last two fingers down',animation_thumb_approach:'Thumb down',animation_sequence:'Each process'}[motion.motion]||motion.motion.replaceAll('_',' ')):'Choose one of the four actions.'):animationMode?'Animation Gesture · selected automatically':motion?'Next motion: '+motion.motion.replace('_',' ')+(motion.effort?' · '+motion.effort+' relative effort':''):staticMode?'Select a Shield/Sword effort before holding Space.':'Select a motion before holding Space.';
   if(active){
    $('guardState').textContent=!live.connected?'No fresh EMG · missing data is flagged separately.':intended?'Intended active now · cleanup deferred':'Non-intended baseline active · cleanup deferred';
    $('elapsed').textContent=live.recording.duration.toFixed(1)+' seconds recorded';$('markers').textContent=Math.max(0,live.collection.annotation.markers-1)+' key boundaries';$('path').textContent='Saving locally: '+live.recording.path;
@@ -54,7 +52,7 @@
   finally{polling=false}
  }
  async function work(action){if(busy||pending)return;busy=true;$('error').textContent='';render();try{await action()}catch(error){$('error').textContent=error.message}finally{busy=false;await refresh();render()}}
- $('start').onclick=()=>work(async()=>{if(dynamicAnimation()&&!('collection_test_condition' in live))throw Error('Open the updated dynamic collector at http://127.0.0.1:8805/animation?mode=dynamic');await sync();await api('collection/start',{profile:'micah_emg',test_condition:stepsMode?'animation_steps':animationMode?'animation':staticMode?'static':'dynamic',animation_condition:animationMode?$('animationCondition').value:undefined,wearing_session:$('wearing').value.trim(),role:$('role').value,focus:'live_intent',initial_intent:'non_intended',interaction_guard:0,capture_mode:live.band_context?.gyro?.age_seconds<1.5&&live.band_context?.orientation?.age_seconds<1.5&&live.sensor_timing?.forearm&&live.sensor_timing?.delivered_sensor_hz?.gyro&&live.sensor_timing?.delivered_sensor_hz?.orientation?'full_context':'emg_only',clock_alignment:alignment});$('saved').textContent='';lastHoldSeconds=0;holdStarted=null;$('start').blur();});
+ $('start').onclick=()=>work(async()=>{if(dynamicAnimation()&&!('collection_test_condition' in live))throw Error('Open the updated dynamic collector at http://127.0.0.1:8805/animation?mode=dynamic');await sync();await api('collection/start',{profile:'micah_emg',test_condition:stepsMode?'animation_steps':animationMode?'animation':staticMode?'static':'dynamic',animation_condition:animationMode?$('animationCondition').value:undefined,wearing_session:$('wearing').value.trim(),role:$('role').value,focus:'live_intent',initial_intent:'non_intended',interaction_guard:0,capture_mode:'emg_only',clock_alignment:alignment});$('saved').textContent='';lastHoldSeconds=0;holdStarted=null;$('start').blur();});
  for(const button of document.querySelectorAll('[data-motion]'))button.onclick=()=>work(async()=>{await api('collection/select-motion',{motion:button.dataset.motion,effort:button.dataset.effort||null});button.blur();});
  function mark(label,client_t){
   if(!ownSession()||!alignment)return;
@@ -64,28 +62,11 @@
    .finally(()=>{pending--;render();if(!pending)refresh();});
   return queue;
  }
- function phaseMark(phase,client_t){
-  if(!ownSession()||!alignment||!spaceHeld)return;
-  const eventAlignment={...alignment};pending++;render();
-  queue=queue.then(()=>api('collection/animation-phase',{phase,client_t,alignment:eventAlignment}))
-   .catch(error=>{$('error').textContent=error.message;})
-   .finally(()=>{pending--;render();if(!pending)refresh();});
- }
- for(const button of document.querySelectorAll('[data-phase]'))button.onclick=()=>{
-  const phase=button.dataset.phase==='hold'?(live.collection?.selected_motion?.motion==='animation_sequence'?'combined_hold':'component_hold'):button.dataset.phase;
-  phaseMark(phase,performance.now()/1000);button.blur();
- };
  $('stop').onclick=()=>work(async()=>{const result=await api('collection/finish');$('saved').textContent='Saved '+result.report.intended_seconds.toFixed(1)+' intended seconds and '+result.report.non_intended_seconds.toFixed(1)+' non-intended seconds to '+result.recording.path+'. Labels: truth-values.json. All reported intervals are retained for later post-processing.';$('stop').blur();spaceHeld=false;});
  $('connect').onclick=()=>work(async()=>{await api('source/stream',{url:$('streamUrl').value.trim()});$('streamUrl').value='';});
  async function interaction(kind){if(!ownSession()||!alignment)return;try{await api('collection/interaction',{kind,client_t:performance.now()/1000,alignment})}catch{}}
  document.addEventListener('keydown',event=>{
   if(event.target.closest('input,textarea,select,[contenteditable="true"]'))return;
-  if(stepsMode&&ownSession()&&spaceHeld&&['Digit2','Digit3','Digit4'].includes(event.code)){
-   event.preventDefault();event.stopPropagation();if(event.repeat)return;
-   const combined=live.collection.selected_motion?.motion==='animation_sequence';
-   const phase=event.code==='Digit4'?(combined?'combined_hold':'component_hold'):event.code==='Digit2'?'curl_ring_pinky':'thumb_approach';
-   phaseMark(phase,performance.now()/1000);return;
-  }
   if(event.code==='Space'&&ownSession()){
    event.preventDefault();event.stopPropagation();if(event.repeat||spaceHeld||busy)return;
    if(!live.collection.selected_motion){$('error').textContent='Select an action before holding Space.';return;}

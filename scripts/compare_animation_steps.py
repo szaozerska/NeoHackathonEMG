@@ -17,6 +17,11 @@ def compare(source, output):
     if not meta.get('recording_complete') or meta.get('collection_variant')!='animation_steps':
         raise ValueError('Use a completed Animation Gesture step-mapping recording.')
     labels=json.loads((source/'animation-phase-intervals.json').read_text())['intervals']
+    if meta.get('phase_reporting_enabled') is False:
+        phases={'animation_cross_fingers':'cross_fingers','animation_curl_ring_pinky':'curl_ring_pinky',
+                'animation_thumb_approach':'thumb_approach','animation_sequence':'full_sequence_unsegmented'}
+        labels=[{**v,'phase':phases[v['selected_motion']['motion']]} for v in
+            json.loads((source/'truth-values.json').read_text())['intervals'] if v['intended']]
     markers=json.loads((source/'animation-phase-markers.json').read_text())['markers']
     t,r,segments,timing=load_envelopes(source)
     rows=[]
@@ -55,6 +60,7 @@ def compare(source, output):
         'limitations':['Component starts and transitions are participant reports, not sensor-verified onsets.',
             'An isolated movement without a separately reported hold may mix movement and steady-pose EMG.',
             'Prepared starting poses differ by step; red preparation is not certified relaxed/clean negative truth.',
+            'Action-and-Space-only recordings have no internal combined-sequence phase labels; those comparisons remain unavailable.',
             'Channel similarity is not detection accuracy or evidence of intention; no model is deployed.',
             'Three envelope samples is an analysis availability rule, not a valid event-duration threshold.']})
     import matplotlib
