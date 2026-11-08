@@ -23,6 +23,7 @@ namespace SpellGame.Game
     {
         [SerializeField] private GameClient gameClient;
         [SerializeField] private OVRCameraRig cameraRig;
+        [SerializeField] private SharedSpaceAligner spaceAligner;
         [Tooltip("Unlit material the panel materials are copied from (only its colour is changed).")]
         [SerializeField] private Material baseMaterial;
 
@@ -134,6 +135,8 @@ namespace SpellGame.Game
 
         private void Awake()
         {
+            if (spaceAligner == null)
+                spaceAligner = FindAnyObjectByType<SharedSpaceAligner>();
             _panelMaterial = Tinted(PanelColor);
             _audio = gameObject.AddComponent<AudioSource>();
             _audio.playOnAwake = false;
@@ -289,11 +292,14 @@ namespace SpellGame.Game
             return view switch
             {
                 View.Connection => $"connection|{gameClient.Connection}|{gameClient.ServerEndpoint}",
-                View.Ready => $"ready|{Me}|{_match.Mode}|{_match.DurationS}|{string.Join(",", _match.Fighters)}|{string.Join(",", _match.Ready)}",
+                View.Ready => $"ready|{Me}|{_match.Mode}|{_match.DurationS}|{string.Join(",", _match.Fighters)}|{string.Join(",", _match.Ready)}|{string.Join(",", AlignedFighters())}",
                 View.Results => $"results|{IsFighter}",
                 _ => view.ToString(),
             };
         }
+
+        private IEnumerable<string> AlignedFighters() =>
+            _match.Fighters.Where(f => _state?.Players.Any(p => p.PlayerId == f && p.Aligned) == true);
 
         private Panel BuildPanel(View view, string key)
         {
@@ -370,8 +376,11 @@ namespace SpellGame.Game
             foreach (var fighter in _match.Fighters)
             {
                 var name = fighter == Me ? $"{fighter} (you)" : fighter == _match.AiId ? "AI mage" : fighter;
-                lines.Add($"{name}:  {(_match.Ready.Contains(fighter) ? "READY" : "not ready")}");
+                var aligned = _match.Mode != MatchMode.Versus || AlignedFighters().Contains(fighter);
+                lines.Add($"{name}:  {(_match.Ready.Contains(fighter) ? "READY" : "not ready")}{(aligned ? "" : "  ·  not in the room frame")}");
             }
+            if (_match.Mode == MatchMode.Versus)
+                lines.Add("Stand on your spot facing the other player,\nthen press I'm ready.");
             if (_match.Mode == MatchMode.Versus && _match.Fighters.Count < 2)
                 lines.Add("Waiting for a second headset to join…");
             if (!IsFighter && _match.Fighters.Count > 0)
@@ -383,7 +392,12 @@ namespace SpellGame.Game
                 var ready = _match.Ready.Contains(Me);
                 buttons.Add(ready
                     ? ("Not ready", ButtonColor, () => gameClient.Send(new ReadyMessage { Ready = false }))
-                    : ("I'm ready!", PrimaryColor, () => gameClient.Send(new ReadyMessage { Ready = true })));
+                    : ("I'm ready!", PrimaryColor, () =>
+                    {
+                        if (_match.Mode == MatchMode.Versus && spaceAligner != null)
+                            spaceAligner.AlignToFloorSpotIfUnaligned();
+                        gameClient.Send(new ReadyMessage { Ready = true });
+                    }));
             }
             buttons.Add(("How to cast", ButtonColor, () => ShowControls(View.Ready)));
             buttons.Add(("Back to menu", ButtonColor, () => gameClient.Send(new MatchQuitMessage())));

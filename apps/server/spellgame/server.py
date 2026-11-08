@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import itertools
 import logging
 import socket
 import time
@@ -65,10 +66,13 @@ class ClientConnection:
 class PlayerSlot:
     player_id: str
     join_order: int
+    """The number in the player ID (P1 → 1): orders pairing prompts and picks the floor spot."""
     vr: ClientConnection | None = None
     classifier: ClientConnection | None = None
     input: PlayerInput = field(default_factory=PlayerInput)
     pose_dirty: bool = False
+    device_id: str | None = None
+    """`DeviceInfo.id` of the headset that last held this slot, so a relaunched app gets its old ID back."""
 
 
 class GameServer:
@@ -97,7 +101,6 @@ class GameServer:
         """The player told to pinch while pairing mode (§5) runs; None outside pairing mode."""
         self._server: asyncio.Server | None = None
         self._tasks: list[asyncio.Task[None]] = []
-        self._joins = 0
 
     async def start(self) -> None:
         self._server = await asyncio.start_server(self._handle_client, self.host, self.port)
@@ -163,11 +166,10 @@ class GameServer:
 
     def _join_vr(self, conn: ClientConnection, requested_id: str | None) -> None:
         slot = self.players.get(requested_id) if requested_id else None
-        if slot is None or slot.vr is not None:
-            self._joins += 1
-            slot = PlayerSlot(player_id=f"P{self._joins}", join_order=self._joins)
-            self.players[slot.player_id] = slot
-            self.game.add_player(slot.player_id)
+        if slot is not None and slot.vr is not None:
+            slot = None
+        slot = slot or self._slot_of_device(conn) or self._free_slot() or self._new_slot()
+        slot.device_id = conn.device.id if conn.device else None
         slot.vr = conn
         slot.input.connected = True
         conn.player_id = slot.player_id
@@ -176,6 +178,37 @@ class GameServer:
         if slot.classifier is not None:
             conn.send(p.Paired(player_id=slot.player_id))
         self._announce_space()
+
+    def _slot_of_device(self, conn: ClientConnection) -> PlayerSlot | None:
+        """The same headset relaunching its app: it takes its old slot back, dropping a connection left over from the
+        previous launch (a dead link can stay open for minutes) and that launch's controller band."""
+        device_id = conn.device.id if conn.device else None
+        slot = next((s for s in self.players.values() if device_id and s.device_id == device_id), None)
+        if slot is None or slot.vr is None:
+            return slot
+        stale = slot.vr
+        log.info("%s relaunched on the same headset; dropping its old connection %s", slot.player_id, stale.peer)
+        self._drop(stale)
+        if slot.classifier is not None and _host(slot.classifier.peer) == _host(stale.peer):
+            self._drop(slot.classifier)
+        return slot
+
+    def _free_slot(self) -> PlayerSlot | None:
+        """The lowest-numbered player nobody uses any more (no headset, no band), so IDs don't climb with restarts."""
+        free = [s for s in self.players.values() if s.vr is None and s.classifier is None]
+        return min(free, key=lambda s: s.join_order, default=None)
+
+    def _new_slot(self) -> PlayerSlot:
+        number = next(n for n in itertools.count(1) if f"P{n}" not in self.players)
+        slot = PlayerSlot(player_id=f"P{number}", join_order=number)
+        self.players[slot.player_id] = slot
+        self.game.add_player(slot.player_id)
+        return slot
+
+    def _drop(self, conn: ClientConnection) -> None:
+        self._leave(conn)
+        conn.player_id = None
+        conn.writer.close()
 
     def _join_classifier(self, conn: ClientConnection, requested_id: str | None) -> None:
         conn.send(p.Welcome(player_id=None))
@@ -304,8 +337,8 @@ class GameServer:
         self.space.choose_host([slot.player_id for slot in headsets])
         if self.space.host_id != previous_host and self.space.host_id is not None:
             log.info("%s hosts the shared anchor", self.space.host_id)
-        for slot in headsets:
-            slot.vr.send(self.space.message_for(slot.join_order))  # type: ignore[union-attr]
+        for seat, slot in enumerate(headsets, start=1):
+            slot.vr.send(self.space.message_for(seat))  # type: ignore[union-attr]
 
     def _on_anchor_shared(self, conn: ClientConnection, slot: PlayerSlot, message: p.AnchorShared) -> None:
         if not self.space.share_anchor(slot.player_id, message.anchor_uuid):
@@ -371,7 +404,7 @@ class GameServer:
     def _step_match(self) -> None:
         headsets = [slot.player_id for slot in sorted(self.players.values(), key=lambda s: s.join_order) if slot.vr]
         before = self.match.phase
-        self.match.step(self.game, headsets, self.dt)
+        self.match.step(self.game, headsets, self.dt, set(self.space.aligned))
         after = self.match.phase
         if after == before:
             return
@@ -400,3 +433,7 @@ class GameServer:
         for slot in self.players.values():
             if slot.vr is not None:
                 slot.vr.send_line(payload)
+
+
+def _host(peer: object) -> object:
+    return peer[0] if isinstance(peer, tuple) else peer

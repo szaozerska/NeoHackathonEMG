@@ -31,12 +31,12 @@ namespace SpellGame.Editor
             var client = CreateGameClient(bodySkeleton, debugSkeletons);
             CreateControllerBand(client);
             CreatePairingButton(client);
-            CreateSharedSpaceAligner(client, rig);
+            var aligner = CreateSharedSpaceAligner(client, rig);
             CreateFireballView(client);
             CreateSwordView(client);
             CreateShieldView(client);
             CreateHealthView(client, trackingSpace.Find("CenterEyeAnchor"));
-            CreateMatchMenu(client, rig);
+            CreateMatchMenu(client, rig, aligner);
             CreateEndGameView(client, rig);
             CreateAiAvatarView(client);
             CreateSpellAudio(client);
@@ -122,13 +122,14 @@ namespace SpellGame.Editor
             serializedButton.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        private static void CreateSharedSpaceAligner(GameClient client, OVRCameraRig rig)
+        private static SharedSpaceAligner CreateSharedSpaceAligner(GameClient client, OVRCameraRig rig)
         {
             var aligner = client.gameObject.AddComponent<SharedSpaceAligner>();
             var serializedAligner = new SerializedObject(aligner);
             serializedAligner.FindProperty("gameClient").objectReferenceValue = client;
             serializedAligner.FindProperty("cameraRig").objectReferenceValue = rig;
             serializedAligner.ApplyModifiedPropertiesWithoutUndo();
+            return aligner;
         }
 
         private const string FireballFolder = "Assets/SpellGame/Fireball";
@@ -262,11 +263,12 @@ namespace SpellGame.Editor
             serializedView.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        private static void CreateMatchMenu(GameClient client, OVRCameraRig rig)
+        private static void CreateMatchMenu(GameClient client, OVRCameraRig rig, SharedSpaceAligner aligner)
         {
             var menu = new GameObject("Match Menu").AddComponent<MatchMenu>();
             var serializedMenu = new SerializedObject(menu);
             serializedMenu.FindProperty("gameClient").objectReferenceValue = client;
+            serializedMenu.FindProperty("spaceAligner").objectReferenceValue = aligner;
             serializedMenu.FindProperty("cameraRig").objectReferenceValue = rig;
             serializedMenu.FindProperty("baseMaterial").objectReferenceValue = UnlitMaterial("DebugSkeleton", new Color(0.2f, 1f, 0.4f));
             serializedMenu.ApplyModifiedPropertiesWithoutUndo();

@@ -36,7 +36,8 @@ class Tuning:
     """Damage per m/s of fireball speed, so the slowest throw (2.5 m/s) deals 5 and a 6 m/s throw deals 12."""
     fireball_radius: float = 0.1
     """Collision radius; the drawn orb may be larger."""
-    fireball_lifetime_s: float = 4.0
+    fireball_max_range_m: float = 8.0
+    """A fireball that hits nothing fizzles after flying this far."""
     fireball_hold_timeout_s: float = 8.0
     fireball_cooldown_s: float = 0.75
     fireball_inertia_s: float = 0.15
@@ -198,6 +199,7 @@ class Projectile:
     pos: np.ndarray
     vel: np.ndarray
     born: float
+    traveled: float = 0.0
 
 
 @dataclass
@@ -362,7 +364,13 @@ class GameState:
         events: list[p.Message] = []
         remaining: list[Projectile] = []
         for projectile in self.projectiles:
-            start, end = projectile.pos, projectile.pos + projectile.vel * dt
+            step = projectile.vel * dt
+            step_length = float(np.linalg.norm(step))
+            range_left = tuning.fireball_max_range_m - projectile.traveled
+            out_of_range = step_length >= range_left
+            if out_of_range and step_length > 0.0:
+                step = step * (range_left / step_length)
+            start, end = projectile.pos, projectile.pos + step
             blocked = self._shield_contact(projectile.owner_id, start, end, tuning.fireball_radius, projectile.vel)
             hit = self._first_hit(projectile, start, end) if blocked is None else None
             if blocked is not None:
@@ -375,10 +383,11 @@ class GameState:
                 damage = self._fireball_damage(projectile)
                 events.append(self._damage(target, projectile.owner_id, damage, Item.FIREBALL, body.pos, body.zone))
                 events.append(self._impact(projectile, body.pos, "hit", target.player_id))
-            elif self.time - projectile.born >= tuning.fireball_lifetime_s:
+            elif out_of_range:
                 events.append(self._impact(projectile, end, "expired", None))
             else:
                 projectile.pos = end
+                projectile.traveled += step_length
                 remaining.append(projectile)
         self.projectiles = remaining
         return events

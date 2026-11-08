@@ -96,10 +96,14 @@ class Match:
         self.ready.clear()
         self.phase = Phase.READY
 
-    def step(self, game: GameState, headsets: list[str], dt: float) -> None:
-        """Advance after `game.step`. `headsets`: connected headset player IDs in join order."""
+    def step(self, game: GameState, headsets: list[str], dt: float, aligned: set[str] | None = None) -> None:
+        """Advance after `game.step`. `headsets`: connected headset player IDs in join order.
+
+        `aligned`: headsets in the shared room frame (§5.1). A versus countdown waits for both fighters to be in it,
+        otherwise each headset judges and draws the other in a different frame. None skips the check.
+        """
         if self.phase == Phase.READY:
-            self._step_ready(game, headsets)
+            self._step_ready(game, headsets, aligned)
         elif self.in_progress and any(f not in headsets and f != self.ai_id for f in self.fighters):
             remaining = [f for f in self.fighters if f in headsets or f == self.ai_id]
             self._end(remaining[0] if len(remaining) == 1 else None, p.MatchEndReason.DISCONNECT)
@@ -131,7 +135,7 @@ class Match:
             ai_id=self.ai_id,
         )
 
-    def _step_ready(self, game: GameState, headsets: list[str]) -> None:
+    def _step_ready(self, game: GameState, headsets: list[str], aligned: set[str] | None) -> None:
         if self.mode == p.MatchMode.SOLO:
             if self.owner not in headsets:
                 self._to_lobby()
@@ -140,6 +144,9 @@ class Match:
             self.ready.add(p.AI_PLAYER_ID)
         else:
             self.fighters = headsets[:2]
+            if aligned is not None and not aligned >= set(self.fighters):
+                self.ready &= set(self.fighters)
+                return
         self.ready &= set(self.fighters)
         if len(self.fighters) == 2 and self.ready >= set(self.fighters):
             self._start_countdown(game)
