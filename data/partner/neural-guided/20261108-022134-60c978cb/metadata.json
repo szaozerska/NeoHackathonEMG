@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "kind": "neural_emg_guided",
+  "id": "20261108-022134-60c978cb",
+  "started_host_uptime": 84129.410751041,
+  "created_utc": "2026-11-08T10:21:34Z",
+  "model": {
+    "signal": {
+      "sample_rate": 2048,
+      "channels": 8,
+      "state_window": 410,
+      "state_hop": 102,
+      "snap_window": 256,
+      "snap_hop": 32,
+      "notch": true,
+      "noise_threshold": 3.0,
+      "warmup_samples": 512
+    },
+    "model_version": "guided-collection-no-model"
+  },
+  "recording_complete": true,
+  "online_learning": false,
+  "dataset_role": "training_only_weak_labels",
+  "label_policy": "Predictions are observations, not training labels. Corrections are participant reports requiring review.",
+  "time_basis": "capture_t is host monotonic seconds relative to Record; sensor timestamps/sequence remain original",
+  "pre_roll_seconds": 2.0,
+  "wearing_session": "ken-wearing-01",
+  "band_source": "kinesis_live_stream",
+  "supervision": "participant_confirmed_clip_labels_no_event_timestamps",
+  "audio_reference": {
+    "file": "audio.wav",
+    "timing_file": "audio-timing.jsonl",
+    "sample_rate": 48000,
+    "channels": 1,
+    "sample_format": "int16",
+    "device": "MacBook Pro Microphone",
+    "frames": 15312960,
+    "input_overflow_blocks": 0,
+    "role": "label_timing_reference_only_never_model_input",
+    "time_basis": "block first sample capture_t = callback_capture_t - (stream_current_time - adc_time)"
+  },
+  "stopped_host_uptime": 84448.668085333,
+  "duration_seconds": 319.2573342920077,
+  "stop_reason": "user_stop",
+  "counts": {
+    "emg": 40856
+  },
+  "correction_count": 0,
+  "sequence_discontinuities": 4,
+  "last_emg_capture_t": 319.2471315419971
+}

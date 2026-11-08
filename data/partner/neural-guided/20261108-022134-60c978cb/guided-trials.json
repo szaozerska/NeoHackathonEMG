@@ -1,0 +1,14 @@
+[
+  {
+    "id": "none-001",
+    "kind": "none",
+    "instruction": "Keep the hand relaxed; do not hold a fist or shield",
+    "intended_count": 0,
+    "start": 7.703146833999199,
+    "end": 307.7069374999992,
+    "confirmed": true,
+    "reported_count": null,
+    "label_source": "participant_confirmation",
+    "exact_event_times_verified": false
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "wearing_session": "ken-wearing-01",
+  "supervision": "weak_clip_labels",
+  "source_hashes": {
+    "streams.jsonl": "ecbc0d3101983eb123090028ddca7d3f23afb7f45210c4e3eb18ecd75bfc7dea",
+    "metadata.json": "ff6805b366cffbb5945316dec6c647bd11b7922e332301fca0c0e8efc379a2f7",
+    "guided-trials.json": "01392e61f65c0d59beec20a4c5090e9caf8d0acfa8c96fc85c0557ef73f71264",
+    "audio.wav": "4afbc447974d1660a0eba1dc1c6854c36ab11ebfdd3e3f60b5b7dde09ebef45b",
+    "audio-timing.jsonl": "7be64ed0ca08df67916bca6873b36e78ded08a85b17d089da0a5da147f332d3a"
+  }
+}
