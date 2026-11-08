@@ -4,6 +4,7 @@
     "references": [
         "SpellGame.Runtime",
         "Oculus.VR",
+        "meta.xr.mrutilitykit",
         "Oculus.VR.Editor",
         "Unity.XR.Management",
         "Unity.XR.Management.Editor",

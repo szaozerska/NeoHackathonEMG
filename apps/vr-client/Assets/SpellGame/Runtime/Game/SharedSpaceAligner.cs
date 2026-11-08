@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Meta.XR.MRUtilityKit;
 using SpellGame.Protocol;
 using UnityEngine;
 
@@ -10,7 +11,10 @@ namespace SpellGame.Game
     /// Moves this headset's tracking space into the shared room frame (architecture.md §5.1), so every pose it streams
     /// and every spell it draws uses the same origin as the other headset.
     /// <list type="bullet">
-    /// <item>Default, center calibration: both players meet in the middle facing each other, touch right controller
+    /// <item>Default, floor marker: a printed QR code (<see cref="markerPayload"/>) lies flat in the middle of the room
+    /// with its top pointing towards P2's side. Once this headset has tracked it for <see cref="markerLockSeconds"/>,
+    /// its center becomes the origin and its top +z. Nothing to press.</item>
+    /// <item>Fallback where QR tracking is unavailable, center calibration: both players meet in the middle facing each other, touch right controller
     /// tips together (each pointing at the other) and click the left thumbstick. The tip, on the floor, becomes the
     /// origin and the controller's pointing direction becomes this player's <c>spot_yaw</c>. No internet or measuring.</item>
     /// <item>With <see cref="useSharedAnchors"/>, host: creates an <see cref="OVRSpatialAnchor"/> at the frame's origin, saves it, shares it to the server's
@@ -26,6 +30,15 @@ namespace SpellGame.Game
 
         [Tooltip("Also align through Meta Shared Spatial Anchors (needs internet). Center calibration always works.")]
         [SerializeField] private bool useSharedAnchors;
+
+        [Tooltip("Text encoded in the floor marker's QR code (docs/center-marker.png); empty accepts any QR code.")]
+        [SerializeField] private string markerPayload = "SPELLGAME-CENTER";
+
+        [Tooltip("Seconds the marker must stay tracked; its pose is averaged over that time.")]
+        [SerializeField] private float markerLockSeconds = 1.5f;
+
+        [Tooltip("Degrees added to the marker's direction, should its top not point the way the printed arrow does.")]
+        [SerializeField] private float markerYawOffset;
 
         [Tooltip("Metres from the controller anchor forward to the tip that touches the other player's.")]
         [SerializeField] private float tipOffset = 0.06f;
@@ -45,18 +58,83 @@ namespace SpellGame.Game
         private string _alignedTo;
         private bool _busy;
         private bool _calibrating;
+        private MRUKTrackable _marker;
+        private float _markerSeenFor;
+        private Vector3 _markerPositionSum;
+        private Vector3 _markerForwardSum;
+        private int _markerSamples;
 
-        private const string CalibratePrompt =
+        private const string TouchPrompt =
             "Calibrate: meet in the middle, touch right controller tips, click the left stick";
+        private const string MarkerPrompt = "Calibrate: look down at the marker in the middle of the room";
+
+        /// <summary>Whether this headset can calibrate on the floor marker (else players touch controller tips).</summary>
+        public bool MarkerAvailable =>
+            MRUK.Instance != null && MRUK.Instance.QRCodeTrackingSupported && HasScenePermission();
+
+        private string CalibratePrompt => MarkerAvailable ? MarkerPrompt : TouchPrompt;
 
         private void OnEnable() => gameClient.SpaceReceived += OnSpace;
 
         private void OnDisable() => gameClient.SpaceReceived -= OnSpace;
 
         // OVRManager.display is created in OVRManager.Awake, so subscribe once every Awake has run.
-        private void Start() => OVRManager.display.RecenteredPose += OnRecentered;
+        private void Start()
+        {
+            OVRManager.display.RecenteredPose += OnRecentered;
+            StartMarkerTracking();
+        }
 
-        private void OnDestroy() => OVRManager.display.RecenteredPose -= OnRecentered;
+        private void OnDestroy()
+        {
+            OVRManager.display.RecenteredPose -= OnRecentered;
+            if (MRUK.Instance != null)
+                MRUK.Instance.SceneSettings.TrackableAdded.RemoveListener(OnTrackableAdded);
+        }
+
+        /// <summary>QR codes are tracked through MRUK, which needs the spatial data (scene) permission.</summary>
+        private void StartMarkerTracking()
+        {
+            var mruk = MRUK.Instance;
+            if (mruk == null)
+            {
+                Debug.LogWarning("[SpellGame] No MRUK in the scene: floor marker calibration is off");
+                return;
+            }
+
+            mruk.EnableWorldLock = false;
+            var trackers = mruk.SceneSettings.TrackerConfiguration;
+            trackers.QRCodeTrackingEnabled = true;
+            mruk.SceneSettings.TrackerConfiguration = trackers;
+            mruk.SceneSettings.TrackableAdded.AddListener(OnTrackableAdded);
+#if UNITY_ANDROID && !UNITY_EDITOR
+            if (!HasScenePermission())
+                UnityEngine.Android.Permission.RequestUserPermission(OVRPermissionsRequester.ScenePermission);
+#endif
+        }
+
+        private static bool HasScenePermission()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            return UnityEngine.Android.Permission.HasUserAuthorizedPermission(OVRPermissionsRequester.ScenePermission);
+#else
+            return true;
+#endif
+        }
+
+        private void OnTrackableAdded(MRUKTrackable trackable)
+        {
+            if (trackable.TrackableType != OVRAnchor.TrackableType.QRCode)
+                return;
+
+            if (!string.IsNullOrEmpty(markerPayload) && trackable.MarkerPayloadString != markerPayload)
+            {
+                Debug.Log($"[SpellGame] Ignoring QR code \"{trackable.MarkerPayloadString}\": not the floor marker");
+                return;
+            }
+
+            _marker = trackable;
+        }
 
         /// <summary>
         /// A recenter moves the headset's tracking origin, so the offset from the last alignment no longer lands on the
@@ -80,6 +158,49 @@ namespace SpellGame.Game
                 CalibrateAtCenter();
             if (OVRInput.GetDown(OVRInput.Button.PrimaryThumbstick, OVRInput.Controller.RTouch))
                 gameClient.Send(new SpaceResetMessage());
+
+            UpdateMarker();
+        }
+
+        /// <summary>
+        /// While unaligned, averages the floor marker's pose over <see cref="markerLockSeconds"/> of tracking, then
+        /// makes its center the origin (its height is the floor) and its top, flattened, the +z axis.
+        /// </summary>
+        private void UpdateMarker()
+        {
+            if (IsAligned(_space) || _calibrating || _marker == null || !_marker.IsTracked)
+            {
+                _markerSeenFor = 0f;
+                _markerSamples = 0;
+                _markerPositionSum = _markerForwardSum = Vector3.zero;
+                return;
+            }
+
+            // MRUK places trackables in tracking-space coordinates; the rig may already be moved by an alignment.
+            var trackingSpace = cameraRig.trackingSpace;
+            var rotation = trackingSpace.rotation * _marker.transform.rotation;
+            var normal = rotation * Vector3.forward;
+            var top = rotation * Vector3.up;
+            if (Mathf.Max(Mathf.Abs(normal.y), Mathf.Abs(top.y)) < 0.8f)
+            {
+                gameClient.SetSpaceStatus("Lay the marker flat on the floor");
+                return;
+            }
+
+            var along = Mathf.Abs(normal.y) > Mathf.Abs(top.y) ? top : normal;
+            _markerPositionSum += trackingSpace.TransformPoint(_marker.transform.position);
+            _markerForwardSum += new Vector3(along.x, 0f, along.z).normalized;
+            _markerSamples++;
+            _markerSeenFor += Time.deltaTime;
+            gameClient.SetSpaceStatus("Marker found, hold still…");
+            if (_markerSeenFor < markerLockSeconds)
+                return;
+
+            var yaw = Mathf.Atan2(_markerForwardSum.x, _markerForwardSum.z) * Mathf.Rad2Deg + markerYawOffset;
+            AlignTo(new Pose(_markerPositionSum / _markerSamples, Quaternion.Euler(0f, yaw, 0f)));
+            _alignedTo = MarkerKey(_space);
+            gameClient.Send(new AlignedMessage { Method = AlignMethod.Marker });
+            gameClient.SetSpaceStatus("Room calibrated on the marker");
         }
 
         private void OnSpace(SpaceMessage space)
@@ -103,7 +224,7 @@ namespace SpellGame.Game
             var space = _space;
             if (!useSharedAnchors)
             {
-                if (_alignedTo != CenterKey(space))
+                if (!IsAligned(space))
                     gameClient.SetSpaceStatus(CalibratePrompt);
                 return;
             }
@@ -112,7 +233,7 @@ namespace SpellGame.Game
             {
                 if (space.HostId == gameClient.PlayerId && _sharedInGroup != space.GroupUuid)
                     await Run(() => ShareAnchorAsync(space), "Sharing the room anchor failed");
-                else if (_alignedTo != CenterKey(space))
+                else if (!IsAligned(space))
                     gameClient.SetSpaceStatus($"Waiting for {space.HostId ?? "a host"} to share the room anchor…");
                 return;
             }
@@ -321,6 +442,11 @@ namespace SpellGame.Game
         }
 
         private static string CenterKey(SpaceMessage space) => $"{AlignMethod.Center}:{space.GroupUuid}";
+
+        private static string MarkerKey(SpaceMessage space) => $"{AlignMethod.Marker}:{space.GroupUuid}";
+
+        private bool IsAligned(SpaceMessage space) =>
+            space != null && (_alignedTo == CenterKey(space) || _alignedTo == MarkerKey(space));
 
         private void DestroyAnchor()
         {

@@ -380,15 +380,33 @@ namespace SpellGame.Game
                     : "not ready";
                 lines.Add($"<color={UiStyle.Hex(UiStyle.PlayerColor(fighter))}><b>{name}</b></color>   {ready}{(aligned ? "" : "  ·  not calibrated")}");
             }
-            var needsCalibration = _match.Mode == MatchMode.Versus && IsFighter && !AlignedFighters().Contains(Me);
-            if (needsCalibration)
-                lines.Add("\n<b>CALIBRATE THE ROOM</b> (both players)\n" +
-                          "1. Meet in the middle of the room, facing each other\n" +
-                          "2. Touch your right controller tips together,\n    each pointing at the other person\n" +
-                          "3. Click the LEFT thumbstick and hold still a moment\n" +
-                          "4. Walk back to your side");
-            else if (_match.Mode == MatchMode.Versus && IsFighter)
-                lines.Add("Room calibrated. Walk back to your side, then press I'm ready.");
+            var versusFighter = _match.Mode == MatchMode.Versus && IsFighter;
+            var marker = spaceAligner == null || spaceAligner.MarkerAvailable;
+            if (versusFighter && !AlignedFighters().Contains(Me))
+            {
+                if (!_match.Ready.Contains(Me))
+                    lines.Add("\nPress I'm ready, then calibrate the room.");
+                else if (marker)
+                    lines.Add("\n<b>CALIBRATE THE ROOM</b>\n" +
+                              "Look down at the QR marker in the middle of the room\n" +
+                              "and keep it in view until this says calibrated.\n" +
+                              "No marker? Meet in the middle, touch right controller tips\n" +
+                              "(each pointing at the other) and click the LEFT thumbstick.\n" +
+                              "The match can't start until both players are calibrated.");
+                else
+                    lines.Add("\n<b>CALIBRATE THE ROOM</b> (both players)\n" +
+                              "1. Meet in the middle of the room, facing each other\n" +
+                              "2. Touch your right controller tips together,\n    each pointing at the other person\n" +
+                              "3. Click the LEFT thumbstick and hold still a moment\n" +
+                              "4. Walk back to your side");
+            }
+            else if (versusFighter)
+            {
+                var waiting = _match.Fighters.Where(f => f != Me && !AlignedFighters().Contains(f)).ToList();
+                lines.Add(waiting.Count > 0
+                    ? $"\nRoom calibrated. Waiting for {string.Join(", ", waiting)} to calibrate…"
+                    : "\nRoom calibrated.");
+            }
             if (_match.Mode == MatchMode.Versus && _match.Fighters.Count < 2)
                 lines.Add("Waiting for a second headset to join…");
             if (!IsFighter && _match.Fighters.Count > 0)
@@ -398,9 +416,7 @@ namespace SpellGame.Game
             if (IsFighter)
             {
                 var ready = _match.Ready.Contains(Me);
-                buttons.Add(needsCalibration
-                    ? ("Calibrate first (left stick)", Kind.Secondary, () => { })
-                    : ready
+                buttons.Add(ready
                     ? ("Not ready", Kind.Secondary, () => gameClient.Send(new ReadyMessage { Ready = false }))
                     : ("I'm ready!", Kind.Primary, () => gameClient.Send(new ReadyMessage { Ready = true })));
             }
@@ -429,7 +445,8 @@ namespace SpellGame.Game
                 "",
                 "Dodge! Fireballs fly straight, so step out of the way.",
                 "Band: B / Y to pair",
-                "Room: touch right controller tips in the middle, click left stick",
+                "Room: after I'm ready, look at the QR marker in the middle of the room",
+                "No marker: touch right controller tips in the middle, click left stick",
                 "Menu button: end a match, or bring this panel back");
         }
 
