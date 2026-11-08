@@ -7,11 +7,9 @@ from spellgame import protocol as p
 from spellgame.game_state import GameState, Item, PlayerInput, Projectile, Tuning
 from spellgame.sim import (
     HAND_IDLE,
-    SWORD_DRAW_DURATION_S,
     SWORD_DRAWN_HAND,
     THROW_DURATION_S,
     standing_pose,
-    sword_draw_hand_offset,
     sword_swing_hand_offset,
     throw_hand_offset,
 )
@@ -59,8 +57,7 @@ class Match:
         return events
 
     def draw_sword(self):
-        self.step(p1_hand=sword_draw_hand_offset(0.0), sign=p.Sign.FIST)
-        return self.motion(sword_draw_hand_offset, SWORD_DRAW_DURATION_S + 0.05)
+        return self.step(p1_hand=SWORD_DRAWN_HAND, sign=p.Sign.FIST)
 
     def throw(self, p1_facing=0.0):
         events = []
@@ -308,7 +305,7 @@ def sword_match():
     return Match(p2_position=(0.0, 1.0))
 
 
-def test_fist_at_pocket_pulled_diagonally_draws_the_sword():
+def test_holding_a_fist_draws_the_sword_at_once():
     match = sword_match()
     events = match.draw_sword()
 
@@ -317,29 +314,10 @@ def test_fist_at_pocket_pulled_diagonally_draws_the_sword():
     assert match.game.snapshot().players[0].item == Item.SWORD
 
 
-def test_same_pull_without_starting_at_the_pocket_does_not_draw():
+def test_no_sword_without_a_fist():
     match = sword_match()
-    away = np.array([0.4, 0.3, 0.2])
-    events = match.motion(lambda t: sword_draw_hand_offset(t) + away, SWORD_DRAW_DURATION_S + 0.05, sign=p.Sign.FIST)
+    match.run(0.5, p1_hand=SWORD_DRAWN_HAND, sign=p.Sign.NONE)
     assert match.p1.item == Item.NONE
-    assert not of_type(events, p.Spell)
-
-
-def test_pull_from_pocket_without_a_fist_does_not_draw():
-    match = sword_match()
-    match.motion(sword_draw_hand_offset, SWORD_DRAW_DURATION_S + 0.05, sign=p.Sign.NONE)
-    assert match.p1.item == Item.NONE
-
-
-def test_too_slow_or_wrong_direction_pull_does_not_draw():
-    slow = sword_match()
-    slow.motion(lambda t: sword_draw_hand_offset(t / 6.0), 6 * SWORD_DRAW_DURATION_S, sign=p.Sign.FIST)
-    assert slow.p1.item == Item.NONE
-
-    downward = sword_match()
-    start = sword_draw_hand_offset(0.0)
-    downward.motion(lambda t: start + np.array([-0.4, -0.3, 0.0]) * min(t / 0.3, 1.0), 0.35, sign=p.Sign.FIST)
-    assert downward.p1.item == Item.NONE
 
 
 def test_releasing_the_fist_sheathes_the_sword_at_once():
@@ -396,7 +374,7 @@ def test_swing_back_and_forth_rehits_only_after_the_cooldown():
 
 def test_cannot_draw_while_holding_a_fireball():
     match = sword_match()
-    match.step(p1_hand=sword_draw_hand_offset(0.0), snap=True)
+    match.step(p1_hand=SWORD_DRAWN_HAND, snap=True)
     events = match.draw_sword()
     assert match.p1.item != Item.SWORD
     assert not [e for e in of_type(events, p.Spell) if e.spell == Item.SWORD]

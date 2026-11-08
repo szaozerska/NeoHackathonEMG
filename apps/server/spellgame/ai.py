@@ -1,7 +1,8 @@
 """The AI opponent of a solo match: a scripted player that sends poses and band signs into `GameState` like any other.
 
 It stands in front of its target, strafes, throws fireballs on a timer with some aim error, and sometimes raises its
-shield against an incoming fireball. Outside `playing` it just stands and sways (and celebrates if it won).
+shield against an incoming fireball. Outside `playing` it just stands and sways (and celebrates if it won). Caught in a
+domain expansion (stunned), it freezes in its last pose.
 """
 
 from __future__ import annotations
@@ -58,6 +59,10 @@ class AiOpponent:
         self._shield_until = -math.inf
         self._judged: set[int] = set()
         self._blocking: set[int] = set()
+        self._last_pose: p.Pose | None = None
+        self._strafe_clock = 0.0
+        """Seconds of strafing so far; it pauses while frozen so the AI picks up where it stopped."""
+        self._last_time: float | None = None
 
     def place_facing(self, game: GameState, target_id: str | None) -> None:
         """Stand `distance` in front of the target, facing it, and reset the attack timer."""
@@ -80,11 +85,19 @@ class AiOpponent:
     def input(self, game: GameState, target_id: str | None, fighting: bool, won: bool = False) -> PlayerInput:
         now = game.time
         me = game.players.get(self.player_id)
+        elapsed_since_last = 0.0 if self._last_time is None else now - self._last_time
+        self._last_time = now
+        if me is not None and now < me.stunned_until and self._last_pose is not None:
+            self._attack = None
+            return PlayerInput(pose=self._last_pose, band_paired=True, connected=True, aligned=True)
+
+        self._strafe_clock += elapsed_since_last
         target = self._target_head(game, target_id)
         position = self.home.copy()
         if fighting:
             side = np.array([math.cos(math.radians(self.facing_deg)), -math.sin(math.radians(self.facing_deg))])
-            position += side * self.tuning.strafe_amplitude * math.sin(2 * math.pi * now / self.tuning.strafe_period_s)
+            strafe_phase = 2 * math.pi * self._strafe_clock / self.tuning.strafe_period_s
+            position += side * self.tuning.strafe_amplitude * math.sin(strafe_phase)
         facing = _yaw_towards(position, target) if target is not None else self.facing_deg
         sign, snapped, hand = p.Sign.NONE, False, None
         bob = 0.02 * math.sin(2 * math.pi * now / 2.5)
@@ -114,6 +127,7 @@ class AiOpponent:
             hand = idle_hand
 
         pose = standing_pose(self.player_id, now, (float(position[0]), float(position[1])), facing, hand)
+        self._last_pose = pose
         return PlayerInput(pose=pose, sign=sign, snapped=snapped, band_paired=True, connected=True, aligned=True)
 
     def _should_shield(self, game: GameState, position: np.ndarray, now: float) -> bool:

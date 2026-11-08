@@ -87,18 +87,10 @@ def throw_hand_offset(elapsed_s: float) -> np.ndarray:
     return _FOLLOW_THROUGH + (HAND_IDLE - _FOLLOW_THROUGH) * _smoothstep((phase - 0.65) / 0.35)
 
 
-SWORD_POCKET_HAND = np.array([-0.12, 0.98, 0.1])
-"""Right hand at the left pocket (the hips are at (0, 1.0, 0))."""
 SWORD_DRAWN_HAND = np.array([0.3, 1.3, 0.3])
-SWORD_DRAW_DURATION_S = 0.3
 SWORD_SWING_FROM = np.array([0.55, 1.25, 0.4])
 SWORD_SWING_TO = np.array([-0.45, 1.25, 0.4])
 
-
-def sword_draw_hand_offset(elapsed_s: float) -> np.ndarray:
-    """Local right-hand offset `elapsed_s` into a draw: up and across from the left pocket."""
-    x = _smoothstep(elapsed_s / SWORD_DRAW_DURATION_S)
-    return SWORD_POCKET_HAND + (SWORD_DRAWN_HAND - SWORD_POCKET_HAND) * x
 
 
 def sword_swing_hand_offset(elapsed_s: float, duration_s: float = 0.25) -> np.ndarray:

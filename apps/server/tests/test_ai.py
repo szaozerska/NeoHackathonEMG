@@ -68,3 +68,20 @@ def test_ai_raises_its_shield_against_an_incoming_fireball():
         isinstance(e, p.Impact) and e.reason == "blocked" for e in events
     )
     assert game.players[ai.player_id].hp == game.tuning.max_hp
+
+
+def test_ai_freezes_in_place_while_caught_in_a_domain_expansion():
+    game, ai, human = arena()
+    run(game, ai, human, 1.0)
+    human.domain_expanded = True
+    events = game.step({"P1": human, ai.player_id: ai.input(game, "P1", True)}, DT)
+    human.domain_expanded = False
+    assert [e for e in events if isinstance(e, p.DomainExpansion)]
+    frozen = game.players[ai.player_id].pose.joints["hips"].pos
+
+    stun = game.tuning.domain_expand_s + game.tuning.domain_stun_s
+    events = run(game, ai, human, stun - 0.1)
+    assert game.players[ai.player_id].pose.joints["hips"].pos == frozen
+    assert not [e for e in events if isinstance(e, p.Spell) and e.caster_id == ai.player_id]
+    run(game, ai, human, 1.0)
+    assert game.players[ai.player_id].pose.joints["hips"].pos != frozen

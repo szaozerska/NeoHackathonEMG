@@ -157,7 +157,6 @@ class Match:
             player.hp = game.tuning.max_hp
             player.item = Item.NONE
             player.cooldown_until = 0.0
-            player.draw_start = None
             player.sword_tip = None
             player.sword_hits.clear()
             player.sword_locked_until = 0.0

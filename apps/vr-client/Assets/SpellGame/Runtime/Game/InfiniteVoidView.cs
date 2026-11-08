@@ -28,27 +28,30 @@ namespace SpellGame.Game
 
         [Header("Timing (seconds)")]
         [SerializeField] private float whiteInSeconds = 0.4f;
+        [Tooltip("The black void starts growing from the caster this long after the cast; until then the world is white.")]
+        [SerializeField] private float voidStartSeconds = 0.9f;
+        [Tooltip("The black void reaches the targets this long after the cast, then fills the world.")]
+        [SerializeField] private float voidReachSeconds = 3f;
         [SerializeField] private float engulfSeconds = 0.6f;
         [SerializeField] private float whiteoutInSeconds = 0.25f;
         [SerializeField] private float fadeOutSeconds = 0.5f;
 
         [Header("Streaks")]
-        [SerializeField, Min(1f)] private float streaksPerSecond = 7200f;
-        [Tooltip("Streaks keep coming this long after they reach the targets, then die out.")]
+        [SerializeField, Min(1f)] private float streaksPerSecond = 2400f;
+        [SerializeField] private float streakDelaySeconds = 1.6f;
+        [Tooltip("Streaks keep coming until this long after the server's expand time (when the stun's white-out starts).")]
         [SerializeField] private float streakTailSeconds = 0.4f;
         [Tooltip("Streaks start between these distances from the line between caster and target: far enough to keep clear " +
                  "of the players' heads, wide enough to fill the view.")]
         [SerializeField] private float tunnelInnerRadius = 1.5f;
         [SerializeField] private float tunnelRadius = 7.5f;
-        [SerializeField] private Vector2 streakSpeed = new(18f, 30f);
+        [SerializeField] private Vector2 streakSpeed = new(54f, 90f);
         [SerializeField] private Vector2 streakWidth = new(0.012f, 0.036f);
-        [Tooltip("Streaks run from this far behind the caster to this far past the target, into the vanishing point.")]
+        [Tooltip("Streaks fill the line from this far behind the caster to this far past the target, into the vanishing point.")]
         [SerializeField] private float streakFarDistance = 60f;
         [Tooltip("Rendered length per m/s of speed.")]
-        [SerializeField] private float streakStretch = 0.06f;
+        [SerializeField] private float streakStretch = 0.27f;
         [SerializeField, Range(0f, 1f)] private float whiteStreakShare = 0.35f;
-        [Tooltip("The void's edge trails this share of the way behind the streaks.")]
-        [SerializeField, Range(0f, 1f)] private float voidLag = 0.1f;
 
         [Header("Size (metres)")]
         [SerializeField] private float worldRadius = 20f;
@@ -82,7 +85,10 @@ namespace SpellGame.Game
             public DomainExpansionMessage Message;
             public float StartTime;
             public Vector3 Origin;
+
+            /// <summary>Where each target was at the cast; the streaks and the void aim there even if the target moves.</summary>
             public readonly Dictionary<string, Vector3> TargetPositions = new();
+
 
             public float End => Message.ExpandS + Message.StunS;
         }
@@ -141,7 +147,7 @@ namespace SpellGame.Game
             var fadeOut = new Gradient();
             fadeOut.SetKeys(
                 new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
-                new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 0.7f), new GradientAlphaKey(0f, 1f) });
+                new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.1f), new GradientAlphaKey(1f, 0.7f), new GradientAlphaKey(0f, 1f) });
             colorOverLifetime.color = fadeOut;
 
             var renderer = go.GetComponent<ParticleSystemRenderer>();
@@ -164,7 +170,12 @@ namespace SpellGame.Game
             }
 
             EndDomain();
-            _domain = new Domain { Message = message, StartTime = Time.time, Origin = origin };
+            _domain = new Domain
+            {
+                Message = message,
+                StartTime = Time.time,
+                Origin = origin,
+            };
             foreach (var targetId in message.TargetIds)
             {
                 if (TryGetChest(targetId, out var target))
@@ -195,48 +206,35 @@ namespace SpellGame.Game
             SetAlpha(_voidMaterial, fade);
             SetAlpha(_whiteoutMaterial, Mathf.Clamp01((elapsed - _domain.Message.ExpandS) / whiteoutInSeconds) * fade);
 
-            var travel = TravelProgress(elapsed);
-            UpdateTargetPositions();
-            EmitStreaks(elapsed, travel);
-            _void.localScale = Vector3.one * (2f * VoidRadius(elapsed, travel));
+            EmitStreaks(elapsed);
+            _void.localScale = Vector3.one * (2f * VoidRadius(elapsed));
         }
 
-        /// <summary>0 when the world has turned white, 1 when the streaks land; eased in so they accelerate.</summary>
-        private float TravelProgress(float elapsed)
-        {
-            var linear = Mathf.Clamp01((elapsed - whiteInSeconds) / (_domain.Message.ExpandS - whiteInSeconds));
-            return linear * linear;
-        }
-
-        private float VoidRadius(float elapsed, float travel)
+        /// <summary>
+        /// Grows from the caster from <see cref="voidStartSeconds"/>, eased in so it accelerates, reaching the farthest target
+        /// at <see cref="voidReachSeconds"/>; then fills the world over <see cref="engulfSeconds"/>.
+        /// </summary>
+        private float VoidRadius(float elapsed)
         {
             var reach = 0f;
             foreach (var target in _domain.TargetPositions.Values)
                 reach = Mathf.Max(reach, Vector3.Distance(_domain.Origin, target));
 
-            var landed = elapsed - _domain.Message.ExpandS;
-            if (landed < 0f)
-                return reach * travel * (1f - voidLag);
-            return Mathf.Lerp(reach * (1f - voidLag), filledVoidRadius, Mathf.Clamp01(landed / engulfSeconds));
-        }
-
-        private void UpdateTargetPositions()
-        {
-            foreach (var targetId in _domain.Message.TargetIds)
-            {
-                if (_domain.TargetPositions.ContainsKey(targetId) && TryGetChest(targetId, out var chest))
-                    _domain.TargetPositions[targetId] = chest;
-            }
+            var landed = elapsed - voidReachSeconds;
+            if (landed >= 0f)
+                return Mathf.Lerp(reach, filledVoidRadius, Mathf.Clamp01(landed / engulfSeconds));
+            var growing = Mathf.Clamp01((elapsed - voidStartSeconds) / (voidReachSeconds - voidStartSeconds));
+            return reach * growing * growing;
         }
 
         /// <summary>
-        /// Straight streaks parallel to the line from caster to target, spread across a ring around it. They spawn anywhere
-        /// from <see cref="streakFarDistance"/> behind the caster up to the advancing front and die when they reach it;
-        /// once they have landed, the front is <see cref="streakFarDistance"/> past the target, so they run off out of sight.
+        /// From <see cref="streakDelaySeconds"/> after the cast, straight streaks parallel to the line from caster to target, spread across a ring around it,
+        /// fly toward the target the whole way from <see cref="streakFarDistance"/> behind the caster to
+        /// <see cref="streakFarDistance"/> past the target, fading in where they appear and out where they end.
         /// </summary>
-        private void EmitStreaks(float elapsed, float travel)
+        private void EmitStreaks(float elapsed)
         {
-            var emitting = elapsed >= whiteInSeconds && elapsed < _domain.Message.ExpandS + streakTailSeconds;
+            var emitting = elapsed >= streakDelaySeconds && elapsed < _domain.Message.ExpandS + streakTailSeconds;
             if (!emitting || _domain.TargetPositions.Count == 0)
                 return;
 
@@ -245,24 +243,24 @@ namespace SpellGame.Game
             _streakDebt -= count;
             var targets = new List<Vector3>(_domain.TargetPositions.Values);
             for (var i = 0; i < count; i++)
-                EmitStreak(targets[Random.Range(0, targets.Count)], travel);
+                EmitStreak(targets[Random.Range(0, targets.Count)]);
         }
 
-        private void EmitStreak(Vector3 target, float travel)
+        private void EmitStreak(Vector3 target)
         {
             var axis = target - _domain.Origin;
             var distance = axis.magnitude;
             var offset = RandomPerpendicular(axis) * RandomTunnelRadius();
             var direction = axis / distance;
-            var front = travel < 1f ? distance * travel : distance + streakFarDistance;
-            var along = Random.Range(-streakFarDistance, front);
+            var end = distance + streakFarDistance;
+            var along = Random.Range(-streakFarDistance, end);
             var speed = Random.Range(streakSpeed.x, streakSpeed.y);
             _streaks.Emit(new ParticleSystem.EmitParams
             {
                 position = _domain.Origin + offset + direction * along,
                 velocity = direction * speed,
                 startSize = Random.Range(streakWidth.x, streakWidth.y),
-                startLifetime = Mathf.Max(0.02f, (front - along) / speed),
+                startLifetime = (end - along) / speed,
                 startColor = Random.value < whiteStreakShare ? Color.white : StreakColors[Random.Range(0, StreakColors.Length)],
                 applyShapeToPosition = false,
             }, 1);

@@ -11,7 +11,7 @@ namespace SpellGame.Game
     /// The controller's tracked position is the hand position, exactly as body tracking reports it for the real band.
     /// <list type="bullet">
     /// <item>trigger: <c>snap</c> (conjure a fireball, then throw by arm motion)</item>
-    /// <item>grip held: <c>fist</c> (start at the opposite pocket and pull up and across to draw the sword)</item>
+    /// <item>grip held: <c>fist</c> (the sword is out while it's held)</item>
     /// <item>A / X held: <c>open_palm</c> (shield; push forward sharply to boost)</item>
     /// </list>
     /// Disable this component when a real band is paired.

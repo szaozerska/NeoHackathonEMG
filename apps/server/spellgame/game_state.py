@@ -13,9 +13,7 @@ import numpy as np
 
 from . import protocol as p
 from .geometry import (
-    UP,
     body_forward,
-    body_right,
     normalize,
     segment_disc_contact,
     vec,
@@ -55,15 +53,6 @@ class Tuning:
     aim_assist_strength: float = 0.5
     """0 disables aim assist; 1 snaps throws within the cone straight at the opponent's chest."""
 
-    sword_pocket_offset: float = 0.15
-    """The pocket is the hips moved this far toward the side opposite the band hand."""
-    sword_pocket_radius: float = 0.2
-    """A fist must start within this distance of the pocket for the pull to draw the sword."""
-    sword_draw_min_distance: float = 0.3
-    sword_draw_window_s: float = 0.6
-    """The pull must cover `sword_draw_min_distance` within this time of the hand leaving the pocket."""
-    sword_draw_cone_deg: float = 50.0
-    """How far the pull may stray from the ideal 45-degree up-and-across diagonal."""
     sword_length: float = 0.9
     """The blade extends from the hand along the forearm (elbow to hand)."""
     sword_radius: float = 0.04
@@ -184,8 +173,6 @@ class PlayerState:
     """The held fireball lags the hand by `Tuning.fireball_inertia_s`; this is its velocity."""
     throw_velocity: np.ndarray | None = None
     """The fastest forward velocity the held fireball reached at throw speed; it leaves at this once the hand slows."""
-    draw_start: tuple[float, np.ndarray] | None = None
-    """Time and hand position of the last fist sample in the pocket, while a draw is possible."""
     sword_tip: np.ndarray | None = None
     sword_hits: dict[str, float] = field(default_factory=dict)
     """Target ID to the time the sword last hit or was blocked by them."""
@@ -375,9 +362,8 @@ class GameState:
         held_speed = float(np.linalg.norm(held))
         forwardness = float(normalize(held) @ body_forward(player.pose.joints))
         fast_and_forward = held_speed >= tuning.throw_min_speed and forwardness >= tuning.throw_min_forward
-        if fast_and_forward and (
-            player.throw_velocity is None or held_speed > float(np.linalg.norm(player.throw_velocity))
-        ):
+        fastest = player.throw_velocity is None or held_speed > float(np.linalg.norm(player.throw_velocity))
+        if fast_and_forward and fastest:
             player.throw_velocity = held
         if player.throw_velocity is None:
             return None
@@ -469,48 +455,17 @@ class GameState:
         )
 
     def _step_sword(self, player: PlayerState, dt: float) -> list[p.Message]:
+        """The sword is out exactly while the fist is held (unless a parry knocked it away recently)."""
         able = player.alive and player.connected and player.sign == p.Sign.FIST
         if player.item == Item.SWORD:
             return self._swing(player, dt) if able else [self._sheathe(player)]
         if not able or player.item != Item.NONE or self.time < player.sword_locked_until:
-            player.draw_start = None
             return []
-
-        hand, pocket = player.band_hand_tracker.position, self._pocket(player)
-        if hand is None or pocket is None:
-            return []
-        if float(np.linalg.norm(hand - pocket)) <= self.tuning.sword_pocket_radius:
-            player.draw_start = (self.time, hand.copy())
-            return []
-        if player.draw_start is None:
-            return []
-        start_time, start_hand = player.draw_start
-        if self.time - start_time > self.tuning.sword_draw_window_s:
-            player.draw_start = None
-            return []
-        return [self._draw_sword(player)] if self._is_draw_pull(player, hand - start_hand) else []
-
-    def _pocket(self, player: PlayerState) -> np.ndarray | None:
-        if player.pose is None or "hips" not in player.pose.joints:
-            return None
-        toward_band_side = body_right(player.pose.joints) * (1.0 if player.band_hand == p.Hand.RIGHT else -1.0)
-        return vec(player.pose.joints["hips"].pos) - toward_band_side * self.tuning.sword_pocket_offset
-
-    def _is_draw_pull(self, player: PlayerState, pull: np.ndarray) -> bool:
-        """Up and across the body toward the band side; motion toward or away from the opponent is ignored."""
-        assert player.pose is not None
-        forward = body_forward(player.pose.joints)
-        pull = pull - forward * float(pull @ forward)
-        if float(np.linalg.norm(pull)) < self.tuning.sword_draw_min_distance:
-            return False
-        across = body_right(player.pose.joints) * (1.0 if player.band_hand == p.Hand.RIGHT else -1.0)
-        diagonal = normalize(UP + across)
-        return float(normalize(pull) @ diagonal) >= np.cos(np.radians(self.tuning.sword_draw_cone_deg))
+        return [self._draw_sword(player)]
 
     def _draw_sword(self, player: PlayerState) -> p.Spell:
         player.item = Item.SWORD
         player.item_since = self.time
-        player.draw_start = None
         player.sword_tip = None
         player.sword_hits.clear()
         blade = self._blade(player)
