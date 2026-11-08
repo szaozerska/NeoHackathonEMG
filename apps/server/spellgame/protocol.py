@@ -254,6 +254,13 @@ class Aligned(Message):
 
 
 @dataclass
+class Unaligned(Message):
+    """VR → server: this headset left the shared frame (e.g. it recentered), so it must calibrate again."""
+
+    TYPE: ClassVar[str] = "unaligned"
+
+
+@dataclass
 class SpaceReset(Message):
     """Any client → server: drop the anchor and re-align everyone."""
 
