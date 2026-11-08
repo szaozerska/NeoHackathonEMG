@@ -132,6 +132,9 @@ namespace SpellGame.Game
         /// <summary>Edges: 0 top, 1 bottom, 2 left, 3 right. The side facing the attacker flashes hardest.</summary>
         private void Flash(float strength, Color color, Vector3? from)
         {
+            strength *= GameSettings.DamageFlash;
+            if (strength < 0.01f)
+                return;
             _flashStrength = strength;
             _flashStart = Time.time;
             _flashMaterial.SetColor("_BaseColor", color);

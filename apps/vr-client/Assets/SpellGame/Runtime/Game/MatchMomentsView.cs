@@ -96,6 +96,7 @@ namespace SpellGame.Game
         private Vector3 _eye, _forward;
 
         private Material _countdownMaterial, _fightMaterial, _koMaterial;
+        private TMP_FontAsset _font;
         private AudioSource _audio;
         private AudioClip _drum, _whoosh, _impact, _bass;
 
@@ -117,6 +118,7 @@ namespace SpellGame.Game
 
         private Transform Eye => cameraRig != null ? cameraRig.centerEyeAnchor : Camera.main.transform;
         private float Now => Time.unscaledTime;
+        private float EffectsVolume => effectsVolume * GameSettings.EffectsVolume;
 
         private void Awake()
         {
@@ -134,24 +136,45 @@ namespace SpellGame.Game
                                "Run SpellGame/Rebuild Main Scene in the editor to import them.");
                 return;
             }
-            var template = textMaterial != null ? textMaterial : font != null ? font.material : TMP_Settings.defaultFontAsset.material;
+            CreateRing();
+            CreateSparks();
+            ApplyTheme();
+        }
+
+        /// <summary>Font, text materials and effect colours from the active theme (else the serialized font / material).</summary>
+        private void ApplyTheme()
+        {
+            if (!MomentText.Available)
+                return;
+            var theme = UiStyle.Theme;
+            var themed = theme != null && theme.DisplayFont != null && theme.MomentMaterial != null;
+            _font = themed ? theme.DisplayFont : font;
+            var template = themed ? theme.MomentMaterial
+                : textMaterial != null ? textMaterial : font != null ? font.material : TMP_Settings.defaultFontAsset.material;
+            foreach (var old in new[] { _countdownMaterial, _fightMaterial, _koMaterial })
+                if (old != null)
+                    Destroy(old);
             _countdownMaterial = MomentText.GlowMaterial(template, MomentPalette.CountdownGlow, MomentPalette.NoShadow);
             _fightMaterial = MomentText.GlowMaterial(template, MomentPalette.FightGlow, MomentPalette.NoShadow);
             _koMaterial = MomentText.GlowMaterial(template, MomentPalette.KoGlow, MomentPalette.KoShadow);
-            CreateRing();
-            CreateSparks();
+            _ringLine.sharedMaterial.SetColor("_BaseColor", Opaque(MomentPalette.FightGlow));
+            _sparks.GetComponent<ParticleSystemRenderer>().sharedMaterial.SetColor("_BaseColor", Opaque(MomentPalette.FightText));
         }
+
+        private static Color Opaque(Color color) => new(color.r, color.g, color.b, 1f);
 
         private void OnEnable()
         {
             gameClient.StateReceived += OnState;
             gameClient.ConnectionChanged += OnConnectionChanged;
+            UiStyle.ThemeChanged += ApplyTheme;
         }
 
         private void OnDisable()
         {
             gameClient.StateReceived -= OnState;
             gameClient.ConnectionChanged -= OnConnectionChanged;
+            UiStyle.ThemeChanged -= ApplyTheme;
             EndSlowMotion();
             StopBuzz();
         }
@@ -229,7 +252,7 @@ namespace SpellGame.Game
             pop.Drift = -_forward * 0.25f;
             pop.OnLand = () =>
             {
-                _audio.PlayOneShot(_drum, effectsVolume);
+                _audio.PlayOneShot(_drum, EffectsVolume);
                 Announce(clip);
                 Buzz(0.5f, 0.08f, 1f, false);
             };
@@ -238,7 +261,7 @@ namespace SpellGame.Game
         private void Fight()
         {
             CaptureView();
-            _audio.PlayOneShot(_whoosh, effectsVolume * 0.7f);
+            _audio.PlayOneShot(_whoosh, EffectsVolume * 0.7f);
             var pop = Spawn("FIGHT!", _fightMaterial, fightFontSize, MomentPalette.FightText, true, fightDistance, fightDistance, 0f);
             if (pop == null)
             {
@@ -252,7 +275,7 @@ namespace SpellGame.Game
             pop.Shake = 0.015f;
             pop.OnLand = () =>
             {
-                _audio.PlayOneShot(_impact, effectsVolume);
+                _audio.PlayOneShot(_impact, EffectsVolume);
                 Announce(fight);
                 Buzz(1f, 0.35f, 1f, false);
                 Shockwave(pop.To, pop.Rotation);
@@ -270,7 +293,7 @@ namespace SpellGame.Game
                 pop.Fade = 0.3f;
                 pop.StartScale = 1.8f;
             }
-            _audio.PlayOneShot(_impact, effectsVolume * 0.7f);
+            _audio.PlayOneShot(_impact, EffectsVolume * 0.7f);
             Announce(suddenDeath);
             Buzz(0.8f, 0.3f, 1f, false);
         }
@@ -282,7 +305,7 @@ namespace SpellGame.Game
             var pop = Spawn("K.O.", _koMaterial, koFontSize, MomentPalette.Text, true, koDistance, koDistance, koTilt);
             if (pop == null)
             {
-                _audio.PlayOneShot(_bass, effectsVolume);
+                _audio.PlayOneShot(_bass, EffectsVolume);
                 Announce(ko);
                 Buzz(1f, 1f, 0.5f, true);
                 return;
@@ -296,7 +319,7 @@ namespace SpellGame.Game
             pop.Shake = 0.03f;
             pop.OnLand = () =>
             {
-                _audio.PlayOneShot(_bass, effectsVolume);
+                _audio.PlayOneShot(_bass, EffectsVolume);
                 Announce(ko);
                 Buzz(1f, 1f, 0.5f, true);
             };
@@ -305,7 +328,7 @@ namespace SpellGame.Game
         private void Announce(AudioClip clip)
         {
             if (clip != null)
-                _audio.PlayOneShot(clip, voiceVolume);
+                _audio.PlayOneShot(clip, voiceVolume * GameSettings.AnnouncerVolume);
         }
 
         // ---------------------------------------------------------------- per frame
@@ -388,6 +411,8 @@ namespace SpellGame.Game
 
         private void StartSlowMotion()
         {
+            if (!GameSettings.KoSlowMotion)
+                return;
             _slowStart = Now;
             _slowActive = true;
             Time.timeScale = slowMotionScale;
@@ -429,10 +454,10 @@ namespace SpellGame.Game
         {
             _buzzStart = Now;
             _buzzEnd = Now + seconds;
-            _buzzAmplitude = amplitude;
+            _buzzAmplitude = amplitude * GameSettings.Haptics;
             _buzzFrequency = frequency;
             _buzzDecays = decays;
-            _buzzing = true;
+            _buzzing = _buzzAmplitude > 0f;
         }
 
         private void UpdateBuzz()
@@ -479,7 +504,7 @@ namespace SpellGame.Game
                 return null;
             var root = new GameObject($"Moment {text}").transform;
             root.SetParent(transform, false);
-            var label = MomentText.Create("Text", root, font, material, text, fontSize, color, italic);
+            var label = MomentText.Create("Text", root, _font, material, text, fontSize, color, italic && UiStyle.Moments.Italic);
             var pop = new Pop
             {
                 Root = root,

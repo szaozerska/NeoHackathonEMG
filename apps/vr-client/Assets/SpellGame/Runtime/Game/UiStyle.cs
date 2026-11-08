@@ -51,6 +51,8 @@ namespace SpellGame.Game
         public static UiPalette Palette => Theme != null ? Theme.Palette : FallbackPalette;
         public static UiShape Shape => Theme != null ? Theme.Shape : UiShape.Rectangles;
         public static UiSounds Sounds => Theme != null ? Theme.Sounds : default;
+        public static UiTextStyle TextStyle => Theme != null ? Theme.Text : UiTextStyle.SmokyOpal;
+        public static UiMoments Moments => Theme != null ? Theme.Moments : UiMoments.SmokyOpal;
 
         // ---------------------------------------------------------------- palette (from the theme)
 
@@ -64,6 +66,12 @@ namespace SpellGame.Game
         public static Color P2 => Palette.P2;
         public static Color Pointer => Palette.Pointer;
         public static Color Ash => Palette.Ash;
+        public static Color TitleColor => TextStyle.Title;
+        /// <summary>Text on primary buttons and award badges.</summary>
+        public static Color OnPrimary => TextStyle.OnPrimary;
+        /// <summary>Outline / glow of hovered and selected cards.</summary>
+        public static Color Highlight => Palette.Highlight.a > 0f ? Palette.Highlight : Ink;
+        private static Color HoverTint => Palette.Hover.a > 0f ? Palette.Hover : Accent;
         public static Color[] Confetti => Palette.Confetti is { Length: > 0 } c ? c : FallbackPalette.Confetti;
 
         /// <summary>P1 red, P2 blue, anyone else in the text colour.</summary>
@@ -132,17 +140,30 @@ namespace SpellGame.Game
         /// <summary>Result cards and body text.</summary>
         public static CrystalStyle Card => Base();
 
-        /// <summary>Primary / selected button: the darker crystal with an ink outline.</summary>
+        /// <summary>Primary / selected button: the theme's primary colour (else the darker crystal) with a highlight outline.</summary>
         public static CrystalStyle Primary
         {
             get
             {
                 var style = Base();
-                style.Fill = WithAlpha(Color.Lerp(style.Fill, style.FacetDark, 0.6f), Mathf.Max(style.Fill.a, 0.8f));
-                style.Outline = Ink;
+                if (!WithPrimary(ref style))
+                    style.Fill = WithAlpha(Color.Lerp(style.Fill, style.FacetDark, 0.6f), Mathf.Max(style.Fill.a, 0.8f));
+                style.Outline = Highlight;
                 style.OutlineWidth = Shape.OutlineWidth;
                 return style;
             }
+        }
+
+        /// <summary>Fills <paramref name="style"/> with the palette's primary colour and its shades; false if it has none.</summary>
+        private static bool WithPrimary(ref CrystalStyle style)
+        {
+            var primary = Palette.Primary;
+            if (primary.a <= 0f)
+                return false;
+            style.Fill = primary;
+            style.FacetLight = Color.Lerp(primary, WithAlpha(Color.white, primary.a), 0.15f);
+            style.FacetDark = Color.Lerp(primary, WithAlpha(Color.black, primary.a), 0.35f);
+            return true;
         }
 
         /// <summary>Secondary button: lighter, plainer crystal.</summary>
@@ -165,7 +186,8 @@ namespace SpellGame.Game
             get
             {
                 var style = Base(0.5f, 0f, 0f);
-                style.Fill = WithAlpha(style.FacetDark, 0.9f);
+                if (!WithPrimary(ref style))
+                    style.Fill = WithAlpha(style.FacetDark, 0.9f);
                 style.ShadowDrop = 0f;
                 return style;
             }
@@ -187,9 +209,9 @@ namespace SpellGame.Game
         /// <summary>Pointer on it: tinted toward the accent, thicker rim, ink outline.</summary>
         public static CrystalStyle Hovered(CrystalStyle style)
         {
-            style.Fill = WithAlpha(Color.Lerp(style.Fill, Accent, 0.25f), Mathf.Max(style.Fill.a, 0.8f));
+            style.Fill = WithAlpha(Color.Lerp(style.Fill, HoverTint, 0.25f), Mathf.Max(style.Fill.a, 0.8f));
             style.RimWidth *= 1.6f;
-            style.Outline = Ink;
+            style.Outline = Highlight;
             style.OutlineWidth = Mathf.Max(style.OutlineWidth, Shape.OutlineWidth * 1.3f);
             return style;
         }
@@ -198,9 +220,9 @@ namespace SpellGame.Game
         public static CrystalStyle Pulsing(CrystalStyle style, float amount)
         {
             amount = Mathf.Clamp01(amount);
-            style.Fill = Color.Lerp(style.Fill, WithAlpha(Color.Lerp(style.Fill, Accent, 0.35f), Mathf.Max(style.Fill.a, 0.8f)), amount);
+            style.Fill = Color.Lerp(style.Fill, WithAlpha(Color.Lerp(style.Fill, HoverTint, 0.35f), Mathf.Max(style.Fill.a, 0.8f)), amount);
             style.RimWidth *= 1f + amount;
-            style.Outline = WithAlpha(Ink, Mathf.Max(style.Outline.a, amount));
+            style.Outline = WithAlpha(Highlight, Mathf.Max(style.Outline.a, amount));
             style.OutlineWidth = Mathf.Lerp(style.OutlineWidth, Shape.OutlineWidth * 1.5f, amount);
             return style;
         }
@@ -382,10 +404,11 @@ namespace SpellGame.Game
             if (source == null)
                 source = (display ? theme.DisplayFont : theme.BodyFont).material;
             var material = new Material(source) { name = $"{source.name} {look}" };
-            material.SetColor(OutlineColorId, Ink);
-            material.SetFloat(OutlineWidthId, look == Look.Title ? 0.26f : display ? 0.22f : 0.2f);
-            material.SetFloat(FaceDilateId, 0.1f);
-            material.SetColor(UnderlayColorId, look == Look.Title ? Ink : Color.clear);
+            var text = TextStyle;
+            material.SetColor(OutlineColorId, text.Outline);
+            material.SetFloat(OutlineWidthId, look == Look.Title ? text.TitleOutline : display ? text.DisplayOutline : text.BodyOutline);
+            material.SetFloat(FaceDilateId, text.Dilate);
+            material.SetColor(UnderlayColorId, look == Look.Title && text.TitleShadow ? text.Outline : Color.clear);
             TextMaterials[key] = material;
             return material;
         }
