@@ -1,0 +1,14 @@
+[
+  {
+    "id": "fist-001",
+    "kind": "fist",
+    "instruction": "Hold a comfortable closed fist",
+    "intended_count": 0,
+    "start": 4.637196791998576,
+    "end": 34.642294332996244,
+    "confirmed": true,
+    "reported_count": null,
+    "label_source": "participant_confirmation",
+    "exact_event_times_verified": false
+  }
+]
