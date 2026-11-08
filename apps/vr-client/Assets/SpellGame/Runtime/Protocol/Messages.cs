@@ -258,6 +258,17 @@ namespace SpellGame.Protocol
 
         /// <summary>Where the hit landed, [x, y, z]; may be null.</summary>
         public float[] Pos { get; set; }
+
+        /// <summary>The body part hit: a <see cref="HitZone"/> value.</summary>
+        public string Zone { get; set; }
+    }
+
+    public static class HitZone
+    {
+        public const string Head = "head";
+        public const string Torso = "torso";
+        public const string Arm = "arm";
+        public const string Leg = "leg";
     }
 
     public static class SpellKind

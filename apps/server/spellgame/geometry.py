@@ -72,11 +72,19 @@ def segment_disc_contact(
 
 
 def segment_distance(p1: np.ndarray, q1: np.ndarray, p2: np.ndarray, q2: np.ndarray) -> float:
-    """Shortest distance between segments p1-q1 and p2-q2 (Ericson, Real-Time Collision Detection §5.1.9)."""
+    """Shortest distance between segments p1-q1 and p2-q2."""
+    on_first, on_second = segment_closest_points(p1, q1, p2, q2)
+    return float(np.linalg.norm(on_first - on_second))
+
+
+def segment_closest_points(
+    p1: np.ndarray, q1: np.ndarray, p2: np.ndarray, q2: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """Closest points on segments p1-q1 and p2-q2 (Ericson, Real-Time Collision Detection §5.1.9)."""
     d1, d2, r = q1 - p1, q2 - p2, p1 - p2
     a, e, f = float(d1 @ d1), float(d2 @ d2), float(d2 @ r)
     if a <= _EPSILON and e <= _EPSILON:
-        return float(np.linalg.norm(r))
+        return p1.copy(), p2.copy()
     if a <= _EPSILON:
         s, t = 0.0, float(np.clip(f / e, 0.0, 1.0))
     else:
@@ -92,4 +100,4 @@ def segment_distance(p1: np.ndarray, q1: np.ndarray, p2: np.ndarray, q2: np.ndar
                 s, t = float(np.clip(-c / a, 0.0, 1.0)), 0.0
             elif t > 1.0:
                 s, t = float(np.clip((b - c) / a, 0.0, 1.0)), 1.0
-    return float(np.linalg.norm((p1 + d1 * s) - (p2 + d2 * t)))
+    return p1 + d1 * s, p2 + d2 * t

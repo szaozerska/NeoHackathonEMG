@@ -23,7 +23,7 @@ namespace SpellGame.Game
 
         [Header("Look")]
         [SerializeField] private float heldDiameter = 0.12f;
-        [Tooltip("Server Tuning.fireball_radius is 0.15, so 0.3 shows the true hit size.")]
+        [Tooltip("Server Tuning.fireball_radius is 0.1, so 0.2 shows the true hit size.")]
         [SerializeField] private float projectileDiameter = 0.2f;
         [SerializeField] private float emberDiameter = 0.04f;
         [Tooltip("Server Tuning.fireball_cooldown_s, used to scale the ember.")]

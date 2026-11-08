@@ -428,3 +428,12 @@ def test_boosted_push_into_a_sword_parries_it():
     assert match.p2.item == Item.NONE
     assert match.p2.sword_locked_until > match.game.time
     assert not of_type(events, p.Damage)
+
+
+def test_damage_reports_the_body_part_hit():
+    match = Match()
+    match.step(snap=True)
+    events = match.throw() + match.run(1.0)
+    damage = of_type(events, p.Damage)
+    assert len(damage) == 1
+    assert damage[0].zone in (p.Zone.HEAD, p.Zone.TORSO, p.Zone.ARM, p.Zone.LEG)
