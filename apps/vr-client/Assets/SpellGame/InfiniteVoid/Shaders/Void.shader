@@ -1,13 +1,19 @@
 // Flat colour for the Infinite Void domain: the white world shell, the black void, the streaks
 // and the stunned player's white-out. InfiniteVoidView sets the render queue and depth test per material.
 // Alpha accumulates like "over" (One OneMinusSrcAlpha), so a fading layer over passthrough shows passthrough through it
-// and a layer over already-opaque content keeps the eye buffer opaque.
+// and a layer over already-opaque content keeps the eye buffer opaque. The blend and depth-write properties let
+// InfiniteVoidView reuse it for the passthrough cut-outs around the players (zero colour and alpha, writing depth).
 Shader "SpellGame/InfiniteVoid/Void"
 {
     Properties
     {
         _Color ("Color", Color) = (1, 1, 1, 1)
         [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest ("Depth Test", Float) = 4
+        [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend ("Src Blend", Float) = 5
+        [Enum(UnityEngine.Rendering.BlendMode)] _DstBlend ("Dst Blend", Float) = 10
+        [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlendAlpha ("Src Blend Alpha", Float) = 1
+        [Enum(UnityEngine.Rendering.BlendMode)] _DstBlendAlpha ("Dst Blend Alpha", Float) = 10
+        [Enum(Off, 0, On, 1)] _ZWrite ("Depth Write", Float) = 0
     }
 
     SubShader
@@ -17,9 +23,9 @@ Shader "SpellGame/InfiniteVoid/Void"
         Pass
         {
             Name "Unlit"
-            Blend SrcAlpha OneMinusSrcAlpha, One OneMinusSrcAlpha
+            Blend [_SrcBlend] [_DstBlend], [_SrcBlendAlpha] [_DstBlendAlpha]
             Cull Off
-            ZWrite Off
+            ZWrite [_ZWrite]
             ZTest [_ZTest]
 
             HLSLPROGRAM

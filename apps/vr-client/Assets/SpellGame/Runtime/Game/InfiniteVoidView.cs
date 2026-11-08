@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using SpellGame.Protocol;
 using UnityEngine;
@@ -11,8 +12,10 @@ namespace SpellGame.Game
     /// inky, starry void expands from the caster behind them, the streaks die out, the void fills the world, and each
     /// target's own view goes white while they are stunned.
     /// <para>
-    /// The white world and the void are drawn first and write no depth, so the remote bodies, the AI and the streaks stay
-    /// visible on top of them; the white-out is drawn over everything.
+    /// The white world and the void are a backdrop: they are drawn first and write no depth, then a cut-out shaped like each
+    /// player's tracked body clears them back to passthrough and writes depth, so the real people (and your own arms) stay
+    /// visible in front of the domain and the streaks pass behind them. Only the stunned target's white-out, drawn over
+    /// everything, blinds.
     /// </para>
     /// </summary>
     public sealed class InfiniteVoidView : MonoBehaviour
@@ -57,6 +60,11 @@ namespace SpellGame.Game
         [SerializeField] private float worldRadius = 20f;
         [SerializeField] private float filledVoidRadius = 30f;
         [SerializeField] private float whiteoutRadius = 0.3f;
+        [Tooltip("The cut-outs are this much wider than the tracked body, to cover clothes and tracking error.")]
+        [SerializeField] private float cutoutHeadDiameter = 0.32f;
+        [SerializeField] private float cutoutTorsoWidth = 0.45f;
+        [SerializeField] private float cutoutLimbWidth = 0.16f;
+        [SerializeField] private float cutoutHandDiameter = 0.18f;
 
         private static readonly int ColorId = Shader.PropertyToID("_Color");
         private static readonly Color[] StreakColors =
@@ -68,11 +76,32 @@ namespace SpellGame.Game
 
         private const int WorldQueue = (int)RenderQueue.Background;
         private const int VoidQueue = (int)RenderQueue.Background + 1;
+        private const int CutoutQueue = (int)RenderQueue.Background + 2;
+
+        private static readonly (Func<BodyJoints, JointPose> From, Func<BodyJoints, JointPose> To)[] CutoutLimbs =
+        {
+            (j => j.Chest, j => j.LShoulder),
+            (j => j.LShoulder, j => j.LElbow),
+            (j => j.LElbow, j => j.LWrist),
+            (j => j.LWrist, j => j.LHand),
+            (j => j.Chest, j => j.RShoulder),
+            (j => j.RShoulder, j => j.RElbow),
+            (j => j.RElbow, j => j.RWrist),
+            (j => j.RWrist, j => j.RHand),
+            (j => j.Hips, j => j.LKnee),
+            (j => j.LKnee, j => j.LAnkle),
+            (j => j.LAnkle, j => j.LFoot),
+            (j => j.Hips, j => j.RKnee),
+            (j => j.RKnee, j => j.RAnkle),
+            (j => j.RAnkle, j => j.RFoot),
+        };
         private const int WhiteoutQueue = (int)RenderQueue.Overlay;
 
         private Material _worldMaterial;
         private Material _voidMaterial;
         private Material _whiteoutMaterial;
+        private Material _cutoutMaterial;
+        private readonly Dictionary<string, Cutout> _cutouts = new();
         private Transform _world;
         private Transform _void;
         private Transform _whiteout;
@@ -93,11 +122,24 @@ namespace SpellGame.Game
             public float End => Message.ExpandS + Message.StunS;
         }
 
+        /// <summary>One player's passthrough cut-out: capsules and spheres over their tracked joints.</summary>
+        private sealed class Cutout
+        {
+            public Transform Root;
+            public Transform Head;
+            public Transform Neck;
+            public Transform Torso;
+            public Transform LHand;
+            public Transform RHand;
+            public Transform[] Limbs;
+        }
+
         private void Awake()
         {
             _worldMaterial = Layer(flatMaterial, WorldQueue);
             _voidMaterial = Layer(inkMaterial, VoidQueue);
             _whiteoutMaterial = Layer(flatMaterial, WhiteoutQueue);
+            _cutoutMaterial = CutoutMaterial(flatMaterial);
 
             _world = SpellVfx.CreateOrb("Infinite Void World", transform, _worldMaterial, worldRadius * 2f);
             _void = SpellVfx.CreateOrb("Infinite Void", transform, _voidMaterial, 1f);
@@ -115,6 +157,24 @@ namespace SpellGame.Game
             Destroy(_worldMaterial);
             Destroy(_voidMaterial);
             Destroy(_whiteoutMaterial);
+            Destroy(_cutoutMaterial);
+        }
+
+        /// <summary>
+        /// Replaces colour and alpha with zero, which shows the passthrough underlay, and writes depth so the streaks behind a
+        /// player are hidden by them.
+        /// </summary>
+        private static Material CutoutMaterial(Material source)
+        {
+            var material = new Material(source) { renderQueue = CutoutQueue };
+            material.SetColor(ColorId, Color.clear);
+            material.SetFloat("_SrcBlend", (float)BlendMode.Zero);
+            material.SetFloat("_DstBlend", (float)BlendMode.Zero);
+            material.SetFloat("_SrcBlendAlpha", (float)BlendMode.Zero);
+            material.SetFloat("_DstBlendAlpha", (float)BlendMode.Zero);
+            material.SetFloat("_ZWrite", 1f);
+            material.SetFloat("_ZTest", (float)CompareFunction.LessEqual);
+            return material;
         }
 
         /// <summary>A copy of <paramref name="source"/> drawn at <paramref name="queue"/> over whatever is already there.</summary>
@@ -184,6 +244,8 @@ namespace SpellGame.Game
 
             _void.position = origin;
             ShowLayers(true, message.TargetIds.Contains(gameClient.PlayerId));
+            var players = new List<string>(message.TargetIds) { message.CasterId, gameClient.PlayerId };
+            ShowCutouts(players);
         }
 
         private void Update()
@@ -208,6 +270,78 @@ namespace SpellGame.Game
 
             EmitStreaks(elapsed);
             _void.localScale = Vector3.one * (2f * VoidRadius(elapsed));
+            PlaceCutouts();
+        }
+
+        /// <summary>Cut-outs for the caster, the targets and you, following their bodies as they move.</summary>
+        private void PlaceCutouts()
+        {
+            foreach (var entry in _cutouts)
+            {
+                var playerId = entry.Key;
+                var cutout = entry.Value;
+                var tracked = gameClient.TryGetJoints(playerId, out var joints) && joints.Head != null && joints.Chest != null && joints.Hips != null;
+                cutout.Root.gameObject.SetActive(tracked);
+                if (!tracked)
+                    continue;
+
+                // Your own head cut-out would surround your eyes and clear the whole view.
+                var own = playerId == gameClient.PlayerId;
+                cutout.Head.gameObject.SetActive(!own);
+                cutout.Neck.gameObject.SetActive(!own);
+                cutout.Head.position = joints.Head.Position;
+                SpellVfx.PlaceBlade(cutout.Neck, joints.Chest.Position, joints.Head.Position, cutoutLimbWidth);
+                SpellVfx.PlaceBlade(cutout.Torso, joints.Hips.Position, joints.Chest.Position, cutoutTorsoWidth);
+                Place(cutout.LHand, joints.LHand);
+                Place(cutout.RHand, joints.RHand);
+                for (var i = 0; i < CutoutLimbs.Length; i++)
+                {
+                    var from = CutoutLimbs[i].From(joints);
+                    var to = CutoutLimbs[i].To(joints);
+                    cutout.Limbs[i].gameObject.SetActive(from != null && to != null);
+                    if (from != null && to != null)
+                        SpellVfx.PlaceBlade(cutout.Limbs[i], from.Position, to.Position, cutoutLimbWidth);
+                }
+            }
+        }
+
+        private static void Place(Transform part, JointPose joint)
+        {
+            part.gameObject.SetActive(joint != null);
+            if (joint != null)
+                part.position = joint.Position;
+        }
+
+        private void ShowCutouts(IEnumerable<string> playerIds)
+        {
+            foreach (var cutout in _cutouts.Values)
+                cutout.Root.gameObject.SetActive(false);
+            foreach (var playerId in playerIds)
+            {
+                if (playerId == null || playerId == MatchMode.AiPlayerId)
+                    continue;
+                if (!_cutouts.ContainsKey(playerId))
+                    _cutouts[playerId] = CreateCutout(playerId);
+            }
+        }
+
+        private Cutout CreateCutout(string playerId)
+        {
+            var root = new GameObject($"Infinite Void Cutout {playerId}").transform;
+            root.SetParent(transform, false);
+            var limbs = new Transform[CutoutLimbs.Length];
+            for (var i = 0; i < limbs.Length; i++)
+                limbs[i] = SpellVfx.CreateBlade("Limb", root, _cutoutMaterial);
+            return new Cutout
+            {
+                Root = root,
+                Head = SpellVfx.CreateOrb("Head", root, _cutoutMaterial, cutoutHeadDiameter),
+                Neck = SpellVfx.CreateBlade("Neck", root, _cutoutMaterial),
+                Torso = SpellVfx.CreateBlade("Torso", root, _cutoutMaterial),
+                LHand = SpellVfx.CreateOrb("LHand", root, _cutoutMaterial, cutoutHandDiameter),
+                RHand = SpellVfx.CreateOrb("RHand", root, _cutoutMaterial, cutoutHandDiameter),
+                Limbs = limbs,
+            };
         }
 
         /// <summary>
@@ -285,6 +419,8 @@ namespace SpellGame.Game
             _streakDebt = 0f;
             _domain = null;
             ShowLayers(false, false);
+            foreach (var cutout in _cutouts.Values)
+                cutout.Root.gameObject.SetActive(false);
         }
 
         private void ShowLayers(bool world, bool whiteout)
