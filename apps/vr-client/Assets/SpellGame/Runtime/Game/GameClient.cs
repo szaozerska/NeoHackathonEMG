@@ -53,6 +53,7 @@ namespace SpellGame.Game
         public event Action<ImpactMessage> ImpactReceived;
         public event Action<StateMessage> StateReceived;
         public event Action<SpaceMessage> SpaceReceived;
+        public event Action<DomainExpansionMessage> DomainExpansionReceived;
         public event Action<ConnectionState> ConnectionChanged;
 
         public string PlayerId => _playerId;
@@ -84,6 +85,9 @@ namespace SpellGame.Game
 
         /// <summary>Asks the server to start pairing mode (architecture.md §5).</summary>
         public void StartPairing() => Send(new PairStartMessage());
+
+        /// <summary>Asks the server to expand this player's domain (Infinite Void).</summary>
+        public void ExpandDomain() => Send(new DomainExpandMessage());
 
         /// <summary>Sends a message to the server; dropped while not connected.</summary>
         public void Send(Message message)
@@ -259,6 +263,9 @@ namespace SpellGame.Game
                     break;
                 case SpaceMessage space:
                     SpaceReceived?.Invoke(space);
+                    break;
+                case DomainExpansionMessage domain:
+                    DomainExpansionReceived?.Invoke(domain);
                     break;
             }
         }

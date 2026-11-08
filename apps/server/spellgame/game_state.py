@@ -89,6 +89,11 @@ class Tuning:
     shield_parry_lock_s: float = 1.5
     """After a parry the attacker can't draw a sword for this long."""
 
+    domain_expand_s: float = 2.5
+    """Infinite Void: how long the streaks take to reach the targets."""
+    domain_stun_s: float = 5.0
+    """After the streaks land, targets can't attack for this long."""
+
 
 @dataclass
 class PlayerInput:
@@ -100,6 +105,8 @@ class PlayerInput:
     """The hand wearing the Neural Band; all gestures are performed with it."""
     snapped: bool = False
     """A snap started since the previous tick. The network layer sets it; the server clears it after `step`."""
+    domain_expanded: bool = False
+    """The player asked to expand their domain since the previous tick; cleared after `step` like `snapped`."""
     band_paired: bool = False
     connected: bool = True
     aligned: bool = False
@@ -169,6 +176,8 @@ class PlayerState:
     """Target ID to the time the sword last hit or was blocked by them."""
     sword_locked_until: float = 0.0
     shield_boost: float = 0.0
+    stunned_until: float = 0.0
+    """Caught in an opponent's domain: no spells until then."""
 
     @property
     def alive(self) -> bool:
@@ -210,6 +219,8 @@ class GameState:
     players: dict[str, PlayerState] = field(default_factory=dict)
     projectiles: list[Projectile] = field(default_factory=list)
     _next_projectile_id: int = 1
+    domain_until: float = 0.0
+    """The running domain expansion ends then; only one runs at a time."""
 
     def add_player(self, player_id: str) -> PlayerState:
         if player_id not in self.players:
@@ -270,15 +281,40 @@ class GameState:
         player.aligned = player_input.aligned
         player.sign = player_input.sign
         player.band_hand = player_input.hand if player_input.hand in player.hands else p.Hand.RIGHT
+        stunned = self.time < player.stunned_until
+        if stunned:
+            player.sign = p.Sign.NONE
         if player_input.pose is not None:
             player.pose = player_input.pose
             for hand, joint_name in ((p.Hand.LEFT, "l_hand"), (p.Hand.RIGHT, "r_hand")):
                 joint = player_input.pose.joints.get(joint_name)
                 if joint is not None:
                     player.hands[hand].add(player_input.pose.t, joint)
+        if stunned:
+            return []
+        if player_input.domain_expanded:
+            return self._expand_domain(player)
         if player_input.snapped:
             return self._on_snap(player)
         return []
+
+    def _expand_domain(self, caster: PlayerState) -> list[p.Message]:
+        """Infinite Void: every opponent is stunned from now until the streaks land plus `domain_stun_s`."""
+        targets = self._targets(caster.player_id)
+        if not caster.alive or not caster.connected or not targets or self.time < self.domain_until:
+            return []
+        tuning = self.tuning
+        self.domain_until = self.time + tuning.domain_expand_s + tuning.domain_stun_s
+        for target in targets:
+            target.stunned_until = self.domain_until
+        return [
+            p.DomainExpansion(
+                caster_id=caster.player_id,
+                target_ids=[target.player_id for target in targets],
+                expand_s=tuning.domain_expand_s,
+                stun_s=tuning.domain_stun_s,
+            )
+        ]
 
     def _on_snap(self, player: PlayerState) -> list[p.Message]:
         if not player.alive or not player.connected or player.item != Item.NONE or self.time < player.cooldown_until:
@@ -295,6 +331,7 @@ class GameState:
         if (
             not player.alive
             or not player.connected
+            or self.time < player.stunned_until
             or self.time - player.item_since > self.tuning.fireball_hold_timeout_s
         ):
             player.item = Item.NONE

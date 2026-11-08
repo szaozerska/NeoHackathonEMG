@@ -514,3 +514,44 @@ def test_damage_reports_the_body_part_hit():
     damage = of_type(events, p.Damage)
     assert len(damage) == 1
     assert damage[0].zone in (p.Zone.HEAD, p.Zone.TORSO, p.Zone.ARM, p.Zone.LEG)
+
+
+def expand_domain(match: Match, caster: str = "P1") -> list[p.Message]:
+    match.inputs[caster].domain_expanded = True
+    events = match.step()
+    match.inputs[caster].domain_expanded = False
+    return events
+
+
+def test_domain_expansion_stuns_the_opponent_until_the_streaks_land_plus_the_stun():
+    match = Match()
+    tuning = match.game.tuning
+    events = expand_domain(match)
+
+    domains = [e for e in events if isinstance(e, p.DomainExpansion)]
+    assert domains == [p.DomainExpansion("P1", ["P2"], tuning.domain_expand_s, tuning.domain_stun_s)]
+    match.inputs["P2"].sign = p.Sign.OPEN_PALM
+    match.run(tuning.domain_expand_s + tuning.domain_stun_s - 0.1)
+    assert match.game.players["P2"].item == Item.NONE
+    match.run(0.2)
+    assert match.game.players["P2"].item == Item.SHIELD
+
+
+def test_domain_expansion_cancels_a_held_fireball_and_blocks_snaps():
+    match = Match()
+    match.inputs["P2"].snapped = True
+    match.step()
+    assert match.game.players["P2"].item == Item.FIREBALL
+
+    events = expand_domain(match)
+    assert any(isinstance(e, p.Spell) and e.state == p.SpellState.CANCELLED and e.caster_id == "P2" for e in events)
+    match.inputs["P2"].snapped = True
+    match.step()
+    assert match.game.players["P2"].item == Item.NONE
+
+
+def test_only_one_domain_runs_at_a_time_and_a_stunned_player_cannot_expand():
+    match = Match()
+    expand_domain(match)
+    assert not [e for e in expand_domain(match, "P1") if isinstance(e, p.DomainExpansion)]
+    assert not [e for e in expand_domain(match, "P2") if isinstance(e, p.DomainExpansion)]

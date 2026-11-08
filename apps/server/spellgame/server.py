@@ -289,6 +289,8 @@ class GameServer:
             self._on_anchor_shared(conn, slot, message)
         elif conn is slot.vr and isinstance(message, p.Aligned):
             self._on_aligned(conn, slot, message)
+        elif conn is slot.vr and isinstance(message, p.DomainExpand):
+            slot.input.domain_expanded = True
         elif conn is slot.vr and isinstance(message, (p.MatchSetup, p.Ready, p.MatchQuit, p.Rematch)):
             self._on_match_message(conn, slot, message)
         elif conn is slot.classifier and isinstance(message, p.SignMessage):
@@ -374,7 +376,7 @@ class GameServer:
             inputs[slot.player_id] = (
                 slot.input
                 if self.match.can_cast(slot.player_id)
-                else replace(slot.input, sign=p.Sign.NONE, snapped=False)
+                else replace(slot.input, sign=p.Sign.NONE, snapped=False, domain_expanded=False)
             )
         if self.ai is not None:
             match = self.match
@@ -386,6 +388,7 @@ class GameServer:
         outgoing: list[p.Message] = []
         for slot in self.players.values():
             slot.input.snapped = False
+            slot.input.domain_expanded = False
             if slot.pose_dirty and slot.input.pose is not None:
                 outgoing.append(slot.input.pose)
                 slot.pose_dirty = False

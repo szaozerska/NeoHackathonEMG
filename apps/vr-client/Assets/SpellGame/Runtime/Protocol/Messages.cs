@@ -263,6 +263,27 @@ namespace SpellGame.Protocol
         public string Zone { get; set; }
     }
 
+    /// <summary>VR → server: this player held B long enough to expand their domain.</summary>
+    public sealed class DomainExpandMessage : Message
+    {
+        public const string TypeName = "domain_expand";
+        public override string Type => TypeName;
+    }
+
+    /// <summary>
+    /// Server → VR: Infinite Void. Streaks race from the caster to each target over <see cref="ExpandS"/>; each target
+    /// then can't attack for <see cref="StunS"/> more seconds.
+    /// </summary>
+    public sealed class DomainExpansionMessage : Message
+    {
+        public const string TypeName = "domain_expansion";
+        public override string Type => TypeName;
+        public string CasterId { get; set; }
+        public List<string> TargetIds { get; set; } = new();
+        public float ExpandS { get; set; }
+        public float StunS { get; set; }
+    }
+
     public static class HitZone
     {
         public const string Head = "head";

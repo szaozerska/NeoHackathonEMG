@@ -16,6 +16,7 @@ namespace SpellGame.Editor
         private const string MaterialFolder = "Assets/SpellGame/Materials";
         private const string SwordFolder = "Assets/SpellGame/Sword";
         private const string ShieldFolder = "Assets/SpellGame/Shield";
+        private const string InfiniteVoidFolder = "Assets/SpellGame/InfiniteVoid";
         private const string CameraRigPrefabPath = "Packages/com.meta.xr.sdk.core/Prefabs/OVRCameraRig.prefab";
         private const string UnlitShaderName = "Universal Render Pipeline/Unlit";
 
@@ -31,6 +32,7 @@ namespace SpellGame.Editor
             var client = CreateGameClient(bodySkeleton, debugSkeletons);
             CreateControllerBand(client);
             CreatePairingButton(client);
+            CreateDomainExpansionButton(client);
             var aligner = CreateSharedSpaceAligner(client, rig);
             CreateFireballView(client);
             CreateSwordView(client);
@@ -41,6 +43,7 @@ namespace SpellGame.Editor
             CreateAiAvatarView(client);
             CreateSpellAudio(client);
             CreateHitCallouts(client);
+            CreateInfiniteVoidView(client, trackingSpace.Find("CenterEyeAnchor"));
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
@@ -117,6 +120,14 @@ namespace SpellGame.Editor
         private static void CreatePairingButton(GameClient client)
         {
             var button = client.gameObject.AddComponent<PairingButton>();
+            var serializedButton = new SerializedObject(button);
+            serializedButton.FindProperty("gameClient").objectReferenceValue = client;
+            serializedButton.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void CreateDomainExpansionButton(GameClient client)
+        {
+            var button = client.gameObject.AddComponent<DomainExpansionButton>();
             var serializedButton = new SerializedObject(button);
             serializedButton.FindProperty("gameClient").objectReferenceValue = client;
             serializedButton.ApplyModifiedPropertiesWithoutUndo();
@@ -223,21 +234,24 @@ namespace SpellGame.Editor
             var view = new GameObject("Sword View").AddComponent<SwordView>();
             var serializedView = new SerializedObject(view);
             serializedView.FindProperty("gameClient").objectReferenceValue = client;
-            serializedView.FindProperty("bladeMaterial").objectReferenceValue = SwordMaterial("SwordBladeCore", "SpellGame/Sword/BladeCore");
-            serializedView.FindProperty("glowMaterial").objectReferenceValue = SwordMaterial("SwordBladeGlow", "SpellGame/Sword/BladeGlow");
-            serializedView.FindProperty("trailMaterial").objectReferenceValue = SwordMaterial("SwordTrail", "SpellGame/Sword/Trail");
-            serializedView.FindProperty("sparkMaterial").objectReferenceValue = SwordMaterial("SwordSpark", "SpellGame/Sword/Spark");
+            serializedView.FindProperty("bladeMaterial").objectReferenceValue = FolderMaterial(SwordFolder, "SwordBladeCore", "SpellGame/Sword/BladeCore");
+            serializedView.FindProperty("glowMaterial").objectReferenceValue = FolderMaterial(SwordFolder, "SwordBladeGlow", "SpellGame/Sword/BladeGlow");
+            serializedView.FindProperty("trailMaterial").objectReferenceValue = FolderMaterial(SwordFolder, "SwordTrail", "SpellGame/Sword/Trail");
+            serializedView.FindProperty("sparkMaterial").objectReferenceValue = FolderMaterial(SwordFolder, "SwordSpark", "SpellGame/Sword/Spark");
             serializedView.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        /// <summary>A material on one of the sword shaders in <see cref="SwordFolder"/>, keeping any tweaks made to an existing one.</summary>
-        private static Material SwordMaterial(string name, string shaderName)
+        /// <summary>
+        /// <c>{spellFolder}/Materials/{name}.mat</c> on a shader from <c>{spellFolder}/Shaders</c>, keeping any tweaks made
+        /// to an existing one.
+        /// </summary>
+        private static Material FolderMaterial(string spellFolder, string name, string shaderName)
         {
             var shader = Shader.Find(shaderName);
             if (shader == null)
-                throw new System.InvalidOperationException($"[SpellGame] Shader '{shaderName}' not found; is {SwordFolder}/Shaders imported?");
+                throw new System.InvalidOperationException($"[SpellGame] Shader '{shaderName}' not found; is {spellFolder}/Shaders imported?");
 
-            var folder = $"{SwordFolder}/Materials";
+            var folder = $"{spellFolder}/Materials";
             var path = $"{folder}/{name}.mat";
             var material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material != null)
@@ -247,10 +261,20 @@ namespace SpellGame.Editor
             }
 
             if (!AssetDatabase.IsValidFolder(folder))
-                AssetDatabase.CreateFolder(SwordFolder, "Materials");
+                AssetDatabase.CreateFolder(spellFolder, "Materials");
             material = new Material(shader);
             AssetDatabase.CreateAsset(material, path);
             return material;
+        }
+
+        private static void CreateInfiniteVoidView(GameClient client, Transform centerEye)
+        {
+            var view = new GameObject("Infinite Void View").AddComponent<InfiniteVoidView>();
+            var serializedView = new SerializedObject(view);
+            serializedView.FindProperty("gameClient").objectReferenceValue = client;
+            serializedView.FindProperty("centerEye").objectReferenceValue = centerEye;
+            serializedView.FindProperty("voidMaterial").objectReferenceValue = FolderMaterial(InfiniteVoidFolder, "Void", "SpellGame/InfiniteVoid/Void");
+            serializedView.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void CreateHealthView(GameClient client, Transform centerEye)

@@ -321,6 +321,25 @@ class Spell(Message):
     direction: list[float] | None
 
 
+@dataclass
+class DomainExpand(Message):
+    """VR → server: the player held B long enough to expand their domain."""
+
+    TYPE: ClassVar[str] = "domain_expand"
+
+
+@dataclass
+class DomainExpansion(Message):
+    """Server → VR: Infinite Void. Streaks race from the caster to each target over `expand_s`; each target then can't
+    attack for `stun_s` more seconds (they can't attack from the cast on)."""
+
+    TYPE: ClassVar[str] = "domain_expansion"
+    caster_id: str
+    target_ids: list[str]
+    expand_s: float
+    stun_s: float
+
+
 class Zone:
     """The body part a hit landed on (`spellgame.hitboxes`)."""
 

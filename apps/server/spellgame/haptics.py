@@ -19,6 +19,8 @@ def haptics_for(event: p.Message) -> list[tuple[str, int]]:
             return [(caster, CHARGING_MS)]
         case p.Spell(state=p.SpellState.CAST, caster_id=caster):
             return [(caster, CAST_MS)]
+        case p.DomainExpansion(caster_id=caster, target_ids=targets):
+            return [(caster, CAST_MS)] + [(target, HIT_TAKEN_MS) for target in targets]
         case p.Damage(target_id=target, source_id=source):
             return [(target, HIT_TAKEN_MS), (source, HIT_DEALT_MS)]
         case _:

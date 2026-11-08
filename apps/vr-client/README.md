@@ -38,6 +38,8 @@ Assets/SpellGame/
     Game/DebugSkeletonsView.cs Draws local and remote skeletons as debug line segments
     Game/ControllerBand.cs     Debug band: Touch trigger = snap, grip = fist, A/X = open palm, sent as this headset's classifier
     Game/PairingButton.cs      holding X+Y on the left controller for 3 s sends pair_start: the server starts pairing mode (§5)
+    Game/DomainExpansionButton.cs holding B on the right controller for 4 s sends domain_expand (Infinite Void)
+    Game/InfiniteVoidView.cs   Infinite Void: world turns white, streaks race to the target as the black void expands, target's view whites out while stunned
     Game/SharedSpaceAligner.cs Shared room frame (§5.1): host shares an OVRSpatialAnchor, everyone aligns the rig to it; floor-spot fallback
     Game/FireballView.cs       Fireball visuals: snap burst, held orb on the band hand, projectile + trail, impact, cooldown ember
     Game/SwordView.cs          Sword visuals: draw/sheathe flash, glowing blade along the forearm, speed-scaled swing trail, hit sparks
@@ -82,6 +84,8 @@ The client ignores its own pose when the server echoes it back.
 - On first launch the headset asks for body-tracking permission. Grant it, or no pose packets are sent.
 - **Pairing a Neural Band:** hold **X+Y** on the left controller for 3 seconds (or `p` in the server's monitor) to start pairing mode.
   The status label tells the prompted player to pinch and everyone else whose turn it is, then shows "band paired".
+- **Domain expansion (Infinite Void):** hold **B** on the right controller for 4 seconds. Opponents can't attack until
+  5 seconds after the streaks reach them, and their view goes white for that time.
 - **No Guardian boundary:** the app asks the OS to hide the boundary while passthrough is on
   (`OVRManager.shouldBoundaryVisibilityBeSuppressed`, Boundary Visibility Support in **Configure Quest Project**), so
   players can move around the whole room. The OS may still ask for a boundary at launch and can refuse to hide it;

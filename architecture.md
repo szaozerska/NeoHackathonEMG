@@ -211,9 +211,11 @@ The server owns the match; every `state` carries it as `match`.
 | `match_setup` | VR → server | `mode` (`solo` vs the AI, or `versus`), `duration_s` (the menu offers 60, 120, 300): set up the next match and wait for ready (§5.2) |
 | `ready` | VR → server | `ready` (bool), on the ready screen |
 | `match_quit` / `rematch` | VR → server | `match_quit` ends a running match early, or leaves the ready or results screen for the lobby; `rematch` on the results screen goes back to ready with the same settings |
+| `domain_expand` | VR → server | none: the player held B on the right controller for 4 s to expand their domain (Infinite Void) |
+| `domain_expansion` | server → VR | `caster_id`, `target_ids`, `expand_s` (streaks reach the targets after this), `stun_s` (targets then can't attack for this long; they can't attack from the cast on). One runs at a time; a stunned player can't cast one |
 | `impact` | server → VR | `projectile_id` (0 for sword contacts), `kind`, `owner_id`, `pos`, `reason` (`hit`/`blocked`/`expired` for fireballs; `blocked`/`parried` for swords), `target_id` (player hit or shielding) |
 | `damage` | server → VR | `target_id`, `source_id`, `amount`, `hp_after`, `kind` (`fireball`/`sword`), `pos` (where the hit landed), `zone` (`head`/`torso`/`arm`/`leg`) |
-| `haptic` | server → one player's classifier | `duration_ms` (1–2000). The hand-sign client forwards it to Kinesis's `POST /haptics`, which buzzes that player's band once. Sent on spell `charging` (40 ms) and `cast` (120 ms) to the caster, on `damage` to the target (300 ms) and the source (60 ms), and to both fighters when a match starts (250 ms) and ends (500 ms); durations live in `spellgame/haptics.py` |
+| `haptic` | server → one player's classifier | `duration_ms` (1–2000). The hand-sign client forwards it to Kinesis's `POST /haptics`, which buzzes that player's band once. Sent on spell `charging` (40 ms) and `cast` (120 ms) to the caster, on `damage` to the target (300 ms) and the source (60 ms), on `domain_expansion` to the caster (120 ms) and each target (300 ms), and to both fighters when a match starts (250 ms) and ends (500 ms); durations live in `spellgame/haptics.py` |
 
 Timestamps (`t`) are sender-local and used only for ordering within one stream. Never compare the band's clock, a Mac clock, and the Quest clock directly.
 
