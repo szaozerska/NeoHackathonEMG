@@ -20,6 +20,9 @@ namespace SpellGame.Editor
         private const string MaterialFolder = "Assets/SpellGame/UI/Materials";
         private const string ResourcesFolder = "Assets/SpellGame/Resources";
         private const string CrystalShaderName = "SpellGame/UI/CrystalPanel";
+        private const string ParchmentShaderName = "SpellGame/UI/ParchmentPanel";
+        private const string SoundFolder = "Assets/SpellGame/UI/Sounds";
+        private const string TmpSdfShader = "TextMeshPro/Distance Field";
         private const string TmpMobileSdfShader = "TextMeshPro/Mobile/Distance Field";
 
         /// <summary>Pre-baked into the atlas; anything else is added at runtime from the font file (dynamic atlas).</summary>
@@ -50,10 +53,48 @@ namespace SpellGame.Editor
             serializedTheme.FindProperty("displayMaterial").objectReferenceValue = TextMaterial(display, theme.Palette.Ink);
             serializedTheme.FindProperty("bodyMaterial").objectReferenceValue = TextMaterial(body, theme.Palette.Ink);
             serializedTheme.FindProperty("crystal").objectReferenceValue = CrystalMaterial();
+            serializedTheme.FindProperty("momentMaterial").objectReferenceValue = MomentMaterial(display);
             serializedTheme.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(theme);
+            EnsureWizardTheme();
             AssetDatabase.SaveAssets();
             return true;
+        }
+
+        /// <summary>
+        /// <c>Resources/SpellGameUiTheme Wizard.asset</c> (<see cref="GameSettings.WizardTheme"/>): parchment cards,
+        /// Cinzel Decorative titles and buttons, IM Fell English body text, arcane purple accent, chime sounds. Its look is
+        /// set only when the asset is created (tweaks survive); fonts and materials are refreshed every rebuild.
+        /// </summary>
+        private static void EnsureWizardTheme()
+        {
+            var display = FontAsset("CinzelDecorative-Bold");
+            var body = FontAsset("IMFellEnglish-Regular");
+
+            var path = $"{ResourcesFolder}/{GameSettings.WizardTheme}.asset";
+            var theme = AssetDatabase.LoadAssetAtPath<UiTheme>(path);
+            if (theme == null)
+            {
+                Directory.CreateDirectory(ResourcesFolder);
+                theme = ScriptableObject.CreateInstance<UiTheme>();
+                theme.SetLook("Wizard", UiPalette.Wizard, UiShape.Parchment, UiTextStyle.Wizard, UiMoments.Wizard, new UiSounds
+                {
+                    Hover = AssetDatabase.LoadAssetAtPath<AudioClip>($"{SoundFolder}/WizardHover.wav"),
+                    Press = AssetDatabase.LoadAssetAtPath<AudioClip>($"{SoundFolder}/WizardPress.wav"),
+                    TimeUp = AssetDatabase.LoadAssetAtPath<AudioClip>($"{SoundFolder}/WizardTimeUp.wav"),
+                });
+                AssetDatabase.CreateAsset(theme, path);
+            }
+
+            var serializedTheme = new SerializedObject(theme);
+            serializedTheme.FindProperty("displayFont").objectReferenceValue = display;
+            serializedTheme.FindProperty("bodyFont").objectReferenceValue = body;
+            serializedTheme.FindProperty("displayMaterial").objectReferenceValue = TextMaterial(display, theme.Text.Outline);
+            serializedTheme.FindProperty("bodyMaterial").objectReferenceValue = TextMaterial(body, theme.Text.Outline);
+            serializedTheme.FindProperty("crystal").objectReferenceValue = PanelMaterial(ParchmentShaderName, "Parchment");
+            serializedTheme.FindProperty("momentMaterial").objectReferenceValue = MomentMaterial(display);
+            serializedTheme.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(theme);
         }
 
         // ---------------------------------------------------------------- TMP Essential Resources
@@ -176,18 +217,44 @@ namespace SpellGame.Editor
             material.SetFloat("_UnderlaySoftness", 0f);
         }
 
-        private static Material CrystalMaterial()
+        /// <summary>
+        /// <c>{font} Moment.mat</c>: the font on TextMeshPro/Distance Field with GLOW_ON + UNDERLAY_ON, saved so a build keeps
+        /// those shader variants; <see cref="MomentText.GlowMaterial"/> copies it and sets the colours at runtime.
+        /// </summary>
+        private static Material MomentMaterial(TMP_FontAsset font)
         {
-            var shader = Shader.Find(CrystalShaderName);
-            if (shader == null)
-                throw new InvalidOperationException($"[SpellGame] Shader '{CrystalShaderName}' not found; is Assets/SpellGame/UI/Shaders imported?");
-
-            var path = $"{MaterialFolder}/Crystal.mat";
+            var path = $"{MaterialFolder}/{font.name} Moment.mat";
             var material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material == null)
             {
                 Directory.CreateDirectory(MaterialFolder);
-                material = new Material(shader) { name = "Crystal" };
+                material = new Material(font.material) { name = $"{font.name} Moment" };
+                AssetDatabase.CreateAsset(material, path);
+            }
+            var shader = Shader.Find(TmpSdfShader);
+            material.shader = shader != null ? shader : font.material.shader;
+            material.CopyPropertiesFromMaterial(font.material);
+            material.EnableKeyword("GLOW_ON");
+            material.EnableKeyword("UNDERLAY_ON");
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        private static Material CrystalMaterial() => PanelMaterial(CrystalShaderName, "Crystal");
+
+        /// <summary><c>{name}.mat</c> on the card shader <paramref name="shaderName"/>; UiStyle copies it per card.</summary>
+        private static Material PanelMaterial(string shaderName, string name)
+        {
+            var shader = Shader.Find(shaderName);
+            if (shader == null)
+                throw new InvalidOperationException($"[SpellGame] Shader '{shaderName}' not found; is Assets/SpellGame/UI/Shaders imported?");
+
+            var path = $"{MaterialFolder}/{name}.mat";
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                Directory.CreateDirectory(MaterialFolder);
+                material = new Material(shader) { name = name };
                 AssetDatabase.CreateAsset(material, path);
             }
             else if (material.shader != shader)

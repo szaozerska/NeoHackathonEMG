@@ -4,17 +4,17 @@ using UnityEngine;
 namespace SpellGame.Game
 {
     /// <summary>
-    /// Colours of the big match moments (<see cref="MatchMomentsView"/>), kept together so they can follow the theme's
-    /// accent: white text with a coloured glow, plus a dark drop shadow on the K.O.
+    /// Colours of the big match moments (<see cref="MatchMomentsView"/>) from the active theme (<see cref="UiStyle.Moments"/>):
+    /// text with a coloured glow and an optional outline, plus a dark drop shadow on the K.O.
     /// </summary>
     public static class MomentPalette
     {
-        public static readonly Color Text = Color.white;
-        public static readonly Color CountdownGlow = new(0.35f, 0.65f, 1f, 0.85f);
-        public static readonly Color FightText = new(1f, 0.87f, 0.5f);
-        public static readonly Color FightGlow = new(1f, 0.45f, 0.1f, 0.9f);
-        public static readonly Color KoGlow = new(0.95f, 0.15f, 0.15f, 0.8f);
-        public static readonly Color KoShadow = new(0.4f, 0.05f, 0.06f, 1f);
+        public static Color Text => UiStyle.Moments.Text;
+        public static Color CountdownGlow => UiStyle.Moments.CountdownGlow;
+        public static Color FightText => UiStyle.Moments.FightText;
+        public static Color FightGlow => UiStyle.Moments.FightGlow;
+        public static Color KoGlow => UiStyle.Moments.KoGlow;
+        public static Color KoShadow => UiStyle.Moments.KoShadow;
         public static readonly Color NoShadow = Color.clear;
     }
 
@@ -38,7 +38,10 @@ namespace SpellGame.Game
         /// </summary>
         public static Material GlowMaterial(Material template, Color glow, Color shadow)
         {
+            var moments = UiStyle.Moments;
             var material = new Material(template);
+            material.SetColor("_OutlineColor", moments.Outline);
+            material.SetFloat("_OutlineWidth", moments.Outline.a > 0f ? moments.OutlineWidth : 0f);
             material.EnableKeyword("GLOW_ON");
             material.SetColor("_GlowColor", glow);
             material.SetFloat("_GlowOffset", 0f);

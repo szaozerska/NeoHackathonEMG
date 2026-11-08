@@ -39,7 +39,7 @@ namespace SpellGame.Game
             }
         }
 
-        public static float MasterVolume { get => Get("MasterVolume", 1f); set { Set("MasterVolume", Mathf.Clamp01(value)); } }
+        public static float MasterVolume { get => Get("MasterVolume", 1f); set => Set("MasterVolume", Mathf.Clamp01(value)); }
         public static float EffectsVolume { get => Get("EffectsVolume", 1f); set => Set("EffectsVolume", Mathf.Clamp01(value)); }
         public static float AnnouncerVolume { get => Get("AnnouncerVolume", 1f); set => Set("AnnouncerVolume", Mathf.Clamp01(value)); }
 
@@ -111,7 +111,7 @@ namespace SpellGame.Game
 
         private static void Set(string key, float value)
         {
-            PlayerPrefs.SetFloat(Prefix + key, value);
+            PlayerPrefs.SetFloat(Prefix + key, Mathf.Round(value * 100f) / 100f);
             Save();
         }
 

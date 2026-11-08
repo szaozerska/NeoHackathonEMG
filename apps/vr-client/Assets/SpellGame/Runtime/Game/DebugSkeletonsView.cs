@@ -145,6 +145,22 @@ namespace SpellGame.Game
         private static TextMeshPro CreateLabel(Transform root, string text) =>
             UiStyle.CreateText("Label", root, text, Vector3.zero, 0.16f, UiStyle.PlayerColor(text), display: true, width: 0.6f, spacing: 4f);
 
+        private void OnEnable() => UiStyle.ThemeChanged += RestyleLabels;
+
+        private void OnDisable() => UiStyle.ThemeChanged -= RestyleLabels;
+
+        /// <summary>New theme: the tags take its font, outline and player colours.</summary>
+        private void RestyleLabels()
+        {
+            foreach (var (skeletonId, body) in _bodiesBySkeleton)
+            {
+                if (body.Label == null)
+                    continue;
+                UiStyle.Restyle(body.Label, true);
+                body.Label.color = UiStyle.PlayerColor(skeletonId);
+            }
+        }
+
         private LineRenderer[] BonesFor(string skeletonId)
         {
             if (_bonesBySkeleton.TryGetValue(skeletonId, out var existing))

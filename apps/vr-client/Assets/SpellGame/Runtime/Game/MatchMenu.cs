@@ -30,7 +30,7 @@ namespace SpellGame.Game
         [SerializeField] private Material baseMaterial;
 
         [Header("Placement")]
-        [SerializeField] private float panelDistance = 1.1f;
+        [Tooltip("Below eye level at the default menu height (Settings → Comfort moves it up or down).")]
         [SerializeField] private float panelDrop = 0.05f;
         [Tooltip("Degrees off your view before a panel glides back in front of you.")]
         [SerializeField] private float refollowAngle = 35f;
@@ -52,7 +52,9 @@ namespace SpellGame.Game
 
         private enum Kind { Primary, Secondary }
 
-        private enum View { None, Connection, Mode, Duration, Controls, Ready, Pause, Results }
+        private enum View { None, Connection, Mode, Duration, Controls, Ready, Pause, Results, Settings }
+
+        private static readonly string[] SettingsPages = { "Sound & look", "Comfort" };
 
         private sealed class Button
         {
@@ -60,6 +62,7 @@ namespace SpellGame.Game
             public UiStyle.Crystal Back;
             public UiStyle.Crystal Dwell;
             public UiStyle.CrystalStyle Style;
+            public TextMeshPro Label;
             public Action OnPress;
         }
 
@@ -70,12 +73,17 @@ namespace SpellGame.Game
             public string Key;
             public readonly List<Button> Buttons = new();
             public readonly List<Material> Materials = new();
+            /// <summary>Re-reads the values shown (settings rows) after a setting changes.</summary>
+            public readonly List<Action> Refresh = new();
             public Vector3 Target;
             public bool Placed;
         }
 
         private Panel _panel;
         private View _view = View.Mode;
+        private View _settingsReturn = View.Mode;
+        private int _settingsPage;
+        private float _placedDistance, _placedHeight;
         private View _controlsReturn = View.Mode;
         private bool _seenControls;
         private string _pendingMode = MatchMode.Solo;
@@ -147,6 +155,7 @@ namespace SpellGame.Game
             gameClient.StateReceived += OnState;
             gameClient.ConnectionChanged += OnConnectionChanged;
             UiStyle.ThemeChanged += ApplyTheme;
+            GameSettings.Changed += OnSettingsChanged;
         }
 
         private void OnDisable()
@@ -154,6 +163,18 @@ namespace SpellGame.Game
             gameClient.StateReceived -= OnState;
             gameClient.ConnectionChanged -= OnConnectionChanged;
             UiStyle.ThemeChanged -= ApplyTheme;
+            GameSettings.Changed -= OnSettingsChanged;
+        }
+
+        /// <summary>Shows the new values; a new menu distance or height moves the panel there.</summary>
+        private void OnSettingsChanged()
+        {
+            if (_panel == null)
+                return;
+            foreach (var refresh in _panel.Refresh)
+                refresh();
+            if (!Mathf.Approximately(_placedDistance, GameSettings.MenuDistance) || !Mathf.Approximately(_placedHeight, GameSettings.MenuHeight))
+                _panel.Target = PanelSpot();
         }
 
         /// <summary>Forgets the last server's match, so a rejoin starts from the menu the new state puts it on.</summary>
@@ -184,11 +205,15 @@ namespace SpellGame.Game
             switch (to)
             {
                 case MatchPhase.Lobby:
-                    if (_view is not (View.Duration or View.Controls))
+                    if (_view == View.Settings)
+                        _settingsReturn = View.Mode;
+                    else if (_view is not (View.Duration or View.Controls))
                         _view = View.Mode;
                     break;
                 case MatchPhase.Ready:
-                    if (!_seenControls && from == MatchPhase.Lobby)
+                    if (_view == View.Settings)
+                        _settingsReturn = View.Ready;
+                    else if (!_seenControls && from == MatchPhase.Lobby)
                         ShowControls(View.Ready);
                     else if (_view != View.Controls)
                         _view = View.Ready;
@@ -206,7 +231,7 @@ namespace SpellGame.Game
                     var knockout = from == MatchPhase.Playing && _match.Reason == MatchEndReason.Ko;
                     _resultsAt = Time.unscaledTime + (knockout ? MatchMomentsView.KoBeatSeconds : 0f);
                     if (!knockout)
-                        _audio.PlayOneShot(_end);
+                        _audio.PlayOneShot(_end, GameSettings.EffectsVolume);
                     break;
             }
         }
@@ -230,7 +255,7 @@ namespace SpellGame.Game
         {
             var inMatch = _match.Phase is MatchPhase.Countdown or MatchPhase.Playing;
             if (inMatch && IsFighter)
-                _view = _view == View.Pause ? View.None : View.Pause;
+                _view = _view is View.Pause or View.Settings ? View.None : View.Pause;
             else if (_panel != null)
                 _panel.Target = PanelSpot();
         }
@@ -270,6 +295,7 @@ namespace SpellGame.Game
             _panelThemeVersion = _themeVersion;
             _panel.Target = keep ?? PanelSpot();
             _panel.Root.position = _panel.Target;
+            _panel.Root.localScale = Vector3.one * GameSettings.UiScale;
             _panel.Placed = true;
             FaceViewer(_panel.Root);
             UpdateFooter(_panel);
@@ -290,6 +316,7 @@ namespace SpellGame.Game
                 View.Connection => $"connection|{gameClient.Connection}|{gameClient.ServerEndpoint}",
                 View.Ready => $"ready|{Me}|{_match.Mode}|{_match.DurationS}|{string.Join(",", _match.Fighters)}|{string.Join(",", _match.Ready)}|{string.Join(",", AlignedFighters())}",
                 View.Results => $"results|{IsFighter}",
+                View.Settings => $"settings|{_settingsPage}",
                 _ => view.ToString(),
             };
         }
@@ -310,7 +337,8 @@ namespace SpellGame.Game
                     Layout(panel, "SPELL DUEL", "Choose your match",
                         ("1 Player  ·  vs AI", Kind.Primary, () => PickMode(MatchMode.Solo)),
                         ("2 Players", Kind.Primary, () => PickMode(MatchMode.Versus)),
-                        ("How to cast", Kind.Secondary, () => ShowControls(View.Mode)));
+                        ("How to cast", Kind.Secondary, () => ShowControls(View.Mode)),
+                        ("Settings", Kind.Secondary, () => ShowSettings(View.Mode)));
                     break;
                 case View.Duration:
                     Layout(panel, _pendingMode == MatchMode.Solo ? "1 PLAYER  ·  vs AI" : "2 PLAYERS", "How long?",
@@ -329,10 +357,14 @@ namespace SpellGame.Game
                 case View.Pause:
                     Layout(panel, "END MATCH?", "Ends it for everyone, with no winner.",
                         ("End match", Kind.Secondary, () => { gameClient.Send(new MatchQuitMessage()); _view = View.None; }),
-                        ("Keep fighting", Kind.Primary, () => _view = View.None));
+                        ("Keep fighting", Kind.Primary, () => _view = View.None),
+                        ("Settings", Kind.Secondary, () => ShowSettings(View.Pause)));
                     break;
                 case View.Results:
                     BuildResults(panel);
+                    break;
+                case View.Settings:
+                    BuildSettings(panel);
                     break;
             }
             return panel;
@@ -399,6 +431,7 @@ namespace SpellGame.Game
                     }));
             }
             buttons.Add(("How to cast", Kind.Secondary, () => ShowControls(View.Ready)));
+            buttons.Add(("Settings", Kind.Secondary, () => ShowSettings(View.Ready)));
             buttons.Add(("Back to menu", Kind.Secondary, () => gameClient.Send(new MatchQuitMessage())));
             Layout(panel, title, string.Join("\n", lines), buttons.ToArray());
         }
@@ -438,6 +471,12 @@ namespace SpellGame.Game
             _view = View.Ready;
         }
 
+        private void ShowSettings(View returnTo)
+        {
+            _settingsReturn = returnTo;
+            _view = View.Settings;
+        }
+
         private void ShowControls(View returnTo)
         {
             _controlsReturn = returnTo;
@@ -446,7 +485,10 @@ namespace SpellGame.Game
 
         private static string Minutes(float seconds) => $"{seconds / 60f:0.#} min";
 
-        /// <summary>A big title card, a card for the body text, then a column of button cards; status text hangs below.</summary>
+        /// <summary>
+        /// A big title card, a card for the body text, then a column of button cards; status text hangs below. Themes with
+        /// <see cref="UiShape.Sheet"/> put the title and text straight on one card behind everything instead.
+        /// </summary>
         private void Layout(Panel panel, string title, string body, params (string Label, Kind Kind, Action OnPress)[] buttons)
         {
             const float pad = 0.03f;
@@ -454,7 +496,7 @@ namespace SpellGame.Game
             var root = panel.Root;
             var titleText = string.IsNullOrEmpty(title)
                 ? null
-                : UiStyle.CreateText("Title", root, title, Vector3.zero, 0.075f * textScale, UiStyle.Text, display: true,
+                : UiStyle.CreateText("Title", root, title, Vector3.zero, 0.075f * textScale, UiStyle.TitleColor, display: true,
                     look: UiStyle.Look.Title, spacing: 2f);
             var bodyText = string.IsNullOrEmpty(body)
                 ? null
@@ -464,18 +506,18 @@ namespace SpellGame.Game
             var buttonsHeight = buttons.Length * buttonHeight + Mathf.Max(0, buttons.Length - 1) * buttonGap;
             var parts = (titleText != null ? 1 : 0) + (bodyText != null ? 1 : 0) + (buttons.Length > 0 ? 1 : 0);
             var height = titleHeight + bodyHeight + buttonsHeight + Mathf.Max(0, parts - 1) * gap;
-
-            panel.Footer = UiStyle.CreateText("Status", root, "", new Vector3(0f, -height * 0.5f - 0.03f, -0.003f), 0.017f * textScale,
-                UiStyle.Text, alignment: TextAlignmentOptions.Top);
-            panel.Footer.rectTransform.pivot = new Vector2(0.5f, 1f);
+            var sheet = UiStyle.Shape.Sheet;
+            var sheetWidth = panelWidth;
 
             var y = height * 0.5f;
             if (titleText != null)
             {
                 var cy = y - titleHeight * 0.5f;
                 var w = Mathf.Max(panelWidth * 0.8f, UiStyle.Width(titleText) + 0.1f);
-                UiStyle.CreateCrystal("Title Card", root, new Vector2(w, titleHeight), UiStyle.Panel, new Vector3(0f, cy, 0f),
-                    UiStyle.SortPanel, panel.Materials);
+                sheetWidth = Mathf.Max(sheetWidth, w);
+                if (!sheet)
+                    UiStyle.CreateCrystal("Title Card", root, new Vector2(w, titleHeight), UiStyle.Panel, new Vector3(0f, cy, 0f),
+                        UiStyle.SortPanel, panel.Materials);
                 titleText.transform.localPosition = new Vector3(0f, cy, -0.004f);
                 y -= titleHeight + gap;
             }
@@ -483,8 +525,10 @@ namespace SpellGame.Game
             {
                 var cy = y - bodyHeight * 0.5f;
                 var w = Mathf.Max(panelWidth, UiStyle.Width(bodyText) + 2f * pad + UiStyle.Shape.Skew * bodyHeight);
-                UiStyle.CreateCrystal("Body Card", root, new Vector2(w, bodyHeight), UiStyle.Card, new Vector3(0f, cy, 0f),
-                    UiStyle.SortPanel, panel.Materials);
+                sheetWidth = Mathf.Max(sheetWidth, w);
+                if (!sheet)
+                    UiStyle.CreateCrystal("Body Card", root, new Vector2(w, bodyHeight), UiStyle.Card, new Vector3(0f, cy, 0f),
+                        UiStyle.SortPanel, panel.Materials);
                 bodyText.transform.localPosition = new Vector3(0f, cy, -0.004f);
                 y -= bodyHeight + gap;
             }
@@ -492,26 +536,179 @@ namespace SpellGame.Game
             var width = panelWidth * 0.85f;
             foreach (var (label, kind, onPress) in buttons)
             {
-                var center = new Vector2(0f, y - buttonHeight * 0.5f);
-                var size = new Vector2(width, buttonHeight);
-                var style = kind == Kind.Primary ? UiStyle.Primary : UiStyle.Secondary;
-                var back = UiStyle.CreateCrystal("Button", root, size, style, new Vector3(center.x, center.y, -0.002f), UiStyle.SortSurface, panel.Materials);
-                var dwell = UiStyle.CreateCrystal("Dwell", root, new Vector2(0f, 0.005f), UiStyle.Bar,
-                    new Vector3(center.x, center.y - buttonHeight * 0.32f, -0.004f), UiStyle.SortBar, panel.Materials);
-                dwell.Transform.gameObject.SetActive(false);
-                var text = UiStyle.CreateText("Label", root, label, new Vector3(center.x, center.y + buttonHeight * 0.04f, -0.005f),
-                    0.032f * textScale, UiStyle.Text, display: true, spacing: 2f);
-                text.fontStyle = FontStyles.UpperCase;
-                panel.Buttons.Add(new Button
-                {
-                    Rect = new Rect(center - size * 0.5f, size),
-                    Back = back,
-                    Dwell = dwell,
-                    Style = style,
-                    OnPress = onPress,
-                });
+                AddButton(panel, label, kind, new Vector2(0f, y - buttonHeight * 0.5f), new Vector2(width, buttonHeight), onPress);
                 y -= buttonHeight + buttonGap;
             }
+            AddFooter(panel, sheetWidth, height);
+        }
+
+        /// <summary>A button card with its dwell bar and label, registered for pointing.</summary>
+        private Button AddButton(Panel panel, string label, Kind kind, Vector2 center, Vector2 size, Action onPress, float labelSize = 0.032f)
+        {
+            var root = panel.Root;
+            var style = kind == Kind.Primary ? UiStyle.Primary : UiStyle.Secondary;
+            var back = UiStyle.CreateCrystal("Button", root, size, style, new Vector3(center.x, center.y, -0.002f), UiStyle.SortSurface, panel.Materials);
+            var dwell = UiStyle.CreateCrystal("Dwell", root, new Vector2(0f, 0.005f), UiStyle.Bar,
+                new Vector3(center.x, center.y - size.y * 0.32f, -0.004f), UiStyle.SortBar, panel.Materials);
+            dwell.Transform.gameObject.SetActive(false);
+            var text = UiStyle.CreateText("Label", root, label, new Vector3(center.x, center.y + size.y * 0.04f, -0.005f),
+                labelSize * textScale, kind == Kind.Primary ? UiStyle.OnPrimary : UiStyle.Text, display: true, spacing: 2f);
+            text.fontStyle = UiStyle.TextStyle.UpperCaseLabels ? FontStyles.UpperCase : FontStyles.Normal;
+            var button = new Button
+            {
+                Rect = new Rect(center - size * 0.5f, size),
+                Back = back,
+                Dwell = dwell,
+                Style = style,
+                Label = text,
+                OnPress = onPress,
+            };
+            panel.Buttons.Add(button);
+            return button;
+        }
+
+        /// <summary>Status text under a stack <paramref name="height"/> tall, and the sheet behind it all for sheet themes.</summary>
+        private void AddFooter(Panel panel, float width, float height)
+        {
+            panel.Footer = UiStyle.CreateText("Status", panel.Root, "", new Vector3(0f, -height * 0.5f - 0.03f, -0.003f), 0.017f * textScale,
+                UiStyle.Text, alignment: TextAlignmentOptions.Top);
+            panel.Footer.rectTransform.pivot = new Vector2(0.5f, 1f);
+            if (!UiStyle.Shape.Sheet)
+                return;
+            const float pad = 0.04f;
+            const float footer = 0.05f;
+            UiStyle.CreateCrystal("Sheet", panel.Root, new Vector2(width + 2f * pad, height + 2f * pad + footer), UiStyle.Panel,
+                new Vector3(0f, -footer * 0.5f, 0.002f), UiStyle.SortPanel - 1, panel.Materials);
+        }
+
+        // ---------------------------------------------------------------- settings
+
+        /// <summary>
+        /// Settings (<see cref="GameSettings"/>, saved on the headset) in two tabs, one row per setting: name, value and
+        /// − / + (or one toggle) buttons. Values update in place; Defaults resets everything but the theme.
+        /// </summary>
+        private void BuildSettings(Panel panel)
+        {
+            const float pad = 0.03f;
+            const float gap = 0.022f;
+            const float rowHeight = 0.058f;
+            const float rowGap = 0.01f;
+            const float small = 0.068f;
+            var root = panel.Root;
+            var sheet = UiStyle.Shape.Sheet;
+            var width = panelWidth;
+            var rows = SettingsRows();
+
+            var title = UiStyle.CreateText("Title", root, "SETTINGS", Vector3.zero, 0.075f * textScale, UiStyle.TitleColor, display: true,
+                look: UiStyle.Look.Title, spacing: 2f);
+            var titleHeight = UiStyle.Height(title) + pad;
+            var tabHeight = buttonHeight * 0.8f;
+            var rowsHeight = rows.Length * rowHeight + Mathf.Max(0, rows.Length - 1) * rowGap + 2f * pad;
+            var height = titleHeight + tabHeight + rowsHeight + buttonHeight + 3f * gap;
+            var half = (width - gap) * 0.5f;
+
+            var y = height * 0.5f;
+            var cy = y - titleHeight * 0.5f;
+            if (!sheet)
+                UiStyle.CreateCrystal("Title Card", root, new Vector2(Mathf.Max(width * 0.8f, UiStyle.Width(title) + 0.1f), titleHeight),
+                    UiStyle.Panel, new Vector3(0f, cy, 0f), UiStyle.SortPanel, panel.Materials);
+            title.transform.localPosition = new Vector3(0f, cy, -0.004f);
+            y -= titleHeight + gap;
+
+            for (var i = 0; i < SettingsPages.Length; i++)
+            {
+                var page = i;
+                AddButton(panel, SettingsPages[i], i == _settingsPage ? Kind.Primary : Kind.Secondary,
+                    new Vector2((i - 0.5f) * (half + gap), y - tabHeight * 0.5f), new Vector2(half, tabHeight), () => _settingsPage = page, 0.026f);
+            }
+            y -= tabHeight + gap;
+
+            if (!sheet)
+                UiStyle.CreateCrystal("Rows Card", root, new Vector2(width, rowsHeight), UiStyle.Card, new Vector3(0f, y - rowsHeight * 0.5f, 0f),
+                    UiStyle.SortPanel, panel.Materials);
+            var rowY = y - pad;
+            var left = -width * 0.5f + pad;
+            var right = width * 0.5f - pad;
+            foreach (var (label, value, down, up) in rows)
+            {
+                var ry = rowY - rowHeight * 0.5f;
+                var name = UiStyle.CreateText("Setting", root, label, new Vector3(left, ry, -0.004f), 0.026f * textScale, UiStyle.Text,
+                    alignment: TextAlignmentOptions.Left, width: width * 0.5f);
+                name.rectTransform.pivot = new Vector2(0f, 0.5f);
+                var buttonSize = new Vector2(small, rowHeight * 0.85f);
+                if (down == null)
+                {
+                    var toggle = AddButton(panel, value(), Kind.Secondary, new Vector2(right - small - rowGap * 0.5f, ry),
+                        new Vector2(2f * small + rowGap, buttonSize.y), up, 0.026f);
+                    panel.Refresh.Add(() => toggle.Label.text = value());
+                }
+                else
+                {
+                    var shown = UiStyle.CreateText("Value", root, value(), new Vector3(right - 2f * small - rowGap - 0.015f, ry, -0.004f),
+                        0.026f * textScale, UiStyle.Text, display: true, alignment: TextAlignmentOptions.Right, width: width * 0.4f);
+                    shown.rectTransform.pivot = new Vector2(1f, 0.5f);
+                    panel.Refresh.Add(() => shown.text = value());
+                    var theme = label == "Theme";
+                    AddButton(panel, theme ? "<" : "-", Kind.Secondary, new Vector2(right - 1.5f * small - rowGap, ry), buttonSize, down, 0.03f);
+                    AddButton(panel, theme ? ">" : "+", Kind.Secondary, new Vector2(right - 0.5f * small, ry), buttonSize, up, 0.03f);
+                }
+                rowY -= rowHeight + rowGap;
+            }
+            y -= rowsHeight + gap;
+
+            AddButton(panel, "Defaults", Kind.Secondary, new Vector2(-0.5f * (half + gap), y - buttonHeight * 0.5f), new Vector2(half, buttonHeight),
+                GameSettings.ResetToDefaults);
+            AddButton(panel, "Back", Kind.Primary, new Vector2(0.5f * (half + gap), y - buttonHeight * 0.5f), new Vector2(half, buttonHeight),
+                () => _view = _settingsReturn);
+            AddFooter(panel, width, height);
+        }
+
+        /// <summary>Label, value text, and the − / + actions (no − = a single toggle button showing the value).</summary>
+        private (string Label, Func<string> Value, Action Down, Action Up)[] SettingsRows()
+        {
+            if (_settingsPage == 0)
+                return new (string, Func<string>, Action, Action)[]
+                {
+                    ("Theme", () => UiStyle.Theme != null ? UiStyle.Theme.DisplayName : "?", () => CycleTheme(-1), () => CycleTheme(1)),
+                    ("Master volume", () => Percent(GameSettings.MasterVolume),
+                        () => GameSettings.MasterVolume -= 0.1f, () => GameSettings.MasterVolume += 0.1f),
+                    ("Effects volume", () => Percent(GameSettings.EffectsVolume),
+                        () => GameSettings.EffectsVolume -= 0.1f, () => GameSettings.EffectsVolume += 0.1f),
+                    ("Announcer volume", () => Percent(GameSettings.AnnouncerVolume),
+                        () => GameSettings.AnnouncerVolume -= 0.1f, () => GameSettings.AnnouncerVolume += 0.1f),
+                };
+            return new (string, Func<string>, Action, Action)[]
+            {
+                ("Menu distance", () => $"{GameSettings.MenuDistance:0.0} m",
+                    () => GameSettings.MenuDistance -= 0.1f, () => GameSettings.MenuDistance += 0.1f),
+                ("Menu height", () => Centimetres(GameSettings.MenuHeight),
+                    () => GameSettings.MenuHeight -= 0.05f, () => GameSettings.MenuHeight += 0.05f),
+                ("Menu & text size", () => Percent(GameSettings.UiScale),
+                    () => GameSettings.UiScale -= 0.1f, () => GameSettings.UiScale += 0.1f),
+                ("Vibration", () => PercentOrOff(GameSettings.Haptics),
+                    () => GameSettings.Haptics -= 0.25f, () => GameSettings.Haptics += 0.25f),
+                ("Damage flashes", () => PercentOrOff(GameSettings.DamageFlash),
+                    () => GameSettings.DamageFlash -= 0.25f, () => GameSettings.DamageFlash += 0.25f),
+                ("K.O. slow motion", () => GameSettings.KoSlowMotion ? "On" : "Off",
+                    null, () => GameSettings.KoSlowMotion = !GameSettings.KoSlowMotion),
+            };
+        }
+
+        private static void CycleTheme(int step)
+        {
+            var themes = GameSettings.Themes;
+            var index = Mathf.Max(0, Array.IndexOf(themes, GameSettings.Theme));
+            GameSettings.Theme = themes[(index + step + themes.Length) % themes.Length];
+        }
+
+        private static string Percent(float value) => $"{Mathf.RoundToInt(value * 100f)}%";
+
+        private static string PercentOrOff(float value) => value <= 0f ? "Off" : Percent(value);
+
+        private static string Centimetres(float metres)
+        {
+            var cm = Mathf.RoundToInt(metres * 100f);
+            return cm == 0 ? "Default" : $"{(cm > 0 ? "+" : "")}{cm} cm";
         }
 
         // ---------------------------------------------------------------- placement
@@ -525,17 +722,23 @@ namespace SpellGame.Game
 
         private Vector3 InFront(float distance, float drop) => Eye.position + FlatForward() * distance + Vector3.down * drop;
 
-        private Vector3 PanelSpot() => InFront(panelDistance, panelDrop);
+        private Vector3 PanelSpot()
+        {
+            _placedDistance = GameSettings.MenuDistance;
+            _placedHeight = GameSettings.MenuHeight;
+            return InFront(_placedDistance, panelDrop - _placedHeight);
+        }
 
         private void FollowView(Panel panel)
         {
             var toPanel = panel.Target - Eye.position;
             toPanel.y = 0f;
             if (toPanel.sqrMagnitude < 1e-4f || Vector3.Angle(FlatForward(), toPanel) > refollowAngle ||
-                toPanel.magnitude > panelDistance * 2f)
+                toPanel.magnitude > GameSettings.MenuDistance * 2f)
                 panel.Target = PanelSpot();
             var t = 1f - Mathf.Exp(-followSpeed * Time.deltaTime);
             panel.Root.position = Vector3.Lerp(panel.Root.position, panel.Target, t);
+            panel.Root.localScale = Vector3.one * GameSettings.UiScale;
             FaceViewer(panel.Root);
         }
 
@@ -597,7 +800,7 @@ namespace SpellGame.Game
                 if (hit != null)
                 {
                     SetHover(hit, true);
-                    _audio.PlayOneShot(_tick, 0.5f);
+                    _audio.PlayOneShot(_tick, 0.5f * GameSettings.EffectsVolume);
                     Buzz(controller, 0.25f, 0.03f);
                 }
             }
@@ -612,12 +815,13 @@ namespace SpellGame.Game
             }
 
             var progress = Mathf.Clamp01((Time.time - _hoverStart) / dwellSeconds);
-            var barWidth = hit.Rect.width - 2f * DwellBarInset;
+            var inset = Mathf.Min(DwellBarInset, hit.Rect.width * 0.15f);
+            var barWidth = hit.Rect.width - 2f * inset;
             var bar = hit.Dwell;
             bar.Transform.gameObject.SetActive(progress > 0f);
             bar.Resize(new Vector2(barWidth * progress, bar.Size.y));
             var barPosition = bar.Transform.localPosition;
-            bar.Transform.localPosition = new Vector3(hit.Rect.xMin + DwellBarInset + barWidth * progress * 0.5f, barPosition.y, barPosition.z);
+            bar.Transform.localPosition = new Vector3(hit.Rect.xMin + inset + barWidth * progress * 0.5f, barPosition.y, barPosition.z);
             if (progress >= 1f && !_dwellFired)
             {
                 _dwellFired = true;
@@ -627,7 +831,7 @@ namespace SpellGame.Game
 
         private void Press(Button button, OVRInput.Controller controller)
         {
-            _audio.PlayOneShot(_beep, 0.6f);
+            _audio.PlayOneShot(_beep, 0.6f * GameSettings.EffectsVolume);
             Buzz(controller, 0.7f, 0.06f);
             button.OnPress();
         }
@@ -643,7 +847,7 @@ namespace SpellGame.Game
 
         private void Buzz(OVRInput.Controller controller, float amplitude, float seconds)
         {
-            OVRInput.SetControllerVibration(1f, amplitude, controller);
+            OVRInput.SetControllerVibration(1f, amplitude * GameSettings.Haptics, controller);
             _hapticController = controller;
             _hapticStop = Time.time + seconds;
         }
@@ -673,7 +877,7 @@ namespace SpellGame.Game
             }
             var pulse = urgent ? 0.5f + 0.5f * Mathf.Sin(Time.time * 8f) : 0f;
             _timerBack.Apply(UiStyle.Pulsing(UiStyle.Hud, urgent ? 0.5f + 0.5f * pulse : 0f));
-            _timerBadge.localScale = Vector3.one * (1f + 0.06f * pulse);
+            _timerBadge.localScale = Vector3.one * ((1f + 0.06f * pulse) * GameSettings.UiScale);
         }
 
         // ---------------------------------------------------------------- construction

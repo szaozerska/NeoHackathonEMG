@@ -96,6 +96,7 @@ namespace SpellGame.Game
         private Vector3 _eye, _forward;
 
         private Material _countdownMaterial, _fightMaterial, _koMaterial;
+        private TMP_FontAsset _font;
         private AudioSource _audio;
         private AudioClip _drum, _whoosh, _impact, _bass;
 
@@ -135,24 +136,45 @@ namespace SpellGame.Game
                                "Run SpellGame/Rebuild Main Scene in the editor to import them.");
                 return;
             }
-            var template = textMaterial != null ? textMaterial : font != null ? font.material : TMP_Settings.defaultFontAsset.material;
+            CreateRing();
+            CreateSparks();
+            ApplyTheme();
+        }
+
+        /// <summary>Font, text materials and effect colours from the active theme (else the serialized font / material).</summary>
+        private void ApplyTheme()
+        {
+            if (!MomentText.Available)
+                return;
+            var theme = UiStyle.Theme;
+            var themed = theme != null && theme.DisplayFont != null && theme.MomentMaterial != null;
+            _font = themed ? theme.DisplayFont : font;
+            var template = themed ? theme.MomentMaterial
+                : textMaterial != null ? textMaterial : font != null ? font.material : TMP_Settings.defaultFontAsset.material;
+            foreach (var old in new[] { _countdownMaterial, _fightMaterial, _koMaterial })
+                if (old != null)
+                    Destroy(old);
             _countdownMaterial = MomentText.GlowMaterial(template, MomentPalette.CountdownGlow, MomentPalette.NoShadow);
             _fightMaterial = MomentText.GlowMaterial(template, MomentPalette.FightGlow, MomentPalette.NoShadow);
             _koMaterial = MomentText.GlowMaterial(template, MomentPalette.KoGlow, MomentPalette.KoShadow);
-            CreateRing();
-            CreateSparks();
+            _ringLine.sharedMaterial.SetColor("_BaseColor", Opaque(MomentPalette.FightGlow));
+            _sparks.GetComponent<ParticleSystemRenderer>().sharedMaterial.SetColor("_BaseColor", Opaque(MomentPalette.FightText));
         }
+
+        private static Color Opaque(Color color) => new(color.r, color.g, color.b, 1f);
 
         private void OnEnable()
         {
             gameClient.StateReceived += OnState;
             gameClient.ConnectionChanged += OnConnectionChanged;
+            UiStyle.ThemeChanged += ApplyTheme;
         }
 
         private void OnDisable()
         {
             gameClient.StateReceived -= OnState;
             gameClient.ConnectionChanged -= OnConnectionChanged;
+            UiStyle.ThemeChanged -= ApplyTheme;
             EndSlowMotion();
             StopBuzz();
         }
@@ -482,7 +504,7 @@ namespace SpellGame.Game
                 return null;
             var root = new GameObject($"Moment {text}").transform;
             root.SetParent(transform, false);
-            var label = MomentText.Create("Text", root, font, material, text, fontSize, color, italic);
+            var label = MomentText.Create("Text", root, _font, material, text, fontSize, color, italic && UiStyle.Moments.Italic);
             var pop = new Pop
             {
                 Root = root,

@@ -168,15 +168,15 @@ namespace SpellGame.Game
             var isFighter = Me != null && _match.Fighters.Contains(Me);
             string title;
             if (_match.Reason == MatchEndReason.Quit)
-                (title, _titleColor) = ("MATCH ENDED", UiStyle.Text);
+                (title, _titleColor) = ("MATCH ENDED", UiStyle.TitleColor);
             else if (_match.Winner == null)
-                (title, _titleColor) = ("DRAW", UiStyle.Text);
+                (title, _titleColor) = ("DRAW", UiStyle.TitleColor);
             else if (_match.Winner == Me)
-                (title, _titleColor) = ("VICTORY!", UiStyle.Text);
+                (title, _titleColor) = ("VICTORY!", UiStyle.TitleColor);
             else if (isFighter)
                 (title, _titleColor) = ("DEFEAT", UiStyle.TextDim);
             else
-                (title, _titleColor) = ($"{NameOf(_match.Winner)} WINS", UiStyle.Text);
+                (title, _titleColor) = ($"{NameOf(_match.Winner)} WINS", UiStyle.TitleColor);
             _won = _match.Winner != null && (_match.Winner == Me || !isFighter);
 
             _title.text = title;
@@ -319,7 +319,7 @@ namespace SpellGame.Game
                 var x = left;
                 foreach (var award in awards)
                 {
-                    var text = UiStyle.CreateText("Award", card, award, Vector3.zero, 0.022f, UiStyle.Text, display: true,
+                    var text = UiStyle.CreateText("Award", card, award, Vector3.zero, 0.022f, UiStyle.OnPrimary, display: true,
                         spacing: 3f);
                     var badgeWidth = UiStyle.Width(text) + 0.03f;
                     if (x > left && x + badgeWidth > left + inner)
@@ -373,7 +373,7 @@ namespace SpellGame.Game
             FollowView();
             var age = Time.time - _shownAt;
             var pop = age < 0.5f ? EaseOutBack(age / 0.5f) : 1f;
-            _banner.localScale = Vector3.one * Mathf.Max(0.01f, pop);
+            _banner.localScale = Vector3.one * (Mathf.Max(0.01f, pop) * GameSettings.UiScale);
             var shimmer = _won ? 0.15f * Mathf.Sin(Time.time * 4f) : 0f;
             _title.color = Color.Lerp(_titleColor, UiStyle.Accent, Mathf.Max(0f, shimmer) * 2f);
             _ash.transform.position = Eye.position + Vector3.up * 1.2f;
@@ -418,7 +418,10 @@ namespace SpellGame.Game
             return forward.sqrMagnitude > 1e-4f ? forward.normalized : Vector3.forward;
         }
 
-        private Vector3 BannerSpot() => Eye.position + FlatForward() * bannerDistance + Vector3.up * bannerLift;
+        /// <summary>In front, moved by the player's menu distance / height settings like the menus.</summary>
+        private Vector3 BannerSpot() =>
+            Eye.position + FlatForward() * (bannerDistance + GameSettings.MenuDistance - GameSettings.DefaultMenuDistance) +
+            Vector3.up * (bannerLift + GameSettings.MenuHeight);
 
         private void FollowView()
         {
