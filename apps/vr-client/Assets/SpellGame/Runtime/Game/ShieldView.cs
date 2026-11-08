@@ -89,7 +89,9 @@ namespace SpellGame.Game
             foreach (var (playerId, player) in _players)
             {
                 var disc = DiscFor(playerId);
-                var raised = player.Item == SpellKind.Shield && TryGetDisc(playerId, out var center, out var normal);
+                var center = Vector3.zero;
+                var normal = Vector3.up;
+                var raised = player.Item == SpellKind.Shield && TryGetDisc(playerId, out center, out normal);
                 disc.gameObject.SetActive(raised);
                 if (!raised)
                     continue;
