@@ -62,6 +62,15 @@ def test_half_second_file_bursts_do_not_expire_state_but_real_loss_clears_displa
     tester.close();assert not tester.status()['connected']
 
 
+def test_source_change_without_new_packets_keeps_status_json_valid(tmp_path):
+    tester,predictor,clock=setup(tmp_path)
+    pump(tester,predictor,clock,'fist')
+    tester.source_changed('file',str(tmp_path/'next.jsonl'))
+    status=tester.status()
+    assert not status['connected'] and status['packet_age_seconds'] is None
+    json.dumps(status,allow_nan=False)
+
+
 def test_tester_http_and_feed_tail_do_not_replay_or_modify_old_recording(tmp_path):
     from spelltrain.live_test import LiveTester
     path=tmp_path/'raw.jsonl';original=b'previous data must not be replayed\n';path.write_bytes(original)

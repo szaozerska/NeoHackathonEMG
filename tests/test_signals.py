@@ -87,6 +87,7 @@ def test_kinesis_stream_emg_event_keeps_host_uptime_and_band_clock():
     payload={'schema_version':1,'type':'emg','stream_session_id':'s','event_sequence':40,'host_time_s':812.25,
              'band_timestamp_us':123456,'payload':{'sequence':9,'sample_rate_hz':2048,'layout':'sample_major','values':rows}}
     packet=normalize_sse(payload,'emg',KINESIS_STREAM_ADAPTER)
-    assert packet=={'samples':rows,'source_seq':9,'source_t':123456,'source_uptime':812.25}
+    assert packet=={'samples':rows,'source_seq':9,'source_t':123456,'source_uptime':812.25,
+                    'stream_session':'s'}
     assert normalize_sse({**payload,'type':'status'},'status',KINESIS_STREAM_ADAPTER) is None
     assert 'source_uptime' not in normalize_sse({'type':'emg','samples':rows},'emg')

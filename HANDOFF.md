@@ -35,6 +35,18 @@ installations are not embedded in this repository.
 
 ## Start the original bench
 
+The launcher now opens **Micah data contribution** at `/`: an EMG-only page
+where the mouse starts a session, buttons select Snap/Shield/Sword effort, and
+holding/releasing Space immediately marks intended/non-intended intervals, without fixed clipping. Connect the full Kinesis feed for synchronized gyro/orientation context; cleanup is deferred to postprocessing. See
+[`docs/micah-contribution.md`](docs/micah-contribution.md). No camera is required
+or started. The optional **Intent lab** remains at `/collect`, with its workflow
+described in [`docs/intent-lab.md`](docs/intent-lab.md). Use **Original
+v4 tester** at `/live` for the original model feedback page described below.
+Both pages use the same active sensor connection and preserve the v4 weights.
+The training order is documented for Sophie in **Our Methodology for Training
+Our Neuroband EMG**, architecture.md §2.2.1: intent gate first, independent action
+detectors second, temporal transitions third. The new gate is not yet trained.
+
 1. Quit other Kinesis copies. Double-click **Start Partner Bench.command**.
    It opens the prepared Kinesis app and the localhost test page. It does not
    replace `/Applications/Kinesis.app` or change saved band credentials.
@@ -58,8 +70,17 @@ installations are not embedded in this repository.
 Default web port is 8765, with 8766 as fallback. Follow the URL printed by the
 launcher rather than assuming a port. Fresh live source timestamps are required;
 copying an old recording into place does not simulate live band input.
-The **stream** tab/SSE URL is used by the game hand-client, not by this original
-file-based test bench. It changes when the feed restarts and must stay local.
+The partner launcher now automatically follows the raw JSONL file Kinesis has
+open, so saving it at a different filename does not require reconfiguring the
+tester. The original explicit `--kinesis-file` mode remains available.
+
+For live testing without saving a raw recording, open **Connect without a
+recording file** on the dashboard. In Kinesis **stream**, enable **local sensor
+feed**, copy its URL, and paste it into the dashboard. The link is saved only in
+ignored `.local/kinesis-stream-url` with owner-only permissions. It changes when
+the feed restarts; paste the replacement link then. Never publish this link.
+This optional tester input is separate from the game's hand-client connection.
+The guided neural collector still expects its raw recording file.
 Accessibility permission is needed only for Kinesis Mac controls; keep controls
 paused if you only want EMG capture.
 

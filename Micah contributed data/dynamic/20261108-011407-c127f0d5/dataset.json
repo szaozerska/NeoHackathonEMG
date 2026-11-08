@@ -1,0 +1,12 @@
+{
+  "session_id": "20261108-011407-c127f0d5",
+  "contributor": "Micah",
+  "test_condition": "dynamic",
+  "dataset_role": "training_development_only",
+  "original_labels": "original/truth-values.json",
+  "review_report": "analysis/review-report.json",
+  "labels_are_primary": true,
+  "review_candidates_are_ground_truth": false,
+  "duration_seconds": 1198.9724537921138,
+  "capture_motion_context_available": false
+}

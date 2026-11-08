@@ -52,6 +52,7 @@ __pycache__/
 # Local EMG bench environments and generated models
 /.setup/
 /.local/
+/Micah data contribution/
 /artifacts/
 /demo-output/
 *.joblib

@@ -1,0 +1,93 @@
+[
+  {
+    "capture_t": 129.9196291670669,
+    "motion": "snap",
+    "effort": null,
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 415.9885082500987,
+    "motion": "sword_hold",
+    "effort": "high",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 425.31991645903327,
+    "motion": "sword_hold",
+    "effort": "low",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 468.83060787501745,
+    "motion": "sword_hold",
+    "effort": "medium",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 518.8906360421097,
+    "motion": "sword_hold",
+    "effort": "high",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 572.9085070000729,
+    "motion": "sword_hold",
+    "effort": "medium",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 582.977359584067,
+    "motion": "sword_hold",
+    "effort": "high",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 661.7197251670295,
+    "motion": "sword_hold",
+    "effort": "low",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 698.271448125015,
+    "motion": "sword_hold",
+    "effort": "medium",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 710.4616891670739,
+    "motion": "sword_hold",
+    "effort": "high",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 747.865037792013,
+    "motion": "shield_hold",
+    "effort": "low",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 990.7322202920914,
+    "motion": "shield_hold",
+    "effort": "medium",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 1062.4719203340355,
+    "motion": "shield_hold",
+    "effort": "high",
+    "source": "participant_selection",
+    "performed_verified": false
+  }
+]

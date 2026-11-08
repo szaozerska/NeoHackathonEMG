@@ -1,5 +1,12 @@
 # Spell-Casting Game: System Architecture Spec
 
+**For Sophie — the Neuroband training architecture is a pyramid, built from
+the bottom up: (A) intended versus non-intended activity → (B) independently
+validated action detectors → (C) learned temporal transitions → game actions.**
+Read **Our Methodology for Training Our Neuroband EMG (§2.2.1)** before changing
+the classifier or collection workflow. These are successive problems with
+separate labels and evaluations; do not start by fitting whole spell sequences.
+
 Diagram: https://www.tldraw.com/f/j9TtJhe8cWZyB6hVz3jwV?d=v-977.-580.3038.1929.page
 
 **How to read this spec:**
@@ -52,13 +59,13 @@ There is one Quest, one Neural Band, and one classification Mac per player, plus
   - A slow reader is disconnected, so read the feed on a dedicated thread.
   - The URL and token change every time the feed is restarted.
 - **Responsibilities:**
-  - Run the ML hand sign classifier on windows of EMG, using the wrist quaternion as an extra feature.
+  - Run the two-stage intent and gesture pipeline described in §2.2.1 on causal windows of EMG, with available wrist orientation/gyro as measured context.
   - Find the server (§4.1) and open a TCP connection to it.
   - Send **current hand sign** packets to the server.
   - **Optional:** send **wrist orientation** packets, used only if the headset's arm tracking proves inaccurate. The band provides rotation only, not position.
 - **Identity:** tagged with the **same player ID** as that player's Quest (§5).
 - **Requirements:** macOS 14+ on Apple Silicon (for the packaged Kinesis build), and the band paired and enrolled via Meta sign-in in Kinesis.
-- **Stack (recommended):** Python 3 with a classical EMG pipeline. Hand-built features plus a simple model beat deep learning when there is little labeled data and only one or two users.
+- **Stack (recommended):** Python 3. Compare classical EMG features against a small causal temporal network using the same wearing-session splits; select by measured false triggers, missed actions and latency.
   - **Feed reader:** standard-library `urllib` reading the SSE stream line by line, on its own thread, pushing EMG batches into a ring buffer (`collections.deque` or a preallocated `numpy` array).
   - **Preprocessing (`scipy.signal`):**
     - Subtract the per-channel mean (the raw counts are unsigned and not centered).
@@ -73,10 +80,211 @@ There is one Quest, one Neural Band, and one classification Mac per player, plus
     - Wrap scaling and the model in a `Pipeline`; save and load it with `joblib`.
   - **Output smoothing:** a majority vote over the last 3–5 predictions plus a confidence threshold before a `sign` packet changes. This is our own code, not a library.
   - **Debug plotting:** `pyqtgraph` for live 8-channel plots; `matplotlib` for offline analysis.
-  - **Stretch goal:** a small 1D CNN on raw windows in `PyTorch`, only if the baseline plateaus. It needs much more data.
+  - **Temporal candidate:** a small causal 1D CNN, optionally followed by a GRU, in `PyTorch`. Compare it with the feature baseline rather than assuming a larger model will improve this dataset.
 - **Data collection (recommended):**
   - A recording script prompts the player ("make sign X") and saves labeled windows to `.npz` files, including rest and `none` samples.
   - Recalibrate every session, because the EMG shifts whenever the band is taken off and put back on.
+
+### 2.2.1 Our Methodology for Training Our Neuroband EMG
+
+**For Sophie.** This is the proposed training methodology and collection
+contract. The localhost collector supports gathering evidence for it; the
+two-stage trained pipeline is not yet deployed. The preserved v4 model and the
+game hand-client's current `EmgLogger` stub do not implement this methodology.
+
+#### For Sophie: build the pyramid from its base, in this order
+
+**The base is intent detection, not gesture recognition. The next layer learns
+individual actions, not spells. Only the third layer learns whether those
+actions form a valid transition over time.** Each layer depends on the one
+below it being measured and understood. A sophisticated transition model cannot
+repair a snap detector or open-hand detector that has not been independently
+validated.
+
+```mermaid
+flowchart BT
+    A["BASE · Stage A<br/>Intended vs non-intended activity<br/>Binary labels only; no gesture names"]
+    B["MIDDLE · Stage B<br/>Which intended action occurred?<br/>Validate snap and open/grip detectors independently"]
+    C["TOP · Stage C<br/>What happened over time?<br/>Snap → open before a maximum deadline<br/>Confirmed grip cancels pending/held Fireball"]
+    D["GAME · Accepted spell state<br/>Quest spatial evidence + authoritative server"]
+    N["Non-intended / uncertain<br/>No new spell trigger<br/>Retain evidence and hard negatives"]
+    A -->|intended activity| B
+    A -->|non-intended or rejected| N
+    B -->|validated event and state evidence| C
+    C -->|valid temporal sequence| D
+```
+
+**For Sophie: do not collapse A, B and C into one labeling task.** Stage A asks
+only whether the participant intended an interaction; Stage B adds action
+identity; Stage C uses longer sequences and reviewed times to learn the
+transition. Preserve separate datasets/targets and report errors at each layer
+as well as across the complete cascade. Collecting a transition clip does not
+make the lower-level action labels reliable automatically.
+
+#### Stage A: intended versus non-intended activity
+
+First build a binary dataset with only two reported classes: **intended
+interaction** and **non-intended everyday movement**. At this stage the person
+does not label which gesture they performed. The question is whether they were
+deliberately attempting an interaction. This is a behavioral label supplied by
+the participant, not intention read directly from a camera or muscle sensor.
+Uncertain or incorrectly performed blocks remain unconfirmed.
+
+For continuous collection, use one live toggle: **red/off = non-intended;
+green/on = intended**. Keep the webcam observing in both states. Preserve every
+toggle timestamp and software clock uncertainty, but do not train directly up
+to a button boundary. Exclude a configurable guard on **both sides** of toggles,
+other reported UI interactions and recording boundaries (initial default: one
+second each side), and intersect the remainder with continuous sensor coverage.
+Prefer clicking with the other hand. Guarded intervals remain participant
+reports; clicking is not an exact physiological onset or a guarantee of intent.
+
+The current **Micah data contribution** page is an independent, EMG-only Stage A
+collector, without camera validation or inference. It also records available timestamped band motion/context for alignment and later analysis. Start with the mouse, select
+Snap or a low/medium/high Shield/Sword hold, then **hold Space for intended
+activity and release for non-intended**. These motion selections are participant
+metadata, separate from the binary target; they need not be used to fit the
+initial intent gate. Space changes the reported label immediately, with **no
+activation delay, fixed clipping or minimum interval**. Preserve every boundary
+and the surrounding non-intended baseline; refine actual motion boundaries in
+a separate postprocessing step. Keep sensor coverage and clock uncertainty
+separate from participant intention reports. Prefer the other hand for Space.
+Data and participant truth reports stay in the Git-ignored
+`Micah data contribution/` folder. See
+[`docs/micah-contribution.md`](docs/micah-contribution.md). The older continuous
+toggle and optional camera workflow remain available at `/collect`.
+
+Collect intended interactions with varied arm positions, continuously varying
+wrist rotations, and relaxed, natural and comfortably firm effort. Collect
+equally varied non-intended activity: resting, finger fidgeting with a still
+wrist, wrist rotation without an action, reaching, whole-arm movement, ordinary
+gripping, walking and natural arm swing. Include visually similar movements in
+both classes where their intended use differs; do not accidentally teach the
+model that motion or strong muscle tension always means intent. If the signals
+do not distinguish a particular pair, report that ambiguity rather than
+inventing separability.
+
+Record continuously and retain all raw evidence, including the lead-in and
+transitions. Start with a classical feature baseline and compare a compact
+causal 1D CNN; test a CNN plus GRU if temporal context helps. Learn a score for
+intended activity with an uncertainty/rejection region. Fit preprocessing on
+training data only and choose thresholds on separate validation sessions.
+Measure false openings of the gate per minute of ordinary activity, missed
+intended interactions, and detection delay, rather than selecting on aggregate
+window accuracy alone.
+
+#### Stage B: classify the intended action and verify its trigger
+
+After Stage A is evaluated, collect a second, gesture-labeled dataset for
+intended activity. Learn which action occurred, separately from whether it was
+intended. Preserve the intended/non-intended labels and original timelines;
+Stage A and Stage B have distinct targets and versioned models. Non-intended
+examples remain useful hard negatives and must remain in end-to-end evaluation.
+Do not throw them away merely because Stage A predicts they are non-intended.
+
+At runtime, the conceptual path is **continuous sensor history → intent gate →
+gesture/event classification → temporal trigger rules → authoritative game
+server**. Maintain a causal pre-trigger buffer so gate latency does not remove
+the beginning of a snap. Evaluate the whole cascade: an otherwise correct
+gesture detector cannot recover an intended action that the gate rejects.
+
+Train **snap events** independently from **held hand states**. A short snap is
+not a five-second hand pose. Collect true snaps at arbitrary, continuously
+varying wrist/arm angles and with relaxed, natural and comfortable firm effort;
+also collect missed attempts, finger/thumb touches, wrist sweeps, finger
+fidgeting and arm/walking motion without snaps. Report actual counts, including
+zero, rather than equating a prompt with success. Counts provide weak clip
+labels; precise positive target pulses require reviewed event timing.
+
+#### Stage C: temporal equipment rules — snap, open hand, then grip
+
+1. A detected intentional snap starts a short **pending-open** interval; it does
+   not by itself establish a held Fireball.
+2. A clearly open hand shortly afterward confirms **Fireball equipped**. Palm-up
+   is not required. There is **no minimum snap-to-open delay**: immediate
+   opening can be valid. Independently validate the snap detector and open-hand
+   detector first. Then collect longer sequences ranging from the shortest
+   natural snap→open transition to the longest acceptable one, plus no-opening
+   controls. Use reviewed times and separate validation data to select a
+   **maximum opening deadline**, rather than assuming one delay works.
+3. If no open hand is confirmed within that interval, discard the pending
+   Fireball. A new snap is required. Missing or ambiguous evidence is not proof
+   that a grip occurred.
+4. A confirmed clasp/grip during the pending interval or while holding Fireball
+   selects **Sword**, without requiring a spatial draw gesture. Confirmation
+   must be quick enough for gameplay and stable enough to resist false grips;
+   measure the tradeoff on reviewed open↔grip transitions.
+5. Once equipped, Fireball persists through open-hand movement and uncertain
+   hand readings until a grip is confirmed or an explicit game rule applies.
+   A low intent-gate score alone must not silently erase held equipment. Keep
+   contextual held-state monitoring active after initial trigger acceptance.
+6. Quest supplies spatial evidence for deployment/throwing, hand position and
+   palm direction. It does not replace the participant's intent label. Spell
+   state and hit/damage rules remain server-authoritative.
+
+The existing game simulation still contains earlier sword/shield semantics;
+these rules describe the target behavior and localhost preview. Integrating
+them into the multiplayer server requires an explicit coordinated change.
+The tension/effort model can be retained as a baseline while snap/intent and
+transition models are developed; no improvement claim follows from retaining it.
+
+#### Synchronized evidence and faster vision-assisted review
+
+Capture every sensor stream Kinesis actually exposes: raw eight-channel EMG,
+wrist orientation, gyro, decoded band gestures, stream configuration and
+connection changes. Retain original sample/sequence identifiers and band
+timestamps plus host receipt uptime. Mark unavailable streams explicitly. The
+raw recording-file path currently supplies only EMG; the full local feed is
+needed for motion context. The band measures wrist orientation, not absolute
+finger pose, hand position or directly calibrated physical force.
+
+Use a computer webcam facing the participant, with the band hand visible, for
+independent hand/finger measurements. The current implementation uses locally
+cached MediaPipe hand landmarks; a suitably trained YOLO hand-keypoint model can
+be evaluated as an alternative. A generic person detector is insufficient.
+Store visual open/grip proposals, landmarks, uncertainty and occlusions alongside
+synchronized video and optional snap-review audio. Correct the hand selection
+for mirrored previews. Quest hand tracking can later add spatial reference.
+
+Vision should automatically propose hand-state intervals and prioritize
+disagreements for review, reducing per-frame button clicks. It cannot certify
+mental intent or precisely locate every snap. Keep **cues**, **model
+predictions**, **vision-derived proposals**, and **participant/reviewer-confirmed
+labels** as separate fields. Record software clock alignment and uncertainty;
+do not claim hardware synchronization. Review uncertain finger motion and snap
+timing before using them as supervised targets. Camera observations are label
+references, not inputs to the deployed band classifier.
+
+Include 10-second stable open-hand and grip holds, quiet finger movement,
+continuous wrist rotation, moving open holds, snap→immediate grip, snap without
+opening, and snap→open→grip at variable speeds. These establish steady-state
+variation and temporal failure cases. An open Fireball hold must not silently
+inherit an old deliberate-shield label.
+
+#### Fresh data, splits and model acceptance
+
+Start new intent and action training from freshly collected labels. Exclude
+historical training data by default; retain the old models and data as archived
+baselines rather than deleting or silently relabeling them. Reuse historical
+examples only after an explicit provenance/label review confirms that their
+meanings and synchronization match this methodology. Historical raw data are
+not distributed with this repository.
+
+Group by original clip and complete wearing session. Never split overlapping
+windows from one clip across training and evaluation. Use separate sessions for
+fitting, validation/threshold selection, and untouched testing, including band
+removal/reapplication and ordinary motion. Preserve evaluation captures from
+training and hard-negative mining. Recording never updates live weights.
+
+Compare the frozen cascade with the preserved baseline on event precision and
+recall where reviewed timing exists, false spell triggers per minute, missed
+actions, grip-switch/open-confirmation latency, rejection coverage, and results
+across continuously measured rotations and effort levels. Count matching alone
+does not establish event accuracy. Promote a versioned candidate only after
+these checks; 99% remains a target, not an established result.
+
+The localhost procedure and saved-file contract are documented in
+[`docs/intent-lab.md`](docs/intent-lab.md).
 
 ### 2.3 Game server (Mac)
 - **Authoritative.** Runs the entire game simulation; clients only send inputs and render state.

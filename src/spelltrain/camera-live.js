@@ -10,14 +10,16 @@
   const result=await response.json();if(!response.ok)throw Error(result.error||'Camera request failed');return result;
  }
  async function syncClock(){
-  const start=clientNow(),response=await fetch('/api/clock',{cache:'no-store'}),value=await response.json(),end=clientNow();
-  return {host_offset_seconds:value.host_uptime-(start+end)/2,uncertainty_seconds:(end-start)/2,client_sync_t:(start+end)/2};
+  const samples=[];
+  for(let i=0;i<5;i++){const start=clientNow(),response=await fetch('/api/clock',{cache:'no-store'}),value=await response.json(),end=clientNow();samples.push({host_offset_seconds:value.host_uptime-(start+end)/2,uncertainty_seconds:(end-start)/2,client_sync_t:(start+end)/2})}
+  return samples.sort((a,b)=>a.uncertainty_seconds-b.uncertainty_seconds)[0];
  }
  function note(message){$('cameraStatus').textContent=message}
  async function enable(){
   $('enableCamera').disabled=true;
+  note('Requesting camera permission… allow it in your browser.');
   try{
-   if(!stream){stream=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480,frameRate:30},audio:true});$('cameraVideo').srcObject=stream;await $('cameraVideo').play()}
+   if(!stream){stream=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480,frameRate:30},audio:$('useAudio')?$('useAudio').checked:true});$('cameraVideo').srcObject=stream;await $('cameraVideo').play()}
    worker?.terminate();ready=false;inFlight=false;
    alignment=await syncClock();note('Loading independent hand observer…');
    worker=new Worker('/camera-worker.js');
@@ -27,10 +29,18 @@
     inFlight=false;
     if(value.kind==='error'){ready=false;$('enableCamera').disabled=false;note('Camera observer error: '+value.error);return}
     if(value.kind==='observation'){
+     const overlay=$('handOverlay');
+     if(overlay){
+      overlay.width=640;overlay.height=480;const ctx=overlay.getContext('2d');ctx.clearRect(0,0,640,480);
+      for(const hand of value.hands){const selected=hand.handedness===(window.cameraTargetHand||'Right');ctx.fillStyle=selected?'#91efc2':'#a9bbd1';
+       for(const p of hand.landmarks){ctx.beginPath();ctx.arc(p[0]*640,p[1]*480,3,0,2*Math.PI);ctx.fill()}
+       const p=hand.landmarks[0];if(p)ctx.fillText(hand.handedness+(selected?' · target':''),p[0]*640,p[1]*480-12);
+      }
+     }
      try{
-      const response=await request('/api/camera/observations',{capture_id:recording?sessionId:null,alignment,observation:value});
+      const response=await request('/api/camera/observations',{capture_id:recording?sessionId:null,alignment,observation:value,target_hand:window.cameraTargetHand||'Right'});
       const name=response.posture.label;
-      $('cameraAction').textContent='Camera: '+name+(name==='unknown'?' · keep your right hand clearly visible':' · independent estimate');
+      $('cameraAction').textContent='Camera: '+name+(name==='unknown'?' · keep the selected band hand clearly visible':' · independent estimate');
       $('cameraComparison').textContent=name==='unknown'?'Not enough visual evidence':response.agreement?'Matches band hand state':'Differs from band · saved for review when recording';
      }catch(error){cameraError=error.message;note('Camera logging error: '+cameraError)}
     }
@@ -65,6 +75,7 @@
    request('/api/camera/display',{capture_id:sessionId,client_t:clientNow(),alignment,display}).catch(error=>{if(recording)note('Display logging error: '+error.message)});
   },
   async abandon(){
+   if(!sessionId)return;
    recording=false;
    if(recorder&&recorder.state!=='inactive'){await new Promise(resolve=>{recorder.onstop=resolve;recorder.stop()})}
    await uploadChain;await request('/api/camera/abandon',{capture_id:sessionId,reason:'participant_saved_emg_with_incomplete_reference'});

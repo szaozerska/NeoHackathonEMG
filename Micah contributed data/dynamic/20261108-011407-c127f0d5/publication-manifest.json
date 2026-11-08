@@ -1,0 +1,121 @@
+{
+  "session_id": "20261108-011407-c127f0d5",
+  "test_condition": "dynamic",
+  "participant_labels_primary": true,
+  "original_labels_modified": false,
+  "review_candidates_are_ground_truth": false,
+  "files": {
+    "README.md": {
+      "sha256": "117a57edd68e0590c6853cf75e03ddb03af3c50c5846fba0f6de52f24a6553d7",
+      "bytes": 4412
+    },
+    "analysis/candidate-windows.png": {
+      "sha256": "ee7739a418a5ec9901997bea18f3d25d65e931a49c7e77e9828a1766c686ff68",
+      "bytes": 178613
+    },
+    "analysis/condition-patterns.json": {
+      "sha256": "ffa97bcf831bb327ef71a0d8d8643b9c5cfe688eee08977b35f39514c848e18a",
+      "bytes": 1871
+    },
+    "analysis/dynamic-overview.png": {
+      "sha256": "e1c73a15a2a072320b20d34e5500cc3e6aed72f728aa03c009960f86fc9ce1d1",
+      "bytes": 166878
+    },
+    "analysis/envelope-review.npz": {
+      "sha256": "bf2fd30aa47e76c165c9f0ec0eefdd6068ccd2a44712d3fbfb41dba1f031f75e",
+      "bytes": 4955207
+    },
+    "analysis/label-review-queue.json": {
+      "sha256": "376adc529fb02a508bc6516095db6354b3393a7aa872edc43777bc8b88e9b788",
+      "bytes": 13789
+    },
+    "analysis/reference-quality.json": {
+      "sha256": "eb46821cca65fa4ed491309ea22cd1658bc53502a94e3ba87f62ea370e963771",
+      "bytes": 33240
+    },
+    "analysis/review-candidates.csv": {
+      "sha256": "924f77d55dc23f757239b57dda5ae0f2f8e577c13b232950b64e547b771b44a1",
+      "bytes": 2003
+    },
+    "analysis/review-candidates.json": {
+      "sha256": "4276a0b2ae8d2db7df1800a34caff47b4461906576afa0b9016e06edb3311bcb",
+      "bytes": 3936
+    },
+    "analysis/review-report.json": {
+      "sha256": "723cfc1fd93c067bb95efc9ad3ceed41fa3d2d65ff8bf147499b238c1501d4d3",
+      "bytes": 9197
+    },
+    "dataset.json": {
+      "sha256": "faa6ef3cac80c7682f764c3fbc91fa272bb1aba67686752687ae7d4fe9a0e27e",
+      "bytes": 416
+    },
+    "original/collection-plan.json": {
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 3
+    },
+    "original/collection-report.json": {
+      "sha256": "0dcdf1463e53d1b11417edb558e826416c657f08757838bb18832b4d7d6e90aa",
+      "bytes": 865
+    },
+    "original/corrections.json": {
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 3
+    },
+    "original/failure-flags.json": {
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 3
+    },
+    "original/guided-manifest.json": {
+      "sha256": "c148007ec2340b9a971841a7e29ffdda09a64563b9cc78bb2d09713374745619",
+      "bytes": 1496
+    },
+    "original/guided-trials.json": {
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 3
+    },
+    "original/intent-gate-intervals.json": {
+      "sha256": "c1b62f4748c28ded915a9cefe54a59cc9d21eedae6d7858a1ca4cbf1d21fc235",
+      "bytes": 386244
+    },
+    "original/intent-gate-trials.json": {
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 3
+    },
+    "original/intent-toggle-markers.json": {
+      "sha256": "46e04edb78143de5f8570c6328e9fd7557fcedc5a8664d0ffdfe5bc37905a191",
+      "bytes": 556061
+    },
+    "original/intent-trials.json": {
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 3
+    },
+    "original/interaction-exclusions.json": {
+      "sha256": "1748c5b84561c4f13fa65ca10b2a05e5d40d4c06b2af18daa8f07861d511a60c",
+      "bytes": 156701
+    },
+    "original/metadata.json": {
+      "sha256": "c86036ccb039087aca9f708816e8bbb869843add70b7e2d9081a422de9b49987",
+      "bytes": 3738
+    },
+    "original/motion-selections.json": {
+      "sha256": "2390259f9a36fc29d1e018eeb794bffe1272aae2d79a5d871df2e664814ff37c",
+      "bytes": 2161
+    },
+    "original/signal-coverage.json": {
+      "sha256": "0a2369339a8803b8d18cfebe8d27714e42ddbbda0c9852f7d35bae295ed5e662",
+      "bytes": 277860
+    },
+    "original/source-manifest.json": {
+      "sha256": "31ee70a150b1ab6a87bb197d54b980b9d80ce5835db1ac06e9be5c9a63db31be",
+      "bytes": 5045
+    },
+    "original/streams.jsonl.gz": {
+      "sha256": "b7b1cc38a702e3144128ee2aeeaacf35993742c6d0f81d1a7178b94dd9e7c247",
+      "bytes": 47509228
+    },
+    "original/truth-values.json": {
+      "sha256": "8b3803a864ccdd39cd8db1ef97c7ec74daf827e46186eca860410c3510ce0208",
+      "bytes": 492545
+    }
+  }
+}

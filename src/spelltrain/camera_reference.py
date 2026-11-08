@@ -12,9 +12,9 @@ import numpy as np
 from .common import write_json,json_lines
 
 
-def camera_posture(observation):
+def camera_posture(observation,target_hand='Right'):
     hands=observation.get('hands',[])
-    eligible=[h for h in hands if h.get('handedness')=='Right' and h.get('score',0)>=.7]
+    eligible=[h for h in hands if h.get('handedness')==target_hand and h.get('score',0)>=.7]
     unknown={'label':'unknown','reason':'right_hand_not_clear','independently_reviewed':False}
     if len(eligible)!=1:return unknown
     hand=eligible[0]
@@ -80,11 +80,12 @@ class CameraReference:
 
 def review_capture(directory):
     """Make a disagreement queue; never turn observer estimates into true labels."""
-    directory=Path(directory);meta=json.loads((directory/'metadata.json').read_text());observations=[];frames=0;displays=[]
+    directory=Path(directory);meta=json.loads((directory/'metadata.json').read_text());observations=[];frames=0;displays=[];camera_rows=[]
     for row in json_lines(directory/'streams.jsonl'):
         if row['kind']=='browser_display':displays.append({'capture_t':row['capture_t'],**row['display']})
         if row['kind']=='camera_observation':
             frames+=1;observation=row['observation'];label=observation['posture']['label']
+            camera_rows.append({'capture_t':row['capture_t'],'label':label})
             if label!='unknown':
                 observations.append({'capture_t':row['capture_t'],'label':label,
                     'band_state_at_receipt':observation['band_state_at_receipt'],
@@ -96,4 +97,19 @@ def review_capture(directory):
         'disagreements_at_receipt':sum(x['disagreement_at_receipt'] for x in observations),
         'observations':observations,'browser_display_changes':displays,'accuracy':None,'snap_event_times_verified':False,
         'note':'Camera geometry is independent of EMG but fallible. Compare video/audio and sensor timestamps before editing labels; receipt-time disagreement includes latency. No automatic training labels.'}
+    proposals=[];run=[]
+    def flush():
+        if len(run)>=3 and run[-1]['capture_t']-run[0]['capture_t']>=.15:
+            proposals.append({'label':run[0]['label'],'first_observed_capture_t':run[0]['capture_t'],
+                'last_observed_capture_t':run[-1]['capture_t'],'frames':len(run),
+                'boundary_policy':'Observed-frame span only; true transition lies between frames and requires review.',
+                'source':'independent_camera_geometry','independently_reviewed':False,'eligible_for_automatic_training':False})
+    for row in sorted(camera_rows,key=lambda row:row['capture_t']):
+        if row['label']=='unknown' or (run and (row['label']!=run[-1]['label'] or row['capture_t']-run[-1]['capture_t']>.35)):
+            flush();run=[]
+        if row['label']!='unknown':run.append(row)
+    flush()
+    write_json(directory/'camera-state-proposals.json',{'proposals':proposals,'automatic_ground_truth':False,
+        'note':'Review these suggested open/grip intervals against the media; they do not establish intent or exact transition times.'})
+    report['camera_state_proposals']=len(proposals)
     write_json(directory/'external-review.json',report);return report

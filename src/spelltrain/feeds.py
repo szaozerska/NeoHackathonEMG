@@ -64,8 +64,9 @@ def normalize_sse(payload, event="message", config=None):
         raise ValueError("ADC counts must be unsigned 16-bit values")
     packet = {"samples": x.tolist(), "source_seq": get_path(payload, c["sequence_path"]),
               "source_t": get_path(payload, c["timestamp_path"])}
-    if c["uptime_path"]:
+    if c.get("uptime_path"):
         packet["source_uptime"] = finite(get_path(payload, c["uptime_path"]))
+        packet["stream_session"] = get_path(payload, "stream_session_id")
     return packet
 
 
@@ -129,7 +130,7 @@ class BatchTimeline:
         return {"t": end, "start": end - (size - 1)/self.fs, "timing": basis, "gap": bool(gap), **packet}
 
 
-def read_sse(url, adapter, stop, callback, error):
+def read_sse(url, adapter, stop, callback, error, event_callback=None):
     parsed = urlsplit(url)
     if parsed.scheme != "http" or parsed.hostname not in ("127.0.0.1", "localhost", "::1"):
         raise ValueError("Kinesis feed URL must be loopback HTTP")
@@ -140,6 +141,8 @@ def read_sse(url, adapter, stop, callback, error):
                 for event, payload in sse_events(stream):
                     if stop.is_set():
                         return
+                    if event_callback is not None:
+                        event_callback(event, payload)
                     packet = normalize_sse(payload, event, adapter)
                     if packet is not None:
                         callback(packet)
@@ -163,6 +166,8 @@ def tail_kinesis(filename, stop, callback, error):
                 stream.seek(0, 2)  # Do not replay an old recording as new live data.
             while not stop.is_set():
                 position = stream.tell()
+                if position>filename.stat().st_size:
+                    stream.seek(0);position=0
                 line = stream.readline()
                 if not line.endswith("\n"):
                     stream.seek(position)

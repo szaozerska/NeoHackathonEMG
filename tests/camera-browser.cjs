@@ -10,7 +10,7 @@ const {spawn,execFileSync}=require('child_process'),assert=require('assert'),fs=
   page.on('response',response=>{if(response.status()>=400)console.log('HTTP',response.status(),response.url())});
   page.on('pageerror',error=>errors.push(error.message));
   page.on('console',message=>{if(message.type()==='error')console.log('Browser:',message.text())});
-  await page.goto(url);assert(await page.locator('#record').isDisabled());
+  await page.goto(url+'/live');assert(await page.locator('#record').isDisabled());
   await page.locator('#enableCamera').click();
   try{await page.waitForFunction(()=>window.CameraReference?.ready,{},{timeout:45000})}catch(error){console.log('Camera status:',await page.locator('#cameraStatus').textContent());throw error}
   await page.locator('#record').click();
