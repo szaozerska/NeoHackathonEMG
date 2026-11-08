@@ -46,7 +46,7 @@ class ServerLink:
                 async for message in self._conn.messages():
                     self._on_message(message)
                 log.warning("game server closed the connection")
-            except ConnectionError as exc:
+            except OSError as exc:
                 log.warning("lost the game server: %s", exc)
             finally:
                 await self._conn.close()

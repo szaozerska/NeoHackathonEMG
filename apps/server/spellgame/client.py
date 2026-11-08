@@ -47,7 +47,7 @@ class Connection:
         self.writer.close()
         try:
             await self.writer.wait_closed()
-        except ConnectionError:
+        except OSError:
             pass
 
 
