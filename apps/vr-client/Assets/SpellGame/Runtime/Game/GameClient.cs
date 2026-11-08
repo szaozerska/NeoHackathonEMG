@@ -19,6 +19,7 @@ namespace SpellGame.Game
     {
         [SerializeField] private OVRSkeleton bodySkeleton;
         [SerializeField] private DebugSkeletonsView debugSkeletons;
+        private readonly HashSet<string> _aligned = new();
         [Tooltip("Optional head-locked debug label; the match menu shows the same status under its panel.")]
         [SerializeField] private TextMesh statusLabel;
 
@@ -244,7 +245,7 @@ namespace SpellGame.Game
                 case PoseMessage pose when pose.PlayerId != _playerId:
                     _remoteJoints[pose.PlayerId] = pose.Joints;
                     if (pose.PlayerId != MatchMode.AiPlayerId)
-                        debugSkeletons.Draw(pose.PlayerId, pose.Joints, withBody: true);
+                        debugSkeletons.Draw(pose.PlayerId, pose.Joints, withBody: InSharedFrame(pose.PlayerId));
                     break;
                 case SignMessage sign:
                     SignReceived?.Invoke(sign);
@@ -262,6 +263,10 @@ namespace SpellGame.Game
                     CalibrationReceived?.Invoke(calibration);
                     break;
                 case StateMessage state:
+                    _aligned.Clear();
+                    foreach (var player in state.Players)
+                        if (player.Aligned)
+                            _aligned.Add(player.PlayerId);
                     UpdateHpStatus(state);
                     StateReceived?.Invoke(state);
                     break;
@@ -273,6 +278,13 @@ namespace SpellGame.Game
                     break;
             }
         }
+
+        /// <summary>
+        /// Whether both headsets are in the shared room frame, so a remote player's poses land on the real person (before
+        /// that they're in the other headset's own frame, and their P1/P2 tag would float somewhere random).
+        /// </summary>
+        private bool InSharedFrame(string remotePlayerId) =>
+            _playerId != null && _aligned.Contains(_playerId) && _aligned.Contains(remotePlayerId);
 
         private void DrawLocalSkeleton()
         {

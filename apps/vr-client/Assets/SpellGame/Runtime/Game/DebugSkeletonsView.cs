@@ -66,6 +66,7 @@ namespace SpellGame.Game
 
         private sealed class Body
         {
+            public Transform Root;
             public Transform Head;
             public Transform Torso;
             public Transform LHand;
@@ -88,10 +89,13 @@ namespace SpellGame.Game
 
             if (withBody)
                 PlaceBody(BodyFor(skeletonId), joints);
+            else if (_bodiesBySkeleton.TryGetValue(skeletonId, out var hidden))
+                hidden.Root.gameObject.SetActive(false);
         }
 
         private static void PlaceBody(Body body, BodyJoints joints)
         {
+            body.Root.gameObject.SetActive(true);
             var head = joints.Head.Position;
             PlaceLabel(body.Label, head);
             if (body.Head == null)
@@ -122,7 +126,7 @@ namespace SpellGame.Game
             root.SetParent(transform, false);
             if (!showRemoteBodies)
             {
-                var tagOnly = new Body { Label = CreateLabel(root, skeletonId) };
+                var tagOnly = new Body { Root = root, Label = CreateLabel(root, skeletonId) };
                 _bodiesBySkeleton[skeletonId] = tagOnly;
                 return tagOnly;
             }
@@ -130,6 +134,7 @@ namespace SpellGame.Game
             var material = bodyMaterial != null ? bodyMaterial : boneMaterial;
             var body = new Body
             {
+                Root = root,
                 Head = SpellVfx.CreateOrb("Head", root, material, HeadDiameter),
                 Torso = SpellVfx.CreateBlade("Torso", root, material),
                 LHand = SpellVfx.CreateOrb("LHand", root, material, HandDiameter),
