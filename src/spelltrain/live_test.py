@@ -132,9 +132,10 @@ class LiveTester:
                         self.collection.select_motion('animation_gesture')
                         self.collection._save()
                     if condition=='animation_steps':
-                        self.capture.meta.update(gesture_label='Animation Gesture',collection_protocol='animation-component-and-sequence-v1',
+                        self.capture.meta.update(gesture_label='Animation Gesture',collection_protocol='animation-component-trials-v2',
                             requested_sequence=['cross_fingers','curl_ring_pinky','thumb_approach','combined_hold'],
-                            phase_supervision='participant_space_and_number_keys_not_sensor_verified',
+                            phase_reporting_enabled=value.get('phase_reporting') is True,
+                            phase_supervision='selected_action_and_space_only; internal step boundaries unknown' if value.get('phase_reporting') is not True else 'legacy participant phase reports',
                             component_comparison_policy='Compare isolated steps with matching reported sequence phases; preserve preparation context and entire transitions.',
                             recommended_repetitions=5,sequence_timestamps_verified=False)
                         self.collection._save();self.collection.save_animation_phases()

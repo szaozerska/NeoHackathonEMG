@@ -92,6 +92,8 @@ class IntentCollection:
         self.space_down=None
         self.selected_motion=None;self.motion_selections=[];self.focus_lost=None
         self.animation_phase_markers=[]
+        self.gyro_report={'samples':0,'min_xyz':None,'max_xyz':None,'first_capture_t':None,'last_capture_t':None,
+            'last_native_timestamp_us':None,'positive_intervals':0,'native_positive_span_seconds':0.,'timestamp_discontinuities':0}
         self.signal_segments=[];self.global_last_seq=None;self.global_last_t=None;self.global_generation=None
         self.sensor_segments=[];self.last_sensor_seq=None;self.last_sensor_t=None;self.last_sensor_epoch=None
         self.capture.meta.update(kind='intent_collection_v1',wearing_session=wearing_session,target_hand=hand,
@@ -165,7 +167,7 @@ class IntentCollection:
             marker['selected_motion']=dict(self.selected_motion) if label=='intended' and self.selected_motion else None
         self.intent_markers.append(marker);self.capture.append('intent_toggle',host,marker=marker)
         write_json(self.capture.directory/'intent-toggle-markers.json',self.intent_markers)
-        if self.capture.meta.get('collection_variant')=='animation_steps':
+        if self.capture.meta.get('collection_variant')=='animation_steps' and self.capture.meta.get('phase_reporting_enabled',True):
             if label=='intended':
                 phase={'animation_cross_fingers':'cross_fingers','animation_curl_ring_pinky':'curl_ring_pinky',
                        'animation_thumb_approach':'thumb_approach','animation_sequence':'cross_fingers'}[self.selected_motion['motion']]
@@ -179,6 +181,7 @@ class IntentCollection:
 
     def mark_animation_phase(self,phase,host=None,uncertainty=0.,alignment=None,source='participant_phase_report'):
         if self.capture.meta.get('collection_variant')!='animation_steps':raise ValueError('Start the step-mapping collector first.')
+        if self.capture.meta.get('phase_reporting_enabled') is False:raise ValueError('This collector uses action selection and Space only.')
         if self.intent_markers[-1]['label']!='intended':raise ValueError('Hold Space before marking a finger step.')
         combined=self.selected_motion['motion']=='animation_sequence'
         order=['cross_fingers','curl_ring_pinky','thumb_approach','combined_hold'] if combined else [
@@ -287,6 +290,22 @@ class IntentCollection:
 
     def context(self,kind,value,host):
         self.tick()
+        if kind=='gyro' and host>=self.capture.start:
+            xyz=np.asarray(value.get('payload',{}).get('values',[]),float)
+            if xyz.shape==(3,) and np.isfinite(xyz).all():
+                report=self.gyro_report;native=value.get('band_timestamp_us')
+                if report['samples']==0:
+                    report['min_xyz']=xyz.tolist();report['max_xyz']=xyz.tolist();report['first_capture_t']=host-self.capture.start
+                else:
+                    report['min_xyz']=np.minimum(report['min_xyz'],xyz).tolist();report['max_xyz']=np.maximum(report['max_xyz'],xyz).tolist()
+                if isinstance(native,(int,float)) and math.isfinite(native):
+                    previous=report['last_native_timestamp_us']
+                    if previous is not None:
+                        delta=(native-previous)/1e6
+                        if 0<delta<1:report['positive_intervals']+=1;report['native_positive_span_seconds']+=delta
+                        else:report['timestamp_discontinuities']+=1
+                    report['last_native_timestamp_us']=native
+                report['samples']+=1;report['last_capture_t']=host-self.capture.start
         if not self.current or not self.current['start']<=host-self.capture.start<=self.current['end']:return
         if kind=='camera':
             labels=self.current['camera_labels'];label=value['posture']['label'];labels[label]=labels.get(label,0)+1
@@ -427,6 +446,14 @@ class IntentCollection:
             self.save_animation_phases(final=True)
             hashes.update({name:hashlib.sha256((self.capture.directory/name).read_bytes()).hexdigest()
                 for name in ('animation-phase-markers.json','animation-phase-intervals.json')})
+        if self.capture.meta.get('recording_profile')=='micah_emg':
+            gyro=self.gyro_report
+            write_json(self.capture.directory/'gyro-report.json',{**gyro,'available':gyro['samples']>0,
+                'measured_native_hz':gyro['positive_intervals']/gyro['native_positive_span_seconds'] if gyro['native_positive_span_seconds'] else None,
+                'used_for_classification':False,'required_for_collection':False,
+                'units':'raw gyro counts; physical calibration unverified',
+                'note':'Optional context only. Original timestamped XYZ events remain in streams.jsonl when received. Zero samples means unavailable, not zero movement.'})
+            hashes['gyro-report.json']=hashlib.sha256((self.capture.directory/'gyro-report.json').read_bytes()).hexdigest()
         write_json(self.capture.directory/'guided-manifest.json',{'schema':1,'wearing_session':self.wearing_session,
             'supervision':'untrimmed_participant_intervals_requires_postprocessing' if self.defer_cleanup else 'weak_clip_labels',
             'postprocessing_required':self.defer_cleanup,'source_hashes':hashes,'open_hold_and_transitions_require_review':True})
