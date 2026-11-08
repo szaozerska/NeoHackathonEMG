@@ -1,0 +1,8399 @@
+{
+ "schema": 1,
+ "session_id": "20261108-040247-0a14a2cd",
+ "purpose": "reserved_validation",
+ "do_not_train": true,
+ "do_not_tune_thresholds": true,
+ "method": "signal_quality_rules_only",
+ "model_predictions_used": false,
+ "labels_or_timestamps_changed": false,
+ "inputs": {
+  "truth-values.json": "bdf3adc27e565c4eb7203d3e2c8eee34c31dfe453e1e330fa0bdafe1cd688dc2",
+  "original/streams.jsonl.gz": "69a16adeef68f788ef8d8c29fa2e9411cb7803adf169a29576ec30654c9b6872"
+ },
+ "rules": {
+  "min_interval_s": 0.25,
+  "reset_cluster": {
+   "count": 3,
+   "within_s": 5.0,
+   "guard_s": 2.0
+  },
+  "adc_clip_counts": [
+   100,
+   65435
+  ],
+  "clipped_share_for_tension": 0.001,
+  "snap_peak_ratio": 5.0,
+  "non_intended_burst_fraction_of_median_snap_peak": 0.5,
+  "envelope": "20 Hz 4th-order high-pass + 60 Hz notch, channel-mean RMS over 0.125 s"
+ },
+ "unstable_spans": [
+  [
+   48.403,
+   62.425
+  ]
+ ],
+ "summary": {
+  "non_intended": {
+   "intervals": 302,
+   "kept": 219,
+   "kept_seconds": 243.07,
+   "kept_for_tension": 216
+  },
+  "snap": {
+   "intervals": 60,
+   "kept": 50,
+   "kept_seconds": 46.42,
+   "kept_for_tension": 7
+  },
+  "shield_hold": {
+   "intervals": 98,
+   "kept": 93,
+   "kept_seconds": 146.26,
+   "kept_for_tension": 92
+  },
+  "sword_hold": {
+   "intervals": 123,
+   "kept": 106,
+   "kept_seconds": 115.04,
+   "kept_for_tension": 62
+  },
+  "animation_gesture": {
+   "intervals": 20,
+   "kept": 19,
+   "kept_seconds": 32.22,
+   "kept_for_tension": 18
+  }
+ },
+ "intervals": [
+  {
+   "index": 0,
+   "start": 0,
+   "end": 78.94019562518224,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "band stream unstable (reset cluster)",
+    "stream dropout inside interval",
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 1,
+   "start": 78.94019562518224,
+   "end": 79.28929562517442,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "no snap peak"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 2,
+   "start": 79.28929562517442,
+   "end": 89.58569562516641,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 3,
+   "start": 89.58569562516641,
+   "end": 90.04209562507458,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 4,
+   "start": 90.04209562507458,
+   "end": 91.7397956250934,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 5,
+   "start": 91.7397956250934,
+   "end": 92.73209562513512,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 6,
+   "start": 92.73209562513512,
+   "end": 93.8299956250703,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 7,
+   "start": 93.8299956250703,
+   "end": 94.75249562505633,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 8,
+   "start": 94.75249562505633,
+   "end": 97.42309562512673,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 9,
+   "start": 97.42309562512673,
+   "end": 98.11969562515151,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "no snap peak"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 10,
+   "start": 98.11969562515151,
+   "end": 104.30899562512059,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 11,
+   "start": 104.30899562512059,
+   "end": 105.23679562518373,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 12,
+   "start": 105.23679562518373,
+   "end": 105.36189562501386,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 13,
+   "start": 105.36189562501386,
+   "end": 105.397395625012,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)",
+    "no snap peak"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 14,
+   "start": 105.397395625012,
+   "end": 105.4555956250988,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 15,
+   "start": 105.4555956250988,
+   "end": 105.55248904193286,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)",
+    "no snap peak"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 16,
+   "start": 105.55248904193286,
+   "end": 106.49218904203735,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 17,
+   "start": 106.49218904203735,
+   "end": 107.38628904207144,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 18,
+   "start": 107.38628904207144,
+   "end": 108.53038904198911,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 19,
+   "start": 108.53038904198911,
+   "end": 109.39758904196788,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 20,
+   "start": 109.39758904196788,
+   "end": 110.373389042099,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 21,
+   "start": 110.373389042099,
+   "end": 110.94228904205374,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 22,
+   "start": 110.94228904205374,
+   "end": 112.18798904190771,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 23,
+   "start": 112.18798904190771,
+   "end": 112.80588904209435,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 24,
+   "start": 112.80588904209435,
+   "end": 113.76238904206548,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 25,
+   "start": 113.76238904206548,
+   "end": 114.49498904193752,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 26,
+   "start": 114.49498904193752,
+   "end": 116.90428904199507,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 27,
+   "start": 116.90428904199507,
+   "end": 117.16638904204592,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "no snap peak"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 28,
+   "start": 117.16638904204592,
+   "end": 117.86198904190678,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 29,
+   "start": 117.86198904190678,
+   "end": 119.13578904198948,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 30,
+   "start": 119.13578904198948,
+   "end": 120.87978904205374,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 31,
+   "start": 120.87978904205374,
+   "end": 121.67188904201612,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 32,
+   "start": 121.67188904201612,
+   "end": 123.50618904200383,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 33,
+   "start": 123.50618904200383,
+   "end": 125.17288904206362,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 34,
+   "start": 125.17288904206362,
+   "end": 126.61628904205281,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 35,
+   "start": 126.61628904205281,
+   "end": 126.85558904195204,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)",
+    "no snap peak"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 36,
+   "start": 126.85558904195204,
+   "end": 127.70568904199172,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 37,
+   "start": 127.70568904199172,
+   "end": 129.21268904197495,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 38,
+   "start": 129.21268904197495,
+   "end": 130.49988904199563,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 39,
+   "start": 130.49988904199563,
+   "end": 131.86928904196247,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 40,
+   "start": 131.86928904196247,
+   "end": 132.82408904202748,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 41,
+   "start": 132.82408904202748,
+   "end": 134.30788904207293,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 42,
+   "start": 134.30788904207293,
+   "end": 135.23398904199712,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 43,
+   "start": 135.23398904199712,
+   "end": 136.51895412500016,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 44,
+   "start": 136.51895412500016,
+   "end": 138.2250541250687,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 45,
+   "start": 138.2250541250687,
+   "end": 139.38575412507635,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 46,
+   "start": 139.38575412507635,
+   "end": 142.49225412507076,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 47,
+   "start": 142.49225412507076,
+   "end": 143.17845412506722,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 48,
+   "start": 143.17845412506722,
+   "end": 145.36805412510876,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 49,
+   "start": 145.36805412510876,
+   "end": 145.93425412510987,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "no snap peak"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 50,
+   "start": 145.93425412510987,
+   "end": 146.95055412501097,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 51,
+   "start": 146.95055412501097,
+   "end": 147.46085412509274,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "no snap peak"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 52,
+   "start": 147.46085412509274,
+   "end": 148.6814541250933,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 53,
+   "start": 148.6814541250933,
+   "end": 150.11985412507784,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 54,
+   "start": 150.11985412507784,
+   "end": 151.17835412512068,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 55,
+   "start": 151.17835412512068,
+   "end": 151.89995412505232,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 56,
+   "start": 151.89995412505232,
+   "end": 153.0965541250771,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 57,
+   "start": 153.0965541250771,
+   "end": 154.21535412513185,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 58,
+   "start": 154.21535412513185,
+   "end": 155.69035412510857,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 59,
+   "start": 155.69035412510857,
+   "end": 156.95665412512608,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 60,
+   "start": 156.95665412512608,
+   "end": 164.18805412505753,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 61,
+   "start": 164.18805412505753,
+   "end": 165.05305412504822,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 62,
+   "start": 165.05305412504822,
+   "end": 166.0628058341099,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 63,
+   "start": 166.0628058341099,
+   "end": 166.91070583404507,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 64,
+   "start": 166.91070583404507,
+   "end": 168.1921058340231,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 65,
+   "start": 168.1921058340231,
+   "end": 169.18240583408624,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 66,
+   "start": 169.18240583408624,
+   "end": 169.84150583401788,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 67,
+   "start": 169.84150583401788,
+   "end": 170.93830583407544,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 68,
+   "start": 170.93830583407544,
+   "end": 171.70120583404787,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 69,
+   "start": 171.70120583404787,
+   "end": 172.67310583405197,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "no snap peak"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 70,
+   "start": 172.67310583405197,
+   "end": 173.32900583406445,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 71,
+   "start": 173.32900583406445,
+   "end": 174.26120583410375,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 72,
+   "start": 174.26120583410375,
+   "end": 174.99530583410524,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 73,
+   "start": 174.99530583410524,
+   "end": 175.8236058340408,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 74,
+   "start": 175.8236058340408,
+   "end": 176.47190583415795,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 75,
+   "start": 176.47190583415795,
+   "end": 177.35870583413634,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 76,
+   "start": 177.35870583413634,
+   "end": 178.05410583410412,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 77,
+   "start": 178.05410583410412,
+   "end": 178.89720583404414,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 78,
+   "start": 178.89720583404414,
+   "end": 179.6473058341071,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 79,
+   "start": 179.6473058341071,
+   "end": 181.08080583414994,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 80,
+   "start": 181.08080583414994,
+   "end": 181.69190583413,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 81,
+   "start": 181.69190583413,
+   "end": 182.87010583409574,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 82,
+   "start": 182.87010583409574,
+   "end": 183.69500583398622,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 83,
+   "start": 183.69500583398622,
+   "end": 184.89030583412386,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 84,
+   "start": 184.89030583412386,
+   "end": 185.6968058340717,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 85,
+   "start": 185.6968058340717,
+   "end": 186.55620583414566,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 86,
+   "start": 186.55620583414566,
+   "end": 186.96090583410114,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 87,
+   "start": 186.96090583410114,
+   "end": 188.1866058340529,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 88,
+   "start": 188.1866058340529,
+   "end": 189.7965058340924,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 89,
+   "start": 189.7965058340924,
+   "end": 190.59360583405942,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 90,
+   "start": 190.59360583405942,
+   "end": 191.1795058340067,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 91,
+   "start": 191.1795058340067,
+   "end": 192.11060583405197,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 92,
+   "start": 192.11060583405197,
+   "end": 192.5443058341043,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 93,
+   "start": 192.5443058341043,
+   "end": 193.29620583413634,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 94,
+   "start": 193.29620583413634,
+   "end": 201.8463560421951,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 95,
+   "start": 201.8463560421951,
+   "end": 202.39435604214668,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 96,
+   "start": 202.39435604214668,
+   "end": 204.17075604212005,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 97,
+   "start": 204.17075604212005,
+   "end": 204.65735604218207,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 98,
+   "start": 204.65735604218207,
+   "end": 205.30735604208894,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 99,
+   "start": 205.30735604208894,
+   "end": 205.70735604211222,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 100,
+   "start": 205.70735604211222,
+   "end": 206.27455604204442,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 101,
+   "start": 206.27455604204442,
+   "end": 207.08055604202673,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 102,
+   "start": 207.08055604202673,
+   "end": 207.48965604207478,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 103,
+   "start": 207.48965604207478,
+   "end": 208.2997560420772,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 104,
+   "start": 208.2997560420772,
+   "end": 208.7618560421979,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 105,
+   "start": 208.7618560421979,
+   "end": 209.4886560421437,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 106,
+   "start": 209.4886560421437,
+   "end": 209.9530560420826,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 107,
+   "start": 209.9530560420826,
+   "end": 210.68925604212563,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 108,
+   "start": 210.68925604212563,
+   "end": 211.29475604207255,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 109,
+   "start": 211.29475604207255,
+   "end": 211.99445604206994,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 110,
+   "start": 211.99445604206994,
+   "end": 212.66155604203232,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 111,
+   "start": 212.66155604203232,
+   "end": 213.20275604212657,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 112,
+   "start": 213.20275604212657,
+   "end": 213.9155560421059,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 113,
+   "start": 213.9155560421059,
+   "end": 214.51055604207795,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 114,
+   "start": 214.51055604207795,
+   "end": 214.88065604213625,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 115,
+   "start": 214.88065604213625,
+   "end": 215.74425604206044,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 116,
+   "start": 215.74425604206044,
+   "end": 218.3536560421344,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 117,
+   "start": 218.3536560421344,
+   "end": 219.1352560421219,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 118,
+   "start": 219.1352560421219,
+   "end": 219.5829560420243,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 119,
+   "start": 219.5829560420243,
+   "end": 220.3457560421666,
+   "label": "intended",
+   "motion": "snap",
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "no snap peak"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 120,
+   "start": 220.3457560421666,
+   "end": 260.1486026250059,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "stream dropout inside interval"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 121,
+   "start": 260.1486026250059,
+   "end": 261.38470262498595,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 122,
+   "start": 261.38470262498595,
+   "end": 264.0998026250163,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 123,
+   "start": 264.0998026250163,
+   "end": 265.01810262491927,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 124,
+   "start": 265.01810262491927,
+   "end": 265.75480262504425,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 125,
+   "start": 265.75480262504425,
+   "end": 266.57260262500495,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 126,
+   "start": 266.57260262500495,
+   "end": 267.44640262506437,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 127,
+   "start": 267.44640262506437,
+   "end": 268.9742026249878,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 128,
+   "start": 268.9742026249878,
+   "end": 269.6195026249625,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 129,
+   "start": 269.6195026249625,
+   "end": 271.00750262488145,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 130,
+   "start": 271.00750262488145,
+   "end": 272.14080262498464,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 131,
+   "start": 272.14080262498464,
+   "end": 274.50420262501575,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 132,
+   "start": 274.50420262501575,
+   "end": 275.1535026249476,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 133,
+   "start": 275.1535026249476,
+   "end": 277.1262026249897,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 134,
+   "start": 277.1262026249897,
+   "end": 278.1773026250303,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 135,
+   "start": 278.1773026250303,
+   "end": 279.44350262498483,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 136,
+   "start": 279.44350262498483,
+   "end": 280.66180262505077,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 137,
+   "start": 280.66180262505077,
+   "end": 282.21210262493696,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 138,
+   "start": 282.21210262493696,
+   "end": 283.3793026249623,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 139,
+   "start": 283.3793026249623,
+   "end": 284.6144026250113,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 140,
+   "start": 284.6144026250113,
+   "end": 285.86823154217564,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 141,
+   "start": 285.86823154217564,
+   "end": 287.2543315420626,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 142,
+   "start": 287.2543315420626,
+   "end": 288.689831542084,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 143,
+   "start": 288.689831542084,
+   "end": 289.63663154211827,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 144,
+   "start": 289.63663154211827,
+   "end": 297.96053154207766,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 145,
+   "start": 297.96053154207766,
+   "end": 299.3380315420218,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 146,
+   "start": 299.3380315420218,
+   "end": 300.60993154207245,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 147,
+   "start": 300.60993154207245,
+   "end": 301.9512315421598,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 148,
+   "start": 301.9512315421598,
+   "end": 303.75533154199366,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 149,
+   "start": 303.75533154199366,
+   "end": 304.89493154210504,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 150,
+   "start": 304.89493154210504,
+   "end": 306.1623315420002,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 151,
+   "start": 306.1623315420002,
+   "end": 307.3539315420203,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 152,
+   "start": 307.3539315420203,
+   "end": 308.9433315420756,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 153,
+   "start": 308.9433315420756,
+   "end": 310.2784315421013,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 154,
+   "start": 310.2784315421013,
+   "end": 311.94483154197223,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 155,
+   "start": 311.94483154197223,
+   "end": 313.14253154210746,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 156,
+   "start": 313.14253154210746,
+   "end": 314.1481315421406,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 157,
+   "start": 314.1481315421406,
+   "end": 315.15903154213447,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 158,
+   "start": 315.15903154213447,
+   "end": 316.2202394590713,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 159,
+   "start": 316.2202394590713,
+   "end": 317.52813945908565,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 160,
+   "start": 317.52813945908565,
+   "end": 318.28423945908435,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 161,
+   "start": 318.28423945908435,
+   "end": 319.43403945909813,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 162,
+   "start": 319.43403945909813,
+   "end": 320.4095394590404,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 163,
+   "start": 320.4095394590404,
+   "end": 322.08553945901804,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 164,
+   "start": 322.08553945901804,
+   "end": 322.98543945897836,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 165,
+   "start": 322.98543945897836,
+   "end": 324.04623945907224,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 166,
+   "start": 324.04623945907224,
+   "end": 324.7774394589942,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 167,
+   "start": 324.7774394589942,
+   "end": 326.1764394590864,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 168,
+   "start": 326.1764394590864,
+   "end": 327.00143945903983,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 169,
+   "start": 327.00143945903983,
+   "end": 328.2009394590277,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 170,
+   "start": 328.2009394590277,
+   "end": 329.27203945908695,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 171,
+   "start": 329.27203945908695,
+   "end": 330.2342394591542,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 172,
+   "start": 330.2342394591542,
+   "end": 332.5302394591272,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 173,
+   "start": 332.5302394591272,
+   "end": 333.5897394591011,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 174,
+   "start": 333.5897394591011,
+   "end": 334.521939459024,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 175,
+   "start": 334.521939459024,
+   "end": 335.64623945904896,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 176,
+   "start": 335.64623945904896,
+   "end": 336.5437394591281,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 177,
+   "start": 336.5437394591281,
+   "end": 337.7019394590752,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 178,
+   "start": 337.7019394590752,
+   "end": 338.78543945902493,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 179,
+   "start": 338.78543945902493,
+   "end": 340.10123945912346,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 180,
+   "start": 340.10123945912346,
+   "end": 340.8772394590778,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 181,
+   "start": 340.8772394590778,
+   "end": 343.2796394590987,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 182,
+   "start": 343.2796394590987,
+   "end": 344.33653945906553,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 183,
+   "start": 344.33653945906553,
+   "end": 345.31333945912775,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 184,
+   "start": 345.31333945912775,
+   "end": 347.13176187512,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 185,
+   "start": 347.13176187512,
+   "end": 348.3382618750911,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 186,
+   "start": 348.3382618750911,
+   "end": 349.3559618749423,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 187,
+   "start": 349.3559618749423,
+   "end": 350.8852618751116,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 188,
+   "start": 350.8852618751116,
+   "end": 351.49286187498365,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 189,
+   "start": 351.49286187498365,
+   "end": 352.9673618749948,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 190,
+   "start": 352.9673618749948,
+   "end": 353.62236187502276,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 191,
+   "start": 353.62236187502276,
+   "end": 354.9670618750388,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 192,
+   "start": 354.9670618750388,
+   "end": 355.63716187502723,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 193,
+   "start": 355.63716187502723,
+   "end": 356.8675618750276,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 194,
+   "start": 356.8675618750276,
+   "end": 357.2972618751228,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 195,
+   "start": 357.2972618751228,
+   "end": 357.40086187492125,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 196,
+   "start": 357.40086187492125,
+   "end": 357.51896187500097,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 197,
+   "start": 357.51896187500097,
+   "end": 359.03056187496986,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 198,
+   "start": 359.03056187496986,
+   "end": 368.443061875063,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 199,
+   "start": 368.443061875063,
+   "end": 369.5621618750738,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 200,
+   "start": 369.5621618750738,
+   "end": 370.43926187511533,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 201,
+   "start": 370.43926187511533,
+   "end": 372.284961874946,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 202,
+   "start": 372.284961874946,
+   "end": 372.5849618749926,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 203,
+   "start": 372.5849618749926,
+   "end": 377.0186942501459,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 204,
+   "start": 377.0186942501459,
+   "end": 377.8209942501271,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 205,
+   "start": 377.8209942501271,
+   "end": 380.73369425011333,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 206,
+   "start": 380.73369425011333,
+   "end": 381.45199425006285,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 207,
+   "start": 381.45199425006285,
+   "end": 383.5760942500783,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 208,
+   "start": 383.5760942500783,
+   "end": 384.579894250026,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 209,
+   "start": 384.579894250026,
+   "end": 386.567294250126,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 210,
+   "start": 386.567294250126,
+   "end": 387.67309425014537,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 211,
+   "start": 387.67309425014537,
+   "end": 389.1004942500731,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 212,
+   "start": 389.1004942500731,
+   "end": 391.7140942501137,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 213,
+   "start": 391.7140942501137,
+   "end": 391.77829425013624,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 214,
+   "start": 391.77829425013624,
+   "end": 396.97209425014444,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 215,
+   "start": 396.97209425014444,
+   "end": 397.9208942500409,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 216,
+   "start": 397.9208942500409,
+   "end": 398.5851942501031,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 217,
+   "start": 398.5851942501031,
+   "end": 398.9697942502098,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 218,
+   "start": 398.9697942502098,
+   "end": 405.2146942501422,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 219,
+   "start": 405.2146942501422,
+   "end": 406.40221150009893,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 220,
+   "start": 406.40221150009893,
+   "end": 406.920211500139,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 221,
+   "start": 406.920211500139,
+   "end": 408.15251150005497,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 222,
+   "start": 408.15251150005497,
+   "end": 409.0672115001362,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 223,
+   "start": 409.0672115001362,
+   "end": 410.20991149998736,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 224,
+   "start": 410.20991149998736,
+   "end": 410.72941150004044,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 225,
+   "start": 410.72941150004044,
+   "end": 412.888711500098,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 226,
+   "start": 412.888711500098,
+   "end": 413.61111150006764,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 227,
+   "start": 413.61111150006764,
+   "end": 416.4761115000583,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 228,
+   "start": 416.4761115000583,
+   "end": 417.02541150001343,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 229,
+   "start": 417.02541150001343,
+   "end": 419.0667115000542,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 230,
+   "start": 419.0667115000542,
+   "end": 419.68111150013283,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 231,
+   "start": 419.68111150013283,
+   "end": 421.79371150012594,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 232,
+   "start": 421.79371150012594,
+   "end": 427.83951150008943,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 233,
+   "start": 427.83951150008943,
+   "end": 429.62461150006857,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 234,
+   "start": 429.62461150006857,
+   "end": 430.4700115000596,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 235,
+   "start": 430.4700115000596,
+   "end": 431.983011500095,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 236,
+   "start": 431.983011500095,
+   "end": 434.4584114999743,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 237,
+   "start": 434.4584114999743,
+   "end": 434.54131150012836,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 238,
+   "start": 434.54131150012836,
+   "end": 442.5718706250191,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 239,
+   "start": 442.5718706250191,
+   "end": 444.241370624979,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 240,
+   "start": 444.241370624979,
+   "end": 444.98937062500045,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 241,
+   "start": 444.98937062500045,
+   "end": 447.0609706250252,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 242,
+   "start": 447.0609706250252,
+   "end": 447.6610706250649,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 243,
+   "start": 447.6610706250649,
+   "end": 449.3931706250878,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 244,
+   "start": 449.3931706250878,
+   "end": 449.76807062502485,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 245,
+   "start": 449.76807062502485,
+   "end": 452.77417062502354,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 246,
+   "start": 452.77417062502354,
+   "end": 453.24707062507514,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 247,
+   "start": 453.24707062507514,
+   "end": 455.3628706249874,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 248,
+   "start": 455.3628706249874,
+   "end": 456.2755706249736,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 249,
+   "start": 456.2755706249736,
+   "end": 458.33567062509246,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 250,
+   "start": 458.33567062509246,
+   "end": 459.35827062511817,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 251,
+   "start": 459.35827062511817,
+   "end": 461.05127062508836,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 252,
+   "start": 461.05127062508836,
+   "end": 462.0719706249656,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 253,
+   "start": 462.0719706249656,
+   "end": 463.60237062501255,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 254,
+   "start": 463.60237062501255,
+   "end": 464.1891706250608,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 255,
+   "start": 464.1891706250608,
+   "end": 465.9492567500565,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 256,
+   "start": 465.9492567500565,
+   "end": 466.3600567500107,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 257,
+   "start": 466.3600567500107,
+   "end": 468.14395674993284,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 258,
+   "start": 468.14395674993284,
+   "end": 468.6919567500008,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 259,
+   "start": 468.6919567500008,
+   "end": 470.1593567500822,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 260,
+   "start": 470.1593567500822,
+   "end": 470.866956749931,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 261,
+   "start": 470.866956749931,
+   "end": 472.40065674996004,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 262,
+   "start": 472.40065674996004,
+   "end": 473.12845674995333,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 263,
+   "start": 473.12845674995333,
+   "end": 474.4030567499576,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 264,
+   "start": 474.4030567499576,
+   "end": 476.96945674996823,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 265,
+   "start": 476.96945674996823,
+   "end": 478.7238567500608,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 266,
+   "start": 478.7238567500608,
+   "end": 480.9162567500025,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 267,
+   "start": 480.9162567500025,
+   "end": 481.15925675001927,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 268,
+   "start": 481.15925675001927,
+   "end": 485.6161567500094,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 269,
+   "start": 485.6161567500094,
+   "end": 487.1116567499703,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 270,
+   "start": 487.1116567499703,
+   "end": 488.1416567499982,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 271,
+   "start": 488.1416567499982,
+   "end": 489.9185567499371,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 272,
+   "start": 489.9185567499371,
+   "end": 490.5025567499688,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 273,
+   "start": 490.5025567499688,
+   "end": 492.386556750047,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 274,
+   "start": 492.386556750047,
+   "end": 492.72905674995854,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 275,
+   "start": 492.72905674995854,
+   "end": 494.7729567500064,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 276,
+   "start": 494.7729567500064,
+   "end": 495.39255674998276,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 277,
+   "start": 495.39255674998276,
+   "end": 496.94895929202903,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 278,
+   "start": 496.94895929202903,
+   "end": 497.5734592920635,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 279,
+   "start": 497.5734592920635,
+   "end": 499.31745929201134,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 280,
+   "start": 499.31745929201134,
+   "end": 499.9398592921207,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 281,
+   "start": 499.9398592921207,
+   "end": 502.1612592920428,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 282,
+   "start": 502.1612592920428,
+   "end": 502.95855929201934,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 283,
+   "start": 502.95855929201934,
+   "end": 505.67045929201413,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 284,
+   "start": 505.67045929201413,
+   "end": 506.1663592921104,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 285,
+   "start": 506.1663592921104,
+   "end": 507.6422592920717,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 286,
+   "start": 507.6422592920717,
+   "end": 508.54695929202717,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 287,
+   "start": 508.54695929202717,
+   "end": 510.4694592920132,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 288,
+   "start": 510.4694592920132,
+   "end": 512.9716592921177,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 289,
+   "start": 512.9716592921177,
+   "end": 515.0947592920857,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 290,
+   "start": 515.0947592920857,
+   "end": 516.4087592920987,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 291,
+   "start": 516.4087592920987,
+   "end": 518.1305592920398,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 292,
+   "start": 518.1305592920398,
+   "end": 518.9260592920473,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 293,
+   "start": 518.9260592920473,
+   "end": 520.3947592921322,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 294,
+   "start": 520.3947592921322,
+   "end": 521.5697592920624,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 295,
+   "start": 521.5697592920624,
+   "end": 523.0442592920735,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 296,
+   "start": 523.0442592920735,
+   "end": 523.5200592920883,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 297,
+   "start": 523.5200592920883,
+   "end": 524.9362592920661,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 298,
+   "start": 524.9362592920661,
+   "end": 525.3780592919793,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 299,
+   "start": 525.3780592919793,
+   "end": 526.9775488339365,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 300,
+   "start": 526.9775488339365,
+   "end": 527.7086488340283,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 301,
+   "start": 527.7086488340283,
+   "end": 529.2209488339722,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 302,
+   "start": 529.2209488339722,
+   "end": 531.4548488340806,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 303,
+   "start": 531.4548488340806,
+   "end": 533.1069488339126,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 304,
+   "start": 533.1069488339126,
+   "end": 533.7663488340331,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 305,
+   "start": 533.7663488340331,
+   "end": 535.138848834089,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 306,
+   "start": 535.138848834089,
+   "end": 536.0924488339806,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 307,
+   "start": 536.0924488339806,
+   "end": 537.1279488339787,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 308,
+   "start": 537.1279488339787,
+   "end": 537.5553488340229,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 309,
+   "start": 537.5553488340229,
+   "end": 538.9870488339802,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 310,
+   "start": 538.9870488339802,
+   "end": 542.6132488340372,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 311,
+   "start": 542.6132488340372,
+   "end": 543.3773488340667,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 312,
+   "start": 543.3773488340667,
+   "end": 544.1071488340385,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 313,
+   "start": 544.1071488340385,
+   "end": 544.1911488339538,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 314,
+   "start": 544.1911488339538,
+   "end": 544.3499488339294,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 315,
+   "start": 544.3499488339294,
+   "end": 545.2481488339836,
+   "label": "intended",
+   "motion": "shield_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 316,
+   "start": 545.2481488339836,
+   "end": 566.4210039171157,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 317,
+   "start": 566.4210039171157,
+   "end": 569.6564039171208,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 318,
+   "start": 569.6564039171208,
+   "end": 581.0522039171774,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 319,
+   "start": 581.0522039171774,
+   "end": 597.4864014590858,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 320,
+   "start": 597.4864014590858,
+   "end": 598.1918014591793,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 321,
+   "start": 598.1918014591793,
+   "end": 598.9806014591595,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 322,
+   "start": 598.9806014591595,
+   "end": 599.1310014590854,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 323,
+   "start": 599.1310014590854,
+   "end": 599.2227014591917,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 324,
+   "start": 599.2227014591917,
+   "end": 599.3016014591558,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 325,
+   "start": 599.3016014591558,
+   "end": 600.2094014590839,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 326,
+   "start": 600.2094014590839,
+   "end": 600.6242014591116,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 327,
+   "start": 600.6242014591116,
+   "end": 601.5199014591053,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 328,
+   "start": 601.5199014591053,
+   "end": 601.5983014592202,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 329,
+   "start": 601.5983014592202,
+   "end": 601.7055014590733,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 330,
+   "start": 601.7055014590733,
+   "end": 602.5159014591482,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 331,
+   "start": 602.5159014591482,
+   "end": 603.4595014591468,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 332,
+   "start": 603.4595014591468,
+   "end": 603.5817014591303,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 333,
+   "start": 603.5817014591303,
+   "end": 603.6853014591616,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 334,
+   "start": 603.6853014591616,
+   "end": 603.7688014592277,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 335,
+   "start": 603.7688014592277,
+   "end": 604.7529014591128,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 336,
+   "start": 604.7529014591128,
+   "end": 604.8869014590746,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 337,
+   "start": 604.8869014590746,
+   "end": 606.4423014591448,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 338,
+   "start": 606.4423014591448,
+   "end": 606.7357014591107,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 339,
+   "start": 606.7357014591107,
+   "end": 607.8387014591135,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 340,
+   "start": 607.8387014591135,
+   "end": 607.9414014590438,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 341,
+   "start": 607.9414014590438,
+   "end": 609.1013014592463,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 342,
+   "start": 609.1013014592463,
+   "end": 609.634501459077,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 343,
+   "start": 609.634501459077,
+   "end": 610.4853014592081,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 344,
+   "start": 610.4853014592081,
+   "end": 610.9685014591087,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 345,
+   "start": 610.9685014591087,
+   "end": 611.7681014591362,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 346,
+   "start": 611.7681014591362,
+   "end": 612.5514014591463,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 347,
+   "start": 612.5514014591463,
+   "end": 613.1749014591333,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 348,
+   "start": 613.1749014591333,
+   "end": 613.2981014591642,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 349,
+   "start": 613.2981014591642,
+   "end": 614.3804014590569,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 350,
+   "start": 614.3804014590569,
+   "end": 614.8927014591172,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 351,
+   "start": 614.8927014591172,
+   "end": 615.7679367089877,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 352,
+   "start": 615.7679367089877,
+   "end": 616.3912367090816,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 353,
+   "start": 616.3912367090816,
+   "end": 617.2031367090531,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 354,
+   "start": 617.2031367090531,
+   "end": 617.7339367090026,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 355,
+   "start": 617.7339367090026,
+   "end": 618.6569367089542,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 356,
+   "start": 618.6569367089542,
+   "end": 619.056736708968,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 357,
+   "start": 619.056736708968,
+   "end": 619.9729367089458,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 358,
+   "start": 619.9729367089458,
+   "end": 620.1484367089579,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 359,
+   "start": 620.1484367089579,
+   "end": 620.2762367089745,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 360,
+   "start": 620.2762367089745,
+   "end": 620.35583670903,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 361,
+   "start": 620.35583670903,
+   "end": 621.4886367090512,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 362,
+   "start": 621.4886367090512,
+   "end": 622.0171367089497,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 363,
+   "start": 622.0171367089497,
+   "end": 622.840836709016,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 364,
+   "start": 622.840836709016,
+   "end": 623.6413367090281,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 365,
+   "start": 623.6413367090281,
+   "end": 624.4054367089411,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 366,
+   "start": 624.4054367089411,
+   "end": 624.5978367089992,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)",
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 367,
+   "start": 624.5978367089992,
+   "end": 624.6928367090877,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 368,
+   "start": 624.6928367090877,
+   "end": 624.809036709019,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 369,
+   "start": 624.809036709019,
+   "end": 625.8410367090255,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 370,
+   "start": 625.8410367090255,
+   "end": 626.0076367090223,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)",
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 371,
+   "start": 626.0076367090223,
+   "end": 626.0929367089411,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 372,
+   "start": 626.0929367089411,
+   "end": 626.2410367089324,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 373,
+   "start": 626.2410367089324,
+   "end": 627.338536708965,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 374,
+   "start": 627.338536708965,
+   "end": 627.9923367090523,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 375,
+   "start": 627.9923367090523,
+   "end": 628.7804367089411,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 376,
+   "start": 628.7804367089411,
+   "end": 629.372336709057,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 377,
+   "start": 629.372336709057,
+   "end": 630.1884367089951,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 378,
+   "start": 630.1884367089951,
+   "end": 630.5818367090542,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 379,
+   "start": 630.5818367090542,
+   "end": 631.5188367090886,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 380,
+   "start": 631.5188367090886,
+   "end": 632.0446367090335,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 381,
+   "start": 632.0446367090335,
+   "end": 632.9385367089417,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "low",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 382,
+   "start": 632.9385367089417,
+   "end": 635.7022367090685,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 383,
+   "start": 635.7022367090685,
+   "end": 636.9300367089454,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 384,
+   "start": 636.9300367089454,
+   "end": 637.6055367089575,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 385,
+   "start": 637.6055367089575,
+   "end": 638.3897367090685,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 386,
+   "start": 638.3897367090685,
+   "end": 639.0089367089095,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 387,
+   "start": 639.0089367089095,
+   "end": 639.6339367089095,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 388,
+   "start": 639.6339367089095,
+   "end": 640.1534367089625,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 389,
+   "start": 640.1534367089625,
+   "end": 640.7693367090542,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 390,
+   "start": 640.7693367090542,
+   "end": 641.0305367090041,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 391,
+   "start": 641.0305367090041,
+   "end": 641.0796367089497,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 392,
+   "start": 641.0796367089497,
+   "end": 641.2223367090337,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 393,
+   "start": 641.2223367090337,
+   "end": 642.2060367090162,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 394,
+   "start": 642.2060367090162,
+   "end": 642.6925367090153,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 395,
+   "start": 642.6925367090153,
+   "end": 643.4511367089581,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 396,
+   "start": 643.4511367089581,
+   "end": 643.9817367090145,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 397,
+   "start": 643.9817367090145,
+   "end": 644.7664367089747,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 398,
+   "start": 644.7664367089747,
+   "end": 644.8976367090363,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 399,
+   "start": 644.8976367090363,
+   "end": 645.0054367089178,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 400,
+   "start": 645.0054367089178,
+   "end": 645.1234367089346,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 401,
+   "start": 645.1234367089346,
+   "end": 646.0072394170566,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 402,
+   "start": 646.0072394170566,
+   "end": 646.5184394170064,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 403,
+   "start": 646.5184394170064,
+   "end": 647.2602394170826,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 404,
+   "start": 647.2602394170826,
+   "end": 647.7999394170474,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 405,
+   "start": 647.7999394170474,
+   "end": 648.788239417132,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 406,
+   "start": 648.788239417132,
+   "end": 649.143939416972,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 407,
+   "start": 649.143939416972,
+   "end": 650.1995394170517,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 408,
+   "start": 650.1995394170517,
+   "end": 650.5866394171026,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 409,
+   "start": 650.5866394171026,
+   "end": 651.413239417132,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 410,
+   "start": 651.413239417132,
+   "end": 652.239539417089,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 411,
+   "start": 652.239539417089,
+   "end": 653.0160394170089,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 412,
+   "start": 653.0160394170089,
+   "end": 653.1270394170424,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 413,
+   "start": 653.1270394170424,
+   "end": 654.1067394170677,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 414,
+   "start": 654.1067394170677,
+   "end": 655.2528394170804,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 415,
+   "start": 655.2528394170804,
+   "end": 656.1047394170891,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 416,
+   "start": 656.1047394170891,
+   "end": 656.4680394170573,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 417,
+   "start": 656.4680394170573,
+   "end": 657.364439417026,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 418,
+   "start": 657.364439417026,
+   "end": 657.8803394171409,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 419,
+   "start": 657.8803394171409,
+   "end": 658.6353394171456,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 420,
+   "start": 658.6353394171456,
+   "end": 658.9218394170748,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 421,
+   "start": 658.9218394170748,
+   "end": 659.7435394170461,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 422,
+   "start": 659.7435394170461,
+   "end": 659.9138394171605,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 423,
+   "start": 659.9138394171605,
+   "end": 659.9960394169902,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 424,
+   "start": 659.9960394169902,
+   "end": 660.1232394170947,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 425,
+   "start": 660.1232394170947,
+   "end": 660.9713394171558,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 426,
+   "start": 660.9713394171558,
+   "end": 661.4599394169636,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 427,
+   "start": 661.4599394169636,
+   "end": 662.2212394170929,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 428,
+   "start": 662.2212394170929,
+   "end": 662.8754394169664,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 429,
+   "start": 662.8754394169664,
+   "end": 663.6572394170798,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 430,
+   "start": 663.6572394170798,
+   "end": 664.005239417078,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 431,
+   "start": 664.005239417078,
+   "end": 664.7005394169828,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 432,
+   "start": 664.7005394169828,
+   "end": 665.0718394170981,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 433,
+   "start": 665.0718394170981,
+   "end": 665.8662394171115,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 434,
+   "start": 665.8662394171115,
+   "end": 665.8992394170491,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 435,
+   "start": 665.8992394170491,
+   "end": 665.9335394169902,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 436,
+   "start": 665.9335394169902,
+   "end": 666.2923394171521,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 437,
+   "start": 666.2923394171521,
+   "end": 667.0459394169739,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 438,
+   "start": 667.0459394169739,
+   "end": 667.1716394170653,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 439,
+   "start": 667.1716394170653,
+   "end": 668.1905394169735,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 440,
+   "start": 668.1905394169735,
+   "end": 668.4928394170711,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 441,
+   "start": 668.4928394170711,
+   "end": 669.1404394169804,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 442,
+   "start": 669.1404394169804,
+   "end": 670.3235394170042,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 443,
+   "start": 670.3235394170042,
+   "end": 671.1154394169571,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 444,
+   "start": 671.1154394169571,
+   "end": 672.1422394170659,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 445,
+   "start": 672.1422394170659,
+   "end": 673.0886394170811,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 446,
+   "start": 673.0886394170811,
+   "end": 673.5721394170541,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 447,
+   "start": 673.5721394170541,
+   "end": 674.6352394170826,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 448,
+   "start": 674.6352394170826,
+   "end": 675.0157394170528,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 449,
+   "start": 675.0157394170528,
+   "end": 675.6960624171188,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 450,
+   "start": 675.6960624171188,
+   "end": 676.0426624171669,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 451,
+   "start": 676.0426624171669,
+   "end": 676.7711624171352,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 452,
+   "start": 676.7711624171352,
+   "end": 677.1763624171726,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 453,
+   "start": 677.1763624171726,
+   "end": 677.9128624171717,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 454,
+   "start": 677.9128624171717,
+   "end": 678.422562417225,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 455,
+   "start": 678.422562417225,
+   "end": 679.3210624171188,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 456,
+   "start": 679.3210624171188,
+   "end": 679.7882624171907,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 457,
+   "start": 679.7882624171907,
+   "end": 680.5373624170898,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 458,
+   "start": 680.5373624170898,
+   "end": 680.688162417151,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 459,
+   "start": 680.688162417151,
+   "end": 680.8042624172522,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 460,
+   "start": 680.8042624172522,
+   "end": 680.8422624171944,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 461,
+   "start": 680.8422624171944,
+   "end": 681.7587624172447,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 462,
+   "start": 681.7587624172447,
+   "end": 682.0990624171682,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 463,
+   "start": 682.0990624171682,
+   "end": 682.9544624171685,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 464,
+   "start": 682.9544624171685,
+   "end": 683.6919624170987,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 465,
+   "start": 683.6919624170987,
+   "end": 684.420962417149,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 466,
+   "start": 684.420962417149,
+   "end": 684.7674624171341,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 467,
+   "start": 684.7674624171341,
+   "end": 685.4628624171019,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "medium",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 468,
+   "start": 685.4628624171019,
+   "end": 690.5152624172624,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 469,
+   "start": 690.5152624172624,
+   "end": 691.7992624172475,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 470,
+   "start": 691.7992624172475,
+   "end": 691.956262417254,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 471,
+   "start": 691.956262417254,
+   "end": 693.3556624172488,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 472,
+   "start": 693.3556624172488,
+   "end": 693.6431624172255,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 473,
+   "start": 693.6431624172255,
+   "end": 694.6793624170823,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 474,
+   "start": 694.6793624170823,
+   "end": 694.9879624171881,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 475,
+   "start": 694.9879624171881,
+   "end": 696.0504624171881,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 476,
+   "start": 696.0504624171881,
+   "end": 696.4295624172082,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 477,
+   "start": 696.4295624172082,
+   "end": 697.388362417114,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 478,
+   "start": 697.388362417114,
+   "end": 697.4402624171926,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 479,
+   "start": 697.4402624171926,
+   "end": 697.4792624171823,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 480,
+   "start": 697.4792624171823,
+   "end": 697.7409624170978,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 481,
+   "start": 697.7409624170978,
+   "end": 698.7375624171691,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 482,
+   "start": 698.7375624171691,
+   "end": 698.7881624172442,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 483,
+   "start": 698.7881624172442,
+   "end": 698.937462417176,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 484,
+   "start": 698.937462417176,
+   "end": 699.09276241716,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 485,
+   "start": 699.09276241716,
+   "end": 700.1566624172265,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 486,
+   "start": 700.1566624172265,
+   "end": 700.8627624171786,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 487,
+   "start": 700.8627624171786,
+   "end": 701.794062417117,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 488,
+   "start": 701.794062417117,
+   "end": 702.219962417148,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 489,
+   "start": 702.219962417148,
+   "end": 702.9714624171611,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 490,
+   "start": 702.9714624171611,
+   "end": 703.4296624171548,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 491,
+   "start": 703.4296624171548,
+   "end": 704.2844624171266,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 492,
+   "start": 704.2844624171266,
+   "end": 704.6686624172144,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 493,
+   "start": 704.6686624172144,
+   "end": 705.440162417246,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 494,
+   "start": 705.440162417246,
+   "end": 705.8506315000122,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 495,
+   "start": 705.8506315000122,
+   "end": 706.6627315001097,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 496,
+   "start": 706.6627315001097,
+   "end": 711.1214315000689,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 497,
+   "start": 711.1214315000689,
+   "end": 712.4995315000415,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 498,
+   "start": 712.4995315000415,
+   "end": 712.8253315000329,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 499,
+   "start": 712.8253315000329,
+   "end": 713.6165315000108,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 500,
+   "start": 713.6165315000108,
+   "end": 713.827231500065,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 501,
+   "start": 713.827231500065,
+   "end": 714.6227315000724,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 502,
+   "start": 714.6227315000724,
+   "end": 715.4611315000802,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 503,
+   "start": 715.4611315000802,
+   "end": 716.6481314999983,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 504,
+   "start": 716.6481314999983,
+   "end": 716.9407315000426,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 505,
+   "start": 716.9407315000426,
+   "end": 717.6052315001143,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 506,
+   "start": 717.6052315001143,
+   "end": 717.8795315000461,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 507,
+   "start": 717.8795315000461,
+   "end": 718.6310315000592,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 508,
+   "start": 718.6310315000592,
+   "end": 718.8929315001005,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 509,
+   "start": 718.8929315001005,
+   "end": 719.7540314999642,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 510,
+   "start": 719.7540314999642,
+   "end": 720.1929315001471,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 511,
+   "start": 720.1929315001471,
+   "end": 721.1714315001154,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 512,
+   "start": 721.1714315001154,
+   "end": 721.3840314999688,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 513,
+   "start": 721.3840314999688,
+   "end": 722.1433315001195,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 514,
+   "start": 722.1433315001195,
+   "end": 722.7724315001396,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 515,
+   "start": 722.7724315001396,
+   "end": 723.6803315001307,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 516,
+   "start": 723.6803315001307,
+   "end": 724.0651315000141,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 517,
+   "start": 724.0651315000141,
+   "end": 724.8214315001387,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 518,
+   "start": 724.8214315001387,
+   "end": 724.8344315000577,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)",
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 519,
+   "start": 724.8344315000577,
+   "end": 724.8704315001378,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 520,
+   "start": 724.8704315001378,
+   "end": 725.203831500141,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 521,
+   "start": 725.203831500141,
+   "end": 726.8010314999847,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 522,
+   "start": 726.8010314999847,
+   "end": 726.9904315001331,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 523,
+   "start": 726.9904315001331,
+   "end": 728.013131499989,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 524,
+   "start": 728.013131499989,
+   "end": 728.2300314999884,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)",
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 525,
+   "start": 728.2300314999884,
+   "end": 729.3814315000782,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 526,
+   "start": 729.3814315000782,
+   "end": 729.9136315000942,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 527,
+   "start": 729.9136315000942,
+   "end": 730.9014315000968,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 528,
+   "start": 730.9014315000968,
+   "end": 731.2042315000435,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 529,
+   "start": 731.2042315000435,
+   "end": 732.1682315000799,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 530,
+   "start": 732.1682315000799,
+   "end": 732.5126315000234,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 531,
+   "start": 732.5126315000234,
+   "end": 733.9039315001573,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 532,
+   "start": 733.9039315001573,
+   "end": 734.1642315000063,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 533,
+   "start": 734.1642315000063,
+   "end": 734.2920315000229,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 534,
+   "start": 734.2920315000229,
+   "end": 734.3657315000892,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 535,
+   "start": 734.3657315000892,
+   "end": 735.5536314999918,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 536,
+   "start": 735.5536314999918,
+   "end": 735.6680869170232,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 537,
+   "start": 735.6680869170232,
+   "end": 737.0155869170558,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 538,
+   "start": 737.0155869170558,
+   "end": 737.2632869170047,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)",
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 539,
+   "start": 737.2632869170047,
+   "end": 737.3595869169803,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 540,
+   "start": 737.3595869169803,
+   "end": 737.5607869171072,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 541,
+   "start": 737.5607869171072,
+   "end": 738.5956869170768,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 542,
+   "start": 738.5956869170768,
+   "end": 739.0411869169911,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 543,
+   "start": 739.0411869169911,
+   "end": 739.1618869169615,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 544,
+   "start": 739.1618869169615,
+   "end": 742.4206869170303,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 545,
+   "start": 742.4206869170303,
+   "end": 743.491486917017,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 546,
+   "start": 743.491486917017,
+   "end": 744.0788869169774,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 547,
+   "start": 744.0788869169774,
+   "end": 744.95698691695,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 548,
+   "start": 744.95698691695,
+   "end": 745.1885869170073,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 549,
+   "start": 745.1885869170073,
+   "end": 746.0090869170381,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 550,
+   "start": 746.0090869170381,
+   "end": 746.1315869169775,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 551,
+   "start": 746.1315869169775,
+   "end": 747.1365869169822,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 552,
+   "start": 747.1365869169822,
+   "end": 747.7905869169626,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 553,
+   "start": 747.7905869169626,
+   "end": 748.5310869170353,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 554,
+   "start": 748.5310869170353,
+   "end": 750.7080869170604,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 555,
+   "start": 750.7080869170604,
+   "end": 751.5791869170498,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 556,
+   "start": 751.5791869170498,
+   "end": 751.9083869169699,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 557,
+   "start": 751.9083869169699,
+   "end": 752.819686917006,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 558,
+   "start": 752.819686917006,
+   "end": 753.1339869169751,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 559,
+   "start": 753.1339869169751,
+   "end": 754.0282869170187,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 560,
+   "start": 754.0282869170187,
+   "end": 754.3002869170159,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 561,
+   "start": 754.3002869170159,
+   "end": 755.0785869170213,
+   "label": "intended",
+   "motion": "sword_hold",
+   "effort": "high",
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 562,
+   "start": 755.0785869170213,
+   "end": 763.5453869169578,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 563,
+   "start": 763.5453869169578,
+   "end": 765.4495869169477,
+   "label": "intended",
+   "motion": "animation_gesture",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": true,
+   "use_for_tension": false
+  },
+  {
+   "index": 564,
+   "start": 765.4495869169477,
+   "end": 766.7291139591252,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 565,
+   "start": 766.7291139591252,
+   "end": 769.0765139590949,
+   "label": "intended",
+   "motion": "animation_gesture",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 566,
+   "start": 769.0765139590949,
+   "end": 770.2080139591126,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 567,
+   "start": 770.2080139591126,
+   "end": 772.1541139591718,
+   "label": "intended",
+   "motion": "animation_gesture",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 568,
+   "start": 772.1541139591718,
+   "end": 773.9078139591729,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 569,
+   "start": 773.9078139591729,
+   "end": 775.1660139590967,
+   "label": "intended",
+   "motion": "animation_gesture",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 570,
+   "start": 775.1660139590967,
+   "end": 776.8120139590465,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 571,
+   "start": 776.8120139590465,
+   "end": 778.0094139591092,
+   "label": "intended",
+   "motion": "animation_gesture",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 572,
+   "start": 778.0094139591092,
+   "end": 779.5049139590701,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 573,
+   "start": 779.5049139590701,
+   "end": 781.1252139591379,
+   "label": "intended",
+   "motion": "animation_gesture",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 574,
+   "start": 781.1252139591379,
+   "end": 782.674213959137,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 575,
+   "start": 782.674213959137,
+   "end": 784.8124139590655,
+   "label": "intended",
+   "motion": "animation_gesture",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 576,
+   "start": 784.8124139590655,
+   "end": 786.1327139590867,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 577,
+   "start": 786.1327139590867,
+   "end": 788.2153139591683,
+   "label": "intended",
+   "motion": "animation_gesture",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 578,
+   "start": 788.2153139591683,
+   "end": 789.1198139591143,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 579,
+   "start": 789.1198139591143,
+   "end": 789.781913959072,
+   "label": "intended",
+   "motion": "animation_gesture",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 580,
+   "start": 789.781913959072,
+   "end": 790.7131139590638,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 581,
+   "start": 790.7131139590638,
+   "end": 792.7235139590921,
+   "label": "intended",
+   "motion": "animation_gesture",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 582,
+   "start": 792.7235139590921,
+   "end": 794.4208139592083,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 583,
+   "start": 794.4208139592083,
+   "end": 795.889005791978,
+   "label": "intended",
+   "motion": "animation_gesture",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 584,
+   "start": 795.889005791978,
+   "end": 797.1906057919841,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 585,
+   "start": 797.1906057919841,
+   "end": 797.2797057920834,
+   "label": "intended",
+   "motion": "animation_gesture",
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 586,
+   "start": 797.2797057920834,
+   "end": 797.4930057920283,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "accidental tap (shorter than 0.25 s)"
+   ],
+   "flags": [],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 587,
+   "start": 797.4930057920283,
+   "end": 800.7818057920085,
+   "label": "intended",
+   "motion": "animation_gesture",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 588,
+   "start": 800.7818057920085,
+   "end": 801.7185057919705,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 589,
+   "start": 801.7185057919705,
+   "end": 803.7100057919743,
+   "label": "intended",
+   "motion": "animation_gesture",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 590,
+   "start": 803.7100057919743,
+   "end": 804.623905791901,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 591,
+   "start": 804.623905791901,
+   "end": 806.0734057920054,
+   "label": "intended",
+   "motion": "animation_gesture",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 592,
+   "start": 806.0734057920054,
+   "end": 808.5093057920458,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "excluded",
+   "reasons": [
+    "snap-sized burst in non-intended time (possible unlabelled action)"
+   ],
+   "flags": [
+    "ADC clipping"
+   ],
+   "use_for_gesture": false,
+   "use_for_tension": false
+  },
+  {
+   "index": 593,
+   "start": 808.5093057920458,
+   "end": 809.8330057919957,
+   "label": "intended",
+   "motion": "animation_gesture",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 594,
+   "start": 809.8330057919957,
+   "end": 810.8072057920508,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 595,
+   "start": 810.8072057920508,
+   "end": 812.1827057920163,
+   "label": "intended",
+   "motion": "animation_gesture",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 596,
+   "start": 812.1827057920163,
+   "end": 812.9799057919299,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 597,
+   "start": 812.9799057919299,
+   "end": 814.5519057919737,
+   "label": "intended",
+   "motion": "animation_gesture",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 598,
+   "start": 814.5519057919737,
+   "end": 815.3489057919942,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 599,
+   "start": 815.3489057919942,
+   "end": 816.6122057919856,
+   "label": "intended",
+   "motion": "animation_gesture",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 600,
+   "start": 816.6122057919856,
+   "end": 817.2904057919513,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 601,
+   "start": 817.2904057919513,
+   "end": 818.6128057920141,
+   "label": "intended",
+   "motion": "animation_gesture",
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  },
+  {
+   "index": 602,
+   "start": 818.6128057920141,
+   "end": 824.3818912090501,
+   "label": "non_intended",
+   "motion": null,
+   "effort": null,
+   "decision": "kept",
+   "reasons": [],
+   "flags": [],
+   "use_for_gesture": true,
+   "use_for_tension": true
+  }
+ ]
+}
