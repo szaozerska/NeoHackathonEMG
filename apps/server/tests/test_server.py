@@ -358,3 +358,59 @@ def test_solo_match_with_the_ai_counts_down_plays_and_quits_back_to_the_lobby():
             await server.stop()
 
     run(scenario())
+
+
+def test_relaunched_headset_gets_its_id_back_and_its_leftover_connections_are_dropped():
+    async def scenario():
+        server = GameServer(host="127.0.0.1", port=0, beacon_address=None)
+        await server.start()
+        quest = p.DeviceInfo(name="Quest 3", id="q3")
+        try:
+            old_vr = await Connection.open("127.0.0.1", server.port)
+            assert (await old_vr.handshake(p.Role.VR, device=quest)).player_id == "P1"
+            old_band = await Connection.open("127.0.0.1", server.port)
+            await old_band.handshake(p.Role.CLASSIFIER, player_id="P1")
+            fake = await Connection.open("127.0.0.1", server.port)
+            assert (await fake.handshake(p.Role.VR)).player_id == "P2"
+
+            vr = await Connection.open("127.0.0.1", server.port)
+            assert (await vr.handshake(p.Role.VR, device=quest)).player_id == "P1"
+            assert await _closed(old_vr) and await _closed(old_band)
+            band = await Connection.open("127.0.0.1", server.port)
+            await band.handshake(p.Role.CLASSIFIER, player_id="P1")
+            assert (await until(vr, lambda m: isinstance(m, p.Paired))).player_id == "P1"
+            assert sorted(server.players) == ["P1", "P2"]
+        finally:
+            await server.stop()
+
+    run(scenario())
+
+
+def test_ids_nobody_uses_are_reused_lowest_first():
+    async def scenario():
+        server = GameServer(host="127.0.0.1", port=0, beacon_address=None)
+        await server.start()
+        try:
+            conns = [await Connection.open("127.0.0.1", server.port) for _ in range(3)]
+            assert [(await c.handshake(p.Role.VR)).player_id for c in conns] == ["P1", "P2", "P3"]
+            await conns[0].close()
+            await conns[1].close()
+            await asyncio.sleep(0.1)
+            again = await Connection.open("127.0.0.1", server.port)
+            assert (await again.handshake(p.Role.VR, device=p.DeviceInfo(name="Quest", id="other"))).player_id == "P1"
+            again2 = await Connection.open("127.0.0.1", server.port)
+            assert (await again2.handshake(p.Role.VR)).player_id == "P2"
+            assert sorted(server.players) == ["P1", "P2", "P3"]
+        finally:
+            await server.stop()
+
+    run(scenario())
+
+
+async def _closed(conn: Connection) -> bool:
+    async def drain():
+        while await conn.receive() is not None:
+            pass
+
+    await asyncio.wait_for(drain(), 3.0)
+    return True
