@@ -14,6 +14,16 @@ namespace SpellGame.Protocol
     public static class ClientRole
     {
         public const string Vr = "vr";
+        public const string Classifier = "classifier";
+    }
+
+    /// <summary>The <c>sign</c> labels the Neural Band side reports. <c>snap</c> is momentary; the others are held.</summary>
+    public static class BandSign
+    {
+        public const string None = "none";
+        public const string Fist = "fist";
+        public const string OpenPalm = "open_palm";
+        public const string Snap = "snap";
     }
 
     public static class HandSide
@@ -35,6 +45,9 @@ namespace SpellGame.Protocol
         public const string TypeName = "hello";
         public override string Type => TypeName;
         public string Role { get; set; }
+
+        /// <summary>Optional: a classifier pairs directly with this player.</summary>
+        public string PlayerId { get; set; }
     }
 
     public sealed class WelcomeMessage : Message

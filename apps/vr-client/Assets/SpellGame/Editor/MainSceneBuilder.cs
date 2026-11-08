@@ -28,6 +28,7 @@ namespace SpellGame.Editor
             var statusLabel = CreateStatusLabel(trackingSpace.Find("CenterEyeAnchor"));
             var debugSkeletons = CreateDebugSkeletonsView();
             var client = CreateGameClient(bodySkeleton, debugSkeletons, statusLabel);
+            CreateControllerBand(client);
             CreateFireballView(client);
             CreateSwordView(client);
             CreateShieldView(client);
@@ -107,6 +108,14 @@ namespace SpellGame.Editor
             serializedClient.FindProperty("statusLabel").objectReferenceValue = statusLabel;
             serializedClient.ApplyModifiedPropertiesWithoutUndo();
             return client;
+        }
+
+        private static void CreateControllerBand(GameClient client)
+        {
+            var band = client.gameObject.AddComponent<ControllerBand>();
+            var serializedBand = new SerializedObject(band);
+            serializedBand.FindProperty("gameClient").objectReferenceValue = client;
+            serializedBand.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void CreateFireballView(GameClient client)
