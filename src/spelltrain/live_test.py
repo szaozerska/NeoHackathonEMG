@@ -54,6 +54,7 @@ class LiveTester:
         self.contribution_root=Path(__file__).resolve().parents[2]/'Micah data contribution'
         self.static_root=Path(__file__).resolve().parents[2]/'Micah contributed data/static'
         self.animation_root=Path(__file__).resolve().parents[2]/'Micah contributed data/animation'
+        self.validation_root=Path(__file__).resolve().parents[2]/'Micah contributed data/validation'
         self.equipment_preview=EquipmentPreview()
         self.band_context={};self.band_event_counts={};self.target_hand='Right'
         self.sensor_timing=SensorTiming()
@@ -99,18 +100,22 @@ class LiveTester:
                 if contribution and (value.get('focus')!='live_intent' or value.get('initial_intent')!='non_intended'):
                     raise ValueError('Micah EMG sessions start in non-intended mode.')
                 condition=value.get('test_condition','dynamic')
-                if condition not in ('dynamic','static','animation','animation_steps'):raise ValueError('Invalid test condition')
+                if condition not in ('dynamic','static','animation','animation_steps','validation'):raise ValueError('Invalid test condition')
+                initial_condition=value.get('initial_test_condition','static')
+                if condition=='validation' and (initial_condition not in ('static','dynamic') or value.get('role')!='evaluation'):
+                    raise ValueError('Validation sessions require reserved evaluation role and static/dynamic condition.')
                 animation_condition=value.get('animation_condition','static')
                 if condition in ('animation','animation_steps') and animation_condition not in ('static','dynamic'):raise ValueError('Choose static or dynamic Animation Gesture testing.')
                 roots={'dynamic':self.contribution_root,'static':self.static_root,'animation':self.animation_root}
                 if condition=='animation' and animation_condition=='dynamic':roots['animation']=self.animation_root/'dynamic'
                 roots['animation_steps']=self.animation_root/'steps'
+                roots['validation']=self.validation_root
                 self.start_capture(root=roots[condition] if contribution else None,emg_only=contribution);self.target_hand=value.get('hand','Right')
                 self.collection=IntentCollection(self.capture,self.clock,wearing,value.get('role','train'),self.target_hand,value.get('focus','full'),value.get('initial_intent','non_intended'),guard,defer_cleanup=contribution)
                 if contribution:
                     self.capture.meta.update(kind='micah_emg_intent_contribution',contributor='Micah',
                         requested_capture_mode=capture_mode,
-                        test_condition=animation_condition if condition in ('animation','animation_steps') else condition,
+                        test_condition='mixed' if condition=='validation' else animation_condition if condition in ('animation','animation_steps') else condition,
                         collection_variant=condition,
                         collection_protocol='spacebar-held-motion-intent-v1',camera_policy='disabled',
                         input_modalities=['emg'],recorded_context=['available_gyro','available_orientation','available_band_events'],classification_policy='participant_motion_selection_only_no_model_predictions',
@@ -139,9 +144,20 @@ class LiveTester:
                             component_comparison_policy='Compare isolated steps with matching reported sequence phases; preserve preparation context and entire transitions.',
                             recommended_repetitions=5,sequence_timestamps_verified=False)
                         self.collection._save();self.collection.save_animation_phases()
+                    if condition=='validation':
+                        self.capture.meta.update(collection_protocol='reserved-static-dynamic-validation-v1',
+                            do_not_train=True,do_not_tune_thresholds=True,evaluation_status='reserved_unscored',
+                            model_frozen_reference=None,classification_modalities=['emg'],
+                            label_policy='Participant action/effort selection and immediate Space boundaries. Each interval preserves its own static/dynamic condition. No physical onsets verified.')
+                        self.collection.configure_validation(initial_condition)
+                        self.collection._save()
                 return {'collection':self.collection.status(),'recording':self.capture.status()}
             if not self.collection or not self.capture:raise ValueError('Start a guided session first.')
             if action=='select-motion':return self.collection.select_motion(value['motion'],value.get('effort'))
+            if action=='select-condition':
+                alignment=value.get('alignment',{});host=float(value['client_t'])+float(alignment['host_offset_seconds'])
+                return self.collection.select_condition(value['test_condition'],host,float(alignment['uncertainty_seconds']),
+                    {**alignment,'client_event_t':value['client_t'],'mapped_host_event_uptime':host,'server_received_host_uptime':self.clock()})
             if action in ('intent-mark','interaction','animation-phase'):
                 alignment=value.get('alignment',{})
                 host=float(value['client_t'])+float(alignment['host_offset_seconds'])
@@ -344,7 +360,7 @@ class LiveTester:
                     'decision_memory':True,'state_updates':self.state_updates,
                     'snap_arbitration':False,'checking_snap':False,'snap_policy':self.snap_policy,'display_policy':self.display_policy,
                     'recording':self.capture.status() if self.capture else self.last_capture,
-                    'collection_test_condition':self.capture.meta.get('test_condition') if self.capture else None,
+                    'collection_test_condition':self.collection.active_test_condition if self.collection and self.capture.meta.get('collection_variant')=='validation' else self.capture.meta.get('test_condition') if self.capture else None,
                     'camera_observer':self.camera_status,'camera_required_for_recording':self.camera_required,
                     'online_learning':False,
                     'collection':self.collection.status() if self.collection else None,
@@ -433,8 +449,8 @@ class LiveTester:
             def log_message(self,*_):pass
             def do_GET(self):
                 route=self.path.split('?',1)[0]
-                if route in ('/','/contribute','/static','/animation','/animation-steps','/collect','/live'):
-                    name='dashboard-animation-steps.html' if route=='/animation-steps' else 'dashboard-animation.html' if route=='/animation' else 'dashboard-live.html' if route=='/live' else 'dashboard-collect.html' if route=='/collect' else 'dashboard-contribute.html'
+                if route in ('/','/contribute','/static','/animation','/animation-steps','/validation','/collect','/live'):
+                    name='dashboard-validation.html' if route=='/validation' else 'dashboard-animation-steps.html' if route=='/animation-steps' else 'dashboard-animation.html' if route=='/animation' else 'dashboard-live.html' if route=='/live' else 'dashboard-collect.html' if route=='/collect' else 'dashboard-contribute.html'
                     body=files('spelltrain').joinpath(name).read_text().replace('__CSRF__',tester.csrf).encode()
                     if route=='/static':
                         body=body.decode().replace('<body>','<body data-test-condition="static">').replace('Micah data contribution','Micah static contribution')

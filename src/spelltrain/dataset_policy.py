@@ -15,3 +15,11 @@ def require_usable_capture(directory):
             metadata.get('dataset_role') == 'rejected_do_not_use'):
         raise ValueError('DO NOT USE: contributor rejected capture '+directory.name+
                          '; excluded from analysis, training, evaluation and negative baselines.')
+
+
+def require_training_capture(directory):
+    require_usable_capture(directory)
+    path=Path(directory)/'metadata.json'
+    metadata=json.loads(path.read_text()) if path.exists() else {}
+    if metadata.get('do_not_train') is True or metadata.get('dataset_role')=='untouched_guided_count_check':
+        raise ValueError('Reserved evaluation capture cannot enter training, exploratory fitting or threshold tuning.')

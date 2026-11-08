@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "session_id": "20261108-033319-04f674dd",
+  "status": "trashed",
+  "do_not_use": true,
+  "reason": "Explicit contributor rejection: TRASHED DATA \u2014 setup was not correct. DO NOT USE ANY PART.",
+  "excluded_from": [
+    "training",
+    "validation",
+    "evaluation",
+    "analysis",
+    "non_intended_baseline"
+  ],
+  "intended_seconds": 10.684999999939464,
+  "non_intended_seconds": 180.32919929199852,
+  "rejected_at_utc": "2026-11-08T11:37:25.414667+00:00",
+  "raw_data_preserved": true,
+  "original_labels_preserved": true,
+  "original_metadata_sha256": "cd081d9c32f7c50df75fbc94fab0d7f4a3e40856e8173fd96b0ceb5e5560850e"
+}

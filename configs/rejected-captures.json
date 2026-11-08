@@ -17,6 +17,15 @@
       "reason": "Explicit contributor disregard: wrong portal used for isolated Animation Gesture component trials. DO NOT USE ANY PART AS DATA.",
       "intended_seconds": 33.4,
       "non_intended_seconds": 62.0
+    },
+    {
+      "session_id": "20261108-033319-04f674dd",
+      "relative_directory": "Micah contributed data/validation/20261108-033319-04f674dd",
+      "status": "trashed",
+      "do_not_use": true,
+      "reason": "Explicit contributor rejection: TRASHED DATA \u2014 setup was not correct. DO NOT USE ANY PART.",
+      "intended_seconds": 10.684999999939464,
+      "non_intended_seconds": 180.32919929199852
     }
   ]
 }

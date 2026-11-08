@@ -85,6 +85,8 @@ class ServerLink:
                 hand=hand,
                 value=reading.value,
                 calibrated=reading.calibrated,
+                fist=reading.fist,
+                palm=reading.palm,
             )
         )
 

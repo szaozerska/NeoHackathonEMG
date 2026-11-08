@@ -92,6 +92,7 @@ class IntentCollection:
         self.space_down=None
         self.selected_motion=None;self.motion_selections=[];self.focus_lost=None
         self.animation_phase_markers=[]
+        self.active_test_condition=None;self.condition_markers=[]
         self.gyro_report={'samples':0,'min_xyz':None,'max_xyz':None,'first_capture_t':None,'last_capture_t':None,
             'last_native_timestamp_us':None,'positive_intervals':0,'native_positive_span_seconds':0.,'timestamp_discontinuities':0}
         self.signal_segments=[];self.global_last_seq=None;self.global_last_t=None;self.global_generation=None
@@ -117,11 +118,16 @@ class IntentCollection:
         if self.intent_markers[-1]['label']=='intended':raise ValueError('Release Space before changing the selected motion.')
         animation=self.capture.meta.get('collection_variant')=='animation'
         steps=self.capture.meta.get('collection_variant')=='animation_steps'
+        validation=self.capture.meta.get('collection_variant')=='validation'
+        if validation and (motion not in ('snap','shield_hold','sword_hold','animation_gesture') or
+            (motion in ('snap','animation_gesture') and effort is not None) or
+            (motion in ('shield_hold','sword_hold') and effort not in ('low','medium','high'))):
+            raise ValueError('Choose Snap, Animation Gesture, or Shield/Sword with low, medium or high effort.')
         if steps and (motion not in ('animation_cross_fingers','animation_curl_ring_pinky','animation_thumb_approach','animation_sequence') or effort is not None):
             raise ValueError('Select an Animation Gesture component or the combined sequence.')
         if animation and (motion!='animation_gesture' or effort is not None):
             raise ValueError('This session collects Animation Gesture only.')
-        if not animation and not steps and (motion not in ('snap','shield_hold','sword_hold') or (motion=='snap' and effort is not None) or (motion!='snap' and effort not in ('low','medium','high'))):
+        if not animation and not steps and not validation and (motion not in ('snap','shield_hold','sword_hold') or (motion=='snap' and effort is not None) or (motion!='snap' and effort not in ('low','medium','high'))):
             raise ValueError('Select Snap, or a Shield/Sword hold with low, medium or high effort.')
         if self.capture.meta.get('test_condition')=='static' and motion=='snap':raise ValueError('Static testing supports Shield and Sword holds only.')
         self.interaction(kind='motion_selection')
@@ -152,7 +158,30 @@ class IntentCollection:
         self.capture.append('participant_interaction',host,interaction=row)
         write_json(self.capture.directory/'interaction-exclusions.json',self.interactions)
 
-    def mark_intent(self,label,host=None,uncertainty=0.,alignment=None):
+    def configure_validation(self,condition):
+        self.active_test_condition=condition
+        self.intent_markers[0]['test_condition']=condition
+        self.condition_markers=[{'capture_t':0.,'test_condition':condition,'source':'participant_selection_at_start'}]
+        write_json(self.capture.directory/'condition-markers.json',{'markers':self.condition_markers})
+        self._save()
+
+    def select_condition(self,condition,host,uncertainty=0.,alignment=None):
+        if self.capture.meta.get('collection_variant')!='validation':raise ValueError('Use the combined validation collector.')
+        if condition not in ('static','dynamic'):raise ValueError('Choose static or dynamic.')
+        if self.intent_markers[-1]['label']=='intended':raise ValueError('Release Space before switching Static/Dynamic.')
+        # Validation and event ordering must succeed before changing the active condition.
+        self.interaction(host,uncertainty,'condition_selection')
+        if host-self.capture.start<self.intent_markers[-1]['capture_t']:raise ValueError('Condition event arrived out of order.')
+        previous=self.active_test_condition;self.active_test_condition=condition
+        try:self.mark_intent('non_intended',host,uncertainty,alignment,report_source='participant_condition_switch')
+        except Exception:
+            self.active_test_condition=previous;raise
+        marker={'capture_t':host-self.capture.start,'test_condition':condition,'source':'participant_condition_switch','browser_clock_alignment':alignment}
+        self.condition_markers.append(marker);self.capture.append('condition_selection',host,marker=marker)
+        write_json(self.capture.directory/'condition-markers.json',{'markers':self.condition_markers})
+        return {'test_condition':condition,'annotation':self.annotation_status()}
+
+    def mark_intent(self,label,host=None,uncertainty=0.,alignment=None,report_source=None):
         if label not in ('intended','non_intended'):raise ValueError('Invalid intent label')
         if label=='intended' and self.capture.meta.get('recording_profile')=='micah_emg' and not self.selected_motion:
             raise ValueError('Select a motion and effort before holding Space.')
@@ -165,6 +194,8 @@ class IntentCollection:
         if self.capture.meta.get('recording_profile')=='micah_emg':
             marker['source']='participant_spacebar_press' if label=='intended' else 'participant_spacebar_release'
             marker['selected_motion']=dict(self.selected_motion) if label=='intended' and self.selected_motion else None
+        if self.active_test_condition:marker['test_condition']=self.active_test_condition
+        if report_source:marker['source']=report_source
         self.intent_markers.append(marker);self.capture.append('intent_toggle',host,marker=marker)
         write_json(self.capture.directory/'intent-toggle-markers.json',self.intent_markers)
         if self.capture.meta.get('collection_variant')=='animation_steps' and self.capture.meta.get('phase_reporting_enabled',True):
@@ -418,8 +449,8 @@ class IntentCollection:
                     if (b>a if self.defer_cleanup else b-a>=.5):intervals.append({'start':a,'end':b,'label':marker['label'],
                         'wearing_session':self.wearing_session,'dataset_role':self.capture.meta['dataset_role'],
                         'source':'participant_spacebar_untrimmed' if self.defer_cleanup else 'participant_toggle_with_interaction_exclusion','supervision':'weak_interval_label',
-                        'gesture_label':None,'selected_motion':marker.get('selected_motion'),'exact_action_times_verified':False})
-        for interval in intervals:interval['test_condition']=self.capture.meta.get('test_condition','dynamic')
+                        'gesture_label':None,'selected_motion':marker.get('selected_motion'),'exact_action_times_verified':False,
+                        'test_condition':marker.get('test_condition',self.capture.meta.get('test_condition','dynamic'))})
         write_json(self.capture.directory/'intent-gate-intervals.json',{'intervals':intervals,'gesture_labels_required':False,
             'interaction_guard_seconds':self.interaction_guard,'postprocessing_required':self.defer_cleanup,
             'policy':'Untrimmed participant windows; use raw EMG and baseline context for later cleanup. Missing samples are not imputed.' if self.defer_cleanup else 'Guarded participant reports intersected with continuous EMG; not inferred mental intent.'})
@@ -442,6 +473,8 @@ class IntentCollection:
             write_json(self.capture.directory/'truth-values.json',truth)
             names+=('truth-values.json','signal-coverage.json')
         hashes={name:hashlib.sha256((self.capture.directory/name).read_bytes()).hexdigest() for name in names}
+        if self.capture.meta.get('collection_variant')=='validation':
+            hashes['condition-markers.json']=hashlib.sha256((self.capture.directory/'condition-markers.json').read_bytes()).hexdigest()
         if self.capture.meta.get('collection_variant')=='animation_steps':
             self.save_animation_phases(final=True)
             hashes.update({name:hashlib.sha256((self.capture.directory/name).read_bytes()).hexdigest()
@@ -471,6 +504,12 @@ class IntentCollection:
             'false_snap_candidates_per_minute':60*false_candidates/negative_seconds if negative_seconds else None,
             'actual_event_precision':None,'actual_event_recall':None,'automatically_retrained':False,
             'note':'Count agreement is not event accuracy. False-candidate rate uses participant-confirmed zero-snap clips only. Camera estimates and model outputs are never truth. Open holds remain separate from deliberate shield labels.'}
+        if self.capture.meta.get('collection_variant')=='validation':
+            report['seconds_by_condition']={condition:{label:sum(v['end']-v['start'] for v in intervals
+                if v['test_condition']==condition and v['label']==label) for label in ('intended','non_intended')}
+                for condition in ('static','dynamic')}
+            report['evaluation_status']='reserved_unscored'
+            report['do_not_train']=True
         write_json(self.capture.directory/'collection-report.json',report)
         return report
 

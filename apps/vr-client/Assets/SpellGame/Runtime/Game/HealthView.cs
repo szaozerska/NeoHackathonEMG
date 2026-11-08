@@ -10,9 +10,9 @@ namespace SpellGame.Game
     /// <list type="bullet">
     /// <item>own HP: a bar above the wrist of the hand without the band, read by glancing at it like a watch;</item>
     /// <item>other players' HP: a bar floating above their head, above the player-ID marker;</item>
-    /// <item>taking damage: bars flash at the edges of the view, stronger for big hits and low HP, on the side the hit came
-    /// from (top and bottom too for hits from behind) and coloured by what hit you: fireball orange, sword cyan; a softer
-    /// blue flash when your shield blocks something.</item>
+    /// <item>taking damage: a soft see-through glow at the rim of the view, stronger for big hits and low HP, on the side
+    /// the hit came from (all round for hits from behind) and coloured by what hit you: fireball orange, sword cyan. Shield
+    /// blocks get no screen flash; the shield's own flash shows them.</item>
     /// </list>
     /// </summary>
     public sealed class HealthView : MonoBehaviour
@@ -43,13 +43,17 @@ namespace SpellGame.Game
         [SerializeField] private float lowHpFraction = 0.25f;
 
         [Header("Damage flash")]
-        [SerializeField] private float flashDuration = 0.35f;
+        [Tooltip("Additive SpellGame/Fireball/Particle material; each edge gets a tinted copy. None = no damage flash.")]
+        [SerializeField] private Material flashMaterial;
+        [SerializeField] private float flashDuration = 0.3f;
         [SerializeField] private float flashDistance = 0.5f;
-        [SerializeField] private float flashMaxThickness = 0.08f;
+        [Tooltip("Left/right glow: from this angle off centre (transparent) out to this one (full); Quest 3 sees ~55°.")]
+        [SerializeField] private Vector2 sideFlashDegrees = new(30f, 62f);
+        [Tooltip("Top/bottom glow, same idea; Quest 3 sees ~48° up and down.")]
+        [SerializeField] private Vector2 topFlashDegrees = new(26f, 58f);
+        [SerializeField, Range(0f, 1f)] private float flashBrightness = 0.8f;
         [SerializeField] private Color fireballFlash = new(1f, 0.42f, 0.05f);
         [SerializeField] private Color swordFlash = new(0.25f, 0.85f, 1f);
-        [SerializeField] private Color blockFlash = new(0.3f, 0.45f, 1f);
-        [SerializeField, Range(0f, 1f)] private float blockFlashStrength = 0.35f;
 
         private sealed class Bar
         {
@@ -70,8 +74,9 @@ namespace SpellGame.Game
         private Bar _wristBar;
         private Material _backMaterial;
         private Material _chipMaterial;
-        private Material _flashMaterial;
         private Transform[] _flashEdges;
+        private Material[] _edgeMaterials;
+        private Color _flashColor;
         private float _flashStart = float.NegativeInfinity;
         private float _flashStrength;
         private readonly float[] _flashWeights = { 1f, 1f, 1f, 1f };
@@ -93,7 +98,6 @@ namespace SpellGame.Game
         {
             _backMaterial = Tinted(new Color(0.08f, 0.08f, 0.08f));
             _chipMaterial = Tinted(new Color(1f, 0.95f, 0.85f));
-            _flashMaterial = Tinted(new Color(1f, 0.05f, 0.05f));
             _wristBar = CreateBar("Wrist HP", wristBarSize);
             _flashEdges = CreateFlashEdges();
         }
@@ -102,14 +106,12 @@ namespace SpellGame.Game
         {
             gameClient.StateReceived += OnState;
             gameClient.DamageReceived += OnDamage;
-            gameClient.ImpactReceived += OnImpact;
         }
 
         private void OnDisable()
         {
             gameClient.StateReceived -= OnState;
             gameClient.DamageReceived -= OnDamage;
-            gameClient.ImpactReceived -= OnImpact;
         }
 
         private void OnState(StateMessage state)
@@ -128,13 +130,6 @@ namespace SpellGame.Game
             Flash(Mathf.Clamp01(0.4f + damage.Amount / 20f + 0.5f * lowHp), color, AttackerPosition(damage.SourceId, damage.Pos));
         }
 
-        private void OnImpact(ImpactMessage impact)
-        {
-            if (impact.TargetId != gameClient.PlayerId || impact.Reason is not ("blocked" or "parried"))
-                return;
-            Flash(blockFlashStrength, blockFlash, AttackerPosition(impact.OwnerId, impact.Pos));
-        }
-
         /// <summary>Where the hit came from: the attacker's head, else the hit point.</summary>
         private Vector3? AttackerPosition(string attackerId, float[] hitPos)
         {
@@ -148,7 +143,7 @@ namespace SpellGame.Game
         {
             _flashStrength = strength;
             _flashStart = Time.time;
-            _flashMaterial.SetColor("_BaseColor", color);
+            _flashColor = color;
             for (var i = 0; i < _flashWeights.Length; i++)
                 _flashWeights[i] = 1f;
             if (from == null || centerEye == null)
@@ -212,16 +207,12 @@ namespace SpellGame.Game
         {
             var t = (Time.time - _flashStart) / flashDuration;
             var active = t is >= 0f and < 1f;
-            var edgeThickness = active ? flashMaxThickness * _flashStrength * (1f - t) : 0f;
+            var fade = active ? flashBrightness * _flashStrength * (1f - t) * (1f - t) : 0f;
             for (var i = 0; i < _flashEdges.Length; i++)
             {
-                var edge = _flashEdges[i];
-                edge.gameObject.SetActive(active && _flashWeights[i] > 0.01f);
-                if (!active)
-                    continue;
-                var thickness = edgeThickness * _flashWeights[i];
-                var horizontal = i < 2;
-                edge.localScale = horizontal ? new Vector3(1.2f, thickness, 1f) : new Vector3(thickness, 1.2f, 1f);
+                _flashEdges[i].gameObject.SetActive(active && _flashWeights[i] > 0.01f);
+                if (active)
+                    _edgeMaterials[i].SetColor("_Color", new Color(_flashColor.r, _flashColor.g, _flashColor.b, fade * _flashWeights[i]));
             }
         }
 
@@ -291,24 +282,77 @@ namespace SpellGame.Game
             return new Bar { Root = root, Fill = fill, Chip = chip, FillMaterial = fillMaterial, Size = size };
         }
 
-        /// <summary>Top, bottom, left, right edges of the view, parented to the eye.</summary>
+        /// <summary>
+        /// Top, bottom, left, right glows at the rim of the view, parented to the eye: strips that fade from transparent
+        /// (towards the centre) to full (past the edge of view), so the middle of the view stays clear.
+        /// </summary>
         private Transform[] CreateFlashEdges()
         {
             var parent = centerEye != null ? centerEye : transform;
-            var offsets = new[]
+            var mesh = GradientStripMesh();
+            var (sideCentre, sideWidth) = Band(sideFlashDegrees);
+            var (topCentre, topHeight) = Band(topFlashDegrees);
+            var layout = new[]
             {
-                new Vector3(0f, 0.27f, 0f), new Vector3(0f, -0.27f, 0f),
-                new Vector3(-0.33f, 0f, 0f), new Vector3(0.33f, 0f, 0f),
+                (new Vector3(0f, topCentre, flashDistance), 90f, topHeight, flashDistance * 5f),
+                (new Vector3(0f, -topCentre, flashDistance), -90f, topHeight, flashDistance * 5f),
+                (new Vector3(-sideCentre, 0f, flashDistance), 180f, sideWidth, flashDistance * 4f),
+                (new Vector3(sideCentre, 0f, flashDistance), 0f, sideWidth, flashDistance * 4f),
             };
-            var edges = new Transform[offsets.Length];
-            for (var i = 0; i < offsets.Length; i++)
+            var edges = new Transform[layout.Length];
+            _edgeMaterials = new Material[layout.Length];
+            for (var i = 0; i < layout.Length; i++)
             {
-                edges[i] = CreateQuad("Damage Flash", parent, _flashMaterial);
-                edges[i].localPosition = (offsets[i] + Vector3.forward) * flashDistance;
-                edges[i].localRotation = Quaternion.identity;
-                edges[i].gameObject.SetActive(false);
+                var (position, roll, depth, length) = layout[i];
+                var go = new GameObject("Damage Flash");
+                go.transform.SetParent(parent, false);
+                go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                var renderer = go.AddComponent<MeshRenderer>();
+                renderer.sharedMaterial = _edgeMaterials[i] = flashMaterial != null ? new Material(flashMaterial) : null;
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+                edges[i] = go.transform;
+                edges[i].localPosition = position;
+                edges[i].localRotation = Quaternion.Euler(0f, 0f, roll);
+                edges[i].localScale = new Vector3(depth, length, 1f);
+                go.SetActive(false);
             }
-            return edges;
+            return flashMaterial != null ? edges : System.Array.Empty<Transform>();
+        }
+
+        /// <summary>Centre and size, at <see cref="flashDistance"/>, of the band between two angles off the view centre.</summary>
+        private (float Centre, float Size) Band(Vector2 degrees)
+        {
+            var inner = flashDistance * Mathf.Tan(degrees.x * Mathf.Deg2Rad);
+            var outer = flashDistance * Mathf.Tan(degrees.y * Mathf.Deg2Rad);
+            return ((inner + outer) * 0.5f, outer - inner);
+        }
+
+        /// <summary>A unit quad whose vertex alpha eases from 0 at x = -0.5 (inner side) to 1 at x = +0.5 (outer side).</summary>
+        private static Mesh GradientStripMesh()
+        {
+            float[] xs = { -0.5f, -0.2f, 0.15f, 0.5f };
+            float[] alphas = { 0f, 0.15f, 0.5f, 1f };
+            var vertices = new Vector3[xs.Length * 2];
+            var colors = new Color[vertices.Length];
+            var triangles = new int[(xs.Length - 1) * 6];
+            for (var i = 0; i < xs.Length; i++)
+            {
+                vertices[i * 2] = new Vector3(xs[i], -0.5f, 0f);
+                vertices[i * 2 + 1] = new Vector3(xs[i], 0.5f, 0f);
+                colors[i * 2] = colors[i * 2 + 1] = new Color(1f, 1f, 1f, alphas[i]);
+                if (i == 0)
+                    continue;
+                var t = (i - 1) * 6;
+                var a = (i - 1) * 2;
+                triangles[t] = a;
+                triangles[t + 1] = a + 1;
+                triangles[t + 2] = a + 2;
+                triangles[t + 3] = a + 1;
+                triangles[t + 4] = a + 3;
+                triangles[t + 5] = a + 2;
+            }
+            return new Mesh { name = "Damage Flash Strip", vertices = vertices, colors = colors, triangles = triangles };
         }
 
         private static Transform CreateQuad(string name, Transform parent, Material material)

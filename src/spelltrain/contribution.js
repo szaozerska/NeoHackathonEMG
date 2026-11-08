@@ -1,7 +1,8 @@
 /* Space down begins an intended interval; Space up ends it. No camera or inference. */
 (()=>{
- const $=id=>document.getElementById(id),stepsMode=document.body.dataset.testCondition==='animation_steps',animationMode=['animation','animation_steps'].includes(document.body.dataset.testCondition),staticMode=animationMode||document.body.dataset.testCondition==='static';
+ const $=id=>document.getElementById(id),validationMode=document.body.dataset.testCondition==='validation',stepsMode=document.body.dataset.testCondition==='animation_steps',animationMode=['animation','animation_steps'].includes(document.body.dataset.testCondition),staticMode=animationMode||document.body.dataset.testCondition==='static';
  let live=null,busy=false,polling=false,alignment=null,spaceHeld=false,pending=0,queue=Promise.resolve(),holdStarted=null,lastHoldSeconds=0;
+ let validationCondition=new URLSearchParams(location.search).get('mode')==='dynamic'?'dynamic':'static',validationEffort='medium';
  if(animationMode&&new URLSearchParams(location.search).get('mode')==='dynamic')$('animationCondition').value='dynamic';
  const dynamicAnimation=()=>animationMode&&$('animationCondition').value==='dynamic';
  async function api(action,value={}){
@@ -18,6 +19,14 @@
   if(!live)return;
   const active=ownSession(),motionReady=live.band_context?.gyro?.age_seconds<1.5&&live.band_context?.orientation?.age_seconds<1.5&&!!live.sensor_timing?.forearm&&!!live.sensor_timing?.delivered_sensor_hz?.gyro&&!!live.sensor_timing?.delivered_sensor_hz?.orientation,intended=pending>0?spaceHeld:live.collection?.annotation?.label==='intended',motion=live.collection?.selected_motion;
   if(animationMode&&active&&live.collection_test_condition)$('animationCondition').value=live.collection_test_condition;
+  if(validationMode){
+   if(active&&live.collection_test_condition)validationCondition=live.collection_test_condition;
+   if(motion?.effort)validationEffort=motion.effort;
+   for(const b of document.querySelectorAll('[data-condition]')){const chosen=b.dataset.condition===validationCondition;b.setAttribute('aria-pressed',String(chosen));b.style.background=chosen?'#365b7f':'';b.disabled=busy||pending>0||spaceHeld||intended;}
+   const strength=motion&&['shield_hold','sword_hold'].includes(motion.motion);$('validationEffort').hidden=!strength;
+   for(const b of document.querySelectorAll('[data-validation-effort]')){const chosen=b.dataset.validationEffort===validationEffort;b.setAttribute('aria-pressed',String(chosen));b.style.background=chosen?'#365b7f':'';b.disabled=busy||pending>0||spaceHeld||intended;}
+   $('conditionHint').textContent=(validationCondition==='static'?'Static: keep your arm comfortably still.':'Dynamic: move and rotate your arm naturally.')+' Switch modes only while red. This whole session remains reserved validation data.';
+  }
   $('signal').dataset.live=String(!!live.connected);$('signal').textContent=live.connected?'EMG connected · 8 channels · 2,048 Hz nominal':'Waiting for fresh EMG from Kinesis';
   $('setup').hidden=active;$('recording').hidden=!active;
   $('start').disabled=busy||!live.connected||!!live.recording?.active;$('start').textContent='Start session';$('connect').disabled=busy||!!live.recording?.active;
@@ -33,7 +42,7 @@
   }
   if($('holdElapsed')){const seconds=holdStarted===null?lastHoldSeconds:performance.now()/1000-holdStarted;$('holdElapsed').textContent=seconds.toFixed(1)+(stepsMode?' seconds':' / 30 seconds'+(seconds>=30?' · target reached; release when ready':''));}
   for(const button of document.querySelectorAll('[data-motion]')){
-   const chosen=motion?.motion===button.dataset.motion&&(motion?.effort||'')===(button.dataset.effort||'');
+   const chosen=motion?.motion===button.dataset.motion&&(validationMode||(motion?.effort||'')===(button.dataset.effort||''));
    button.setAttribute('aria-pressed',String(chosen));button.style.background=chosen?'#365b7f':'';
    button.disabled=busy||pending>0||spaceHeld||intended;
   }
@@ -52,8 +61,16 @@
   finally{polling=false}
  }
  async function work(action){if(busy||pending)return;busy=true;$('error').textContent='';render();try{await action()}catch(error){$('error').textContent=error.message}finally{busy=false;await refresh();render()}}
- $('start').onclick=()=>work(async()=>{if(dynamicAnimation()&&!('collection_test_condition' in live))throw Error('Open the updated dynamic collector at http://127.0.0.1:8805/animation?mode=dynamic');await sync();await api('collection/start',{profile:'micah_emg',test_condition:stepsMode?'animation_steps':animationMode?'animation':staticMode?'static':'dynamic',animation_condition:animationMode?$('animationCondition').value:undefined,wearing_session:$('wearing').value.trim(),role:$('role').value,focus:'live_intent',initial_intent:'non_intended',interaction_guard:0,capture_mode:'emg_only',clock_alignment:alignment});$('saved').textContent='';lastHoldSeconds=0;holdStarted=null;$('start').blur();});
- for(const button of document.querySelectorAll('[data-motion]'))button.onclick=()=>work(async()=>{await api('collection/select-motion',{motion:button.dataset.motion,effort:button.dataset.effort||null});button.blur();});
+ $('start').onclick=()=>work(async()=>{if(dynamicAnimation()&&!('collection_test_condition' in live))throw Error('Open the updated dynamic collector at http://127.0.0.1:8805/animation?mode=dynamic');await sync();await api('collection/start',{profile:'micah_emg',test_condition:validationMode?'validation':stepsMode?'animation_steps':animationMode?'animation':staticMode?'static':'dynamic',animation_condition:animationMode?$('animationCondition').value:undefined,initial_test_condition:validationMode?validationCondition:undefined,wearing_session:$('wearing').value.trim(),role:validationMode?'evaluation':$('role').value,focus:'live_intent',initial_intent:'non_intended',interaction_guard:0,capture_mode:'emg_only',clock_alignment:alignment});$('saved').textContent='';lastHoldSeconds=0;holdStarted=null;$('start').blur();});
+ for(const button of document.querySelectorAll('[data-motion]'))button.onclick=()=>work(async()=>{await api('collection/select-motion',{motion:button.dataset.motion,effort:validationMode&&['shield_hold','sword_hold'].includes(button.dataset.motion)?validationEffort:button.dataset.effort||null});button.blur();});
+ for(const button of document.querySelectorAll('[data-condition]'))button.onclick=()=>work(async()=>{
+  const condition=button.dataset.condition;
+  if(ownSession()){const result=await api('collection/select-condition',{test_condition:condition,client_t:performance.now()/1000,alignment});if(live.collection)live.collection.annotation=result.annotation;live.collection_test_condition=condition;}
+  validationCondition=condition;button.blur();
+ });
+ for(const button of document.querySelectorAll('[data-validation-effort]'))button.onclick=()=>work(async()=>{
+  await api('collection/select-motion',{motion:live.collection.selected_motion.motion,effort:button.dataset.validationEffort});validationEffort=button.dataset.validationEffort;button.blur();
+ });
  function mark(label,client_t){
   if(!ownSession()||!alignment)return;
   const eventAlignment={...alignment};pending++;render();
