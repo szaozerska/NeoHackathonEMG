@@ -1,6 +1,6 @@
-# Sophie’s validation data — 2026-11-08
+# Sophie’s dynamic session — 2026-11-08
 
-**Contributor: Sophie. Purpose: reserved validation/evaluation. Do not use for model training, model selection, or threshold tuning.**
+**Contributor: Sophie. Role changed 2026-11-08 at Sophie's request: this capture is now part of the pooled Ken/Micah/Sophie train/validation/test split.** Only intervals marked `train_eligible` in [`analysis/training-selection.json`](analysis/training-selection.json) are used (signal-quality rules only, `python -m spelltrain.training_selection`). The sections below describe the original reserved publication and its validation filter, which the training selection builds on.
 
 - Session: `20261108-040247-0a14a2cd`
 - Duration: 824.38 seconds (13 minutes 44 seconds).
@@ -45,7 +45,7 @@ Use [`truth-values.filtered.json`](truth-values.filtered.json) to score a frozen
 
 ## Evaluation rules
 
-The original role `untouched_guided_count_check`, `do_not_train: true`, and `do_not_tune_thresholds: true` are preserved. Training adapters reject both the canonical session and its original capture folder. Freeze a model and its thresholds before scoring these data. Do not change labels using predictions or use validation results to tune the model while continuing to call this untouched evaluation.
+The original role was `untouched_guided_count_check` with `do_not_train: true`; `metadata.json` now records the role change (`role_change`), and `original/` keeps the original collector metadata unchanged. Freeze a model and its thresholds before scoring these data. Do not change labels using predictions or use validation results to tune the model while continuing to call this untouched evaluation.
 
 Space down/up and gesture buttons supply weak participant interval labels, not verified physiological onsets or event counts. Snap-labeled intervals are not exact snap timestamps. Preserve original trial/session groupings; overlapping windows are not independent examples. The source wearing-session ID is retained verbatim and does not itself establish independence from every training recording.
 

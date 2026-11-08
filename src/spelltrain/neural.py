@@ -118,9 +118,13 @@ def input_array(rows, architecture):
 
 
 def row_weights(rows):
+    """Each class weighs the same; within a class each wearer, and within a wearer each clip, weighs the same."""
+    person = lambda r: r.get('wearing_session')
     pairs = Counter((r['group'], r['label']) for r in rows)
-    groups = {label: {r['group'] for r in rows if r['label'] == label} for label in {r['label'] for r in rows}}
-    weight = np.asarray([1/(pairs[r['group'], r['label']]*len(groups[r['label']])) for r in rows], np.float32)
+    groups = Counter((person(r), r['label']) for r in {(r['group'], r['label'], person(r)): r for r in rows}.values())
+    people = Counter(label for _, label in groups)
+    weight = np.asarray([1/(pairs[r['group'], r['label']]*groups[person(r), r['label']]*people[r['label']])
+                         for r in rows], np.float32)
     return weight/weight.mean()
 
 

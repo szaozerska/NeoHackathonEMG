@@ -27,7 +27,7 @@ def main():
         parser.error('Choose a port between 1024 and 65535')
     tester = LiveTester(load_artifact(ROOT/'models/gestures-v4/model.joblib'),
                         ROOT/'data/player-a/raw/animation-live.jsonl', auto_source=True)
-    output=(args.output_root or ROOT/('Micah contributed data/validation' if args.validation else 'Micah contributed data/animation')).resolve()
+    output=(args.output_root or ROOT/('data/micah/validation' if args.validation else 'data/micah/animation')).resolve()
     if args.validation:tester.validation_root=output
     else:tester.animation_root=output
     if args.source_state and args.source_state.exists():

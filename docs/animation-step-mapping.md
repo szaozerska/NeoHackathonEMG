@@ -17,7 +17,7 @@ return under one Space hold. There are no additional phase controls, number-key
 requirements, minimum intervals or fixed clipping. Static/dynamic testing and
 the wearing-session/evaluation settings remain available.
 
-Captures save under `Micah contributed data/animation/steps/<session-id>/`.
+Captures save under `data/micah/animation/steps/<session-id>/`.
 `truth-values.json` records every intended/non-intended Space interval and the
 selected action. Raw EMG, surrounding context, and available gyro/orientation
 are retained with their native timing. A raw Kinesis recording supplies eight

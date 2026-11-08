@@ -1,4 +1,4 @@
-# Micah contributed data
+# data/micah
 
 This directory is intentionally tracked in Git at Micah's request.
 

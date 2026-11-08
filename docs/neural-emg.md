@@ -94,7 +94,7 @@ validates on the last 20% of each clip.
 
 `guided_only_dataset(..., interval_directories)` (`--interval-capture`, and the
 Modal sweep by default) also loads Micah's Space-interval contributions under
-`Micah contributed data/{static,dynamic}` (`add_interval_capture`): shield/sword
+`data/micah/{static,dynamic}` (`add_interval_capture`): shield/sword
 holds become `open`/`fist`, non-intended time becomes `none` and snap negatives
 (0.3 s boundary margin, 1 s clear of published snap-like candidates), and snap
 intervals become count bags. Per class, the last 30% of intervals validate;

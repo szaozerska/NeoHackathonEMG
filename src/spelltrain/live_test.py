@@ -52,9 +52,9 @@ class LiveTester:
         self.live_input=None
         self.collection=None;self.last_collection_report=None
         self.contribution_root=Path(__file__).resolve().parents[2]/'Micah data contribution'
-        self.static_root=Path(__file__).resolve().parents[2]/'Micah contributed data/static'
-        self.animation_root=Path(__file__).resolve().parents[2]/'Micah contributed data/animation'
-        self.validation_root=Path(__file__).resolve().parents[2]/'Micah contributed data/validation'
+        self.static_root=Path(__file__).resolve().parents[2]/'data/micah/static'
+        self.animation_root=Path(__file__).resolve().parents[2]/'data/micah/animation'
+        self.validation_root=Path(__file__).resolve().parents[2]/'data/micah/validation'
         self.equipment_preview=EquipmentPreview()
         self.band_context={};self.band_event_counts={};self.target_hand='Right'
         self.sensor_timing=SensorTiming()

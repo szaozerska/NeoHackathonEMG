@@ -17,7 +17,7 @@ For dynamic arm movement and continuous rotation testing:
 ```
 
 The page also offers a static/dynamic selector before starting. Dynamic saves
-go under `Micah contributed data/animation/dynamic/<session-id>/`; their metadata
+go under `data/micah/animation/dynamic/<session-id>/`; their metadata
 and every truth interval are labeled `test_condition: dynamic`. Static examples
 keep their static label. The Animation Gesture class remains `animation_gesture`
 in both conditions, and Space down/up still supplies intended/non-intended labels.
@@ -44,7 +44,7 @@ substep labels are not invented from signal change points.
    repeat as needed. Prefer the other hand for Space.
 4. Click **Stop & save session**.
 
-Completed sessions are stored in `Micah contributed data/animation/<session-id>/`.
+Completed sessions are stored in `data/micah/animation/<session-id>/`.
 They are separate from the original shield/sword static and dynamic datasets. Static metadata uses
 `test_condition: static`, `collection_variant: animation`, and
 `gesture_label: Animation Gesture`; selected-motion labels use

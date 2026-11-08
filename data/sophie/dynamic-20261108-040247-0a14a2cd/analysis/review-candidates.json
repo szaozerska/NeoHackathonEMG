@@ -1,0 +1,260 @@
+[
+ {
+  "capture_t_seconds": 39.47009781259112,
+  "label_index": 0,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 84.43749562517041,
+  "label_index": 2,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 90.89094562508399,
+  "label_index": 4,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 96.08779562509153,
+  "label_index": 8,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 115.6996390419663,
+  "label_index": 26,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 122.58903904200997,
+  "label_index": 32,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 125.89458904205821,
+  "label_index": 34,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 140.93900412507355,
+  "label_index": 46,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 146.44240412506042,
+  "label_index": 50,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 148.07115412509302,
+  "label_index": 52,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 160.5723541250918,
+  "label_index": 60,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 197.57128093816573,
+  "label_index": 94,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 204.9823560421355,
+  "label_index": 98,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 217.04895604209742,
+  "label_index": 116,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 265.38645262498176,
+  "label_index": 124,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 267.00950262503466,
+  "label_index": 126,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 269.29685262497514,
+  "label_index": 128,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 308.14863154204795,
+  "label_index": 152,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 555.8345763755497,
+  "label_index": 316,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 575.3543039171491,
+  "label_index": 318,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 610.7269014591584,
+  "label_index": 344,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 624.5016367089702,
+  "label_index": 366,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 625.9243367090239,
+  "label_index": 370,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 687.9890624171821,
+  "label_index": 468,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 700.5097124172025,
+  "label_index": 486,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 702.0070124171325,
+  "label_index": 488,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 703.2005624171579,
+  "label_index": 490,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 705.6453969586291,
+  "label_index": 494,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 708.8920815000893,
+  "label_index": 496,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 712.6624315000372,
+  "label_index": 498,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 717.7423815000802,
+  "label_index": 506,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 719.9734815000556,
+  "label_index": 510,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 722.4578815001296,
+  "label_index": 514,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 724.8279315000982,
+  "label_index": 518,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 725.0371315001394,
+  "label_index": 520,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 728.1215814999887,
+  "label_index": 524,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 737.1394369170303,
+  "label_index": 538,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 749.6195869170479,
+  "label_index": 554,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 751.7437869170099,
+  "label_index": 556,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 754.1642869170173,
+  "label_index": 560,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 759.3119869169896,
+  "label_index": 562,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 766.0893504380365,
+  "label_index": 564,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ },
+ {
+  "capture_t_seconds": 807.2913557920256,
+  "label_index": 592,
+  "original_label": "non_intended",
+  "category": "unlabeled_snap_like_burst"
+ }
+]

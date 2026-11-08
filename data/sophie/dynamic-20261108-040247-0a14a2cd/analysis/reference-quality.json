@@ -1,0 +1,268 @@
+[
+ {
+  "label_index": 5,
+  "peak_capture_t": 92.51149838860147,
+  "interval_start": 91.7397956250934,
+  "interval_end": 92.73209562513512,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 7,
+  "peak_capture_t": 94.52082680922467,
+  "interval_start": 93.8299956250703,
+  "interval_end": 94.75249562505633,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 11,
+  "peak_capture_t": 104.9467578100739,
+  "interval_start": 104.30899562512059,
+  "interval_end": 105.23679562518373,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 17,
+  "peak_capture_t": 107.27164345711935,
+  "interval_start": 106.49218904203735,
+  "interval_end": 107.38628904207144,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 19,
+  "peak_capture_t": 109.20863222097978,
+  "interval_start": 108.53038904198911,
+  "interval_end": 109.39758904196788,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 25,
+  "peak_capture_t": 114.37278729618993,
+  "interval_start": 113.76238904206548,
+  "interval_end": 114.49498904193752,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 29,
+  "peak_capture_t": 118.61340499273501,
+  "interval_start": 117.86198904190678,
+  "interval_end": 119.13578904198948,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 31,
+  "peak_capture_t": 121.32376691163518,
+  "interval_start": 120.87978904205374,
+  "interval_end": 121.67188904201612,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 33,
+  "peak_capture_t": 124.34382982167881,
+  "interval_start": 123.50618904200383,
+  "interval_end": 125.17288904206362,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 37,
+  "peak_capture_t": 128.71139587531798,
+  "interval_start": 127.70568904199172,
+  "interval_end": 129.21268904197495,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 41,
+  "peak_capture_t": 134.075898627867,
+  "interval_start": 132.82408904202748,
+  "interval_end": 134.30788904207293,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 43,
+  "peak_capture_t": 136.23081014631316,
+  "interval_start": 135.23398904199712,
+  "interval_end": 136.51895412500016,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 45,
+  "peak_capture_t": 138.98538750910666,
+  "interval_start": 138.2250541250687,
+  "interval_end": 139.38575412507635,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 53,
+  "peak_capture_t": 149.9604793500621,
+  "interval_start": 148.6814541250933,
+  "interval_end": 150.11985412507784,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 55,
+  "peak_capture_t": 151.62005889054853,
+  "interval_start": 151.17835412512068,
+  "interval_end": 151.89995412505232,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 57,
+  "peak_capture_t": 154.07197709358297,
+  "interval_start": 153.0965541250771,
+  "interval_end": 154.21535412513185,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 59,
+  "peak_capture_t": 156.64798942534253,
+  "interval_start": 155.69035412510857,
+  "interval_end": 156.95665412512608,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 61,
+  "peak_capture_t": 164.89835976390168,
+  "interval_start": 164.18805412505753,
+  "interval_end": 165.05305412504822,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 63,
+  "peak_capture_t": 166.7703075677855,
+  "interval_start": 166.0628058341099,
+  "interval_end": 166.91070583404507,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 65,
+  "peak_capture_t": 168.9242276105797,
+  "interval_start": 168.1921058340231,
+  "interval_end": 169.18240583408624,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 71,
+  "peak_capture_t": 173.95016966876574,
+  "interval_start": 173.32900583406445,
+  "interval_end": 174.26120583410375,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 73,
+  "peak_capture_t": 175.48708143632393,
+  "interval_start": 174.99530583410524,
+  "interval_end": 175.8236058340408,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 75,
+  "peak_capture_t": 177.08946144010406,
+  "interval_start": 176.47190583415795,
+  "interval_end": 177.35870583413634,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 77,
+  "peak_capture_t": 178.7308806926012,
+  "interval_start": 178.05410583410412,
+  "interval_end": 178.89720583404414,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 79,
+  "peak_capture_t": 180.8107804976171,
+  "interval_start": 179.6473058341071,
+  "interval_end": 181.08080583414994,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 81,
+  "peak_capture_t": 182.57387943856884,
+  "interval_start": 181.69190583413,
+  "interval_end": 182.87010583409574,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 83,
+  "peak_capture_t": 184.52944489347283,
+  "interval_start": 183.69500583398622,
+  "interval_end": 184.89030583412386,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 85,
+  "peak_capture_t": 186.24120685388334,
+  "interval_start": 185.6968058340717,
+  "interval_end": 186.55620583414566,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 87,
+  "peak_capture_t": 188.04680988611653,
+  "interval_start": 186.96090583410114,
+  "interval_end": 188.1866058340529,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 89,
+  "peak_capture_t": 190.44649338175077,
+  "interval_start": 189.7965058340924,
+  "interval_end": 190.59360583405942,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 91,
+  "peak_capture_t": 191.9540802196134,
+  "interval_start": 191.1795058340067,
+  "interval_end": 192.11060583405197,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 93,
+  "peak_capture_t": 192.60262537759263,
+  "interval_start": 192.5443058341043,
+  "interval_end": 193.29620583413634,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 101,
+  "peak_capture_t": 206.87927318818402,
+  "interval_start": 206.27455604204442,
+  "interval_end": 207.08055604202673,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 103,
+  "peak_capture_t": 208.09621872170828,
+  "interval_start": 207.48965604207478,
+  "interval_end": 208.2997560420772,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 105,
+  "peak_capture_t": 209.2487999604782,
+  "interval_start": 208.7618560421979,
+  "interval_end": 209.4886560421437,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 107,
+  "peak_capture_t": 210.58096787019167,
+  "interval_start": 209.9530560420826,
+  "interval_end": 210.68925604212563,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 115,
+  "peak_capture_t": 215.5205773715861,
+  "interval_start": 214.88065604213625,
+  "interval_end": 215.74425604206044,
+  "source": "emg_envelope_peak"
+ },
+ {
+  "label_index": 117,
+  "peak_capture_t": 219.0735289097065,
+  "interval_start": 218.3536560421344,
+  "interval_end": 219.1352560421219,
+  "source": "emg_envelope_peak"
+ }
+]

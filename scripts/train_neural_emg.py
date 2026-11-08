@@ -29,7 +29,7 @@ def main():
     parser.add_argument('--guided-capture', action='append', default=[], help='EMG-only participant-confirmed training clips')
     parser.add_argument('--epochs', type=int)
     parser.add_argument('--interval-capture', action='append', default=[],
-                        help='Space-held interval contribution (e.g. Micah contributed data/dynamic/<id>); with --guided-only')
+                        help='Space-held interval contribution (e.g. data/micah/dynamic/<id>); with --guided-only')
     parser.add_argument('--guided-only', action='store_true',
                         help='Build the dataset from --guided-capture clips alone (no reference review); whole captures are held out')
     parser.add_argument('--skip-incomplete-tasks', action='store_true',
