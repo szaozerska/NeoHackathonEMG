@@ -9,7 +9,7 @@
   "weight_decay": 0.01,
   "dropout": 0.25,
   "tasks": {
-    "state": {"window_kind": "state", "classes": ["none", "open", "fist"], "background": "none"},
+    "state": {"window_kind": "state", "classes": ["none", "open", "fist", "infinite_void"], "background": "none"},
     "snap": {"window_kind": "snap", "classes": ["negative", "snap"], "background": "negative", "event_class": "snap"}
   },
   "spell_mapping": {"open": "shield_candidate", "fist": "sword", "snap": "fireball_equip"}

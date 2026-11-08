@@ -61,6 +61,14 @@ Twenty snaps means twenty short clips with one requested snap each. Confirm the
 actual count, enter `0` for a missed action, or `x` to discard uncertain clips.
 Source uptime must be fresh; interrupted recordings are not complete sessions.
 
+Omit `--kinesis-file` to read Kinesis's live stream instead of a raw recording:
+enable Live EMG, copy the URL from Kinesis's **stream** tab and paste it when the
+collector asks (the token changes per Kinesis launch and is never saved). Its
+`host_time_s` is the same Mac uptime clock as the raw file. A reader that falls
+more than one second behind is disconnected and reconnects; the lost batches
+appear as sequence discontinuities in `metadata.json`. `band_source` records
+which path a capture used.
+
 Instructions balance **soft/firm × minimal/natural/exaggerated rotation**. Next
 collect matching controls using the same command with `--kind negative`:
 wrist rotation without snaps, larger wrist movements, finger touch/release,

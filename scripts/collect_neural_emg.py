@@ -7,7 +7,7 @@ from pathlib import Path
 import random
 import threading
 import time
-from spelltrain.feeds import tail_kinesis
+from spelltrain.feeds import KINESIS_STREAM_ADAPTER, read_sse, tail_kinesis
 from spelltrain.live_capture import LiveCapture
 from spelltrain.signals import DEFAULT_SIGNAL
 from spelltrain.common import write_json
@@ -45,7 +45,7 @@ def plan(kind, repetitions, seed=7, instruction=None, event=False):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--kinesis-file', required=True)
+    parser.add_argument('--kinesis-file', help='Tail a Kinesis raw JSONL recording; omit to paste the Kinesis live stream URL')
     parser.add_argument('--kind', default='snap', help='snap, negative, or a registered state label')
     parser.add_argument('--config', default='configs/neural-emg.json')
     parser.add_argument('--instruction', help='Collection instruction for a new state or event gesture')
@@ -76,11 +76,18 @@ def main():
             buffer.append((now, row)); state['last'] = now
             if state['capture'] is not None:
                 state['capture'].append('emg', now, packet=row)
-    reader = threading.Thread(target=tail_kinesis, args=(args.kinesis_file, stop, packet,
-                              lambda message: state.update(error=message)), daemon=True)
+    report = lambda message: state.update(error=message)
+    if args.kinesis_file:
+        band_source = 'kinesis_raw_jsonl'
+        reader = threading.Thread(target=tail_kinesis, args=(args.kinesis_file, stop, packet, report), daemon=True)
+        print('EMG only. Start Kinesis raw recording at: '+str(Path(args.kinesis_file).resolve()), flush=True)
+    else:
+        band_source = 'kinesis_live_stream'
+        url = input('EMG only. In Kinesis enable Live EMG, then paste the stream URL from its stream tab: ').strip()
+        reader = threading.Thread(target=read_sse, args=(url, KINESIS_STREAM_ADAPTER, stop, packet, report), daemon=True)
     reader.start(); capture = None; trials = []
-    print('EMG only. Start Kinesis raw recording at: '+str(Path(args.kinesis_file).resolve()), flush=True)
-    print('One action per short clip, repeated 20 times by default. No event timestamps are assumed.', flush=True)
+    if counted:
+        print('One action per short clip, repeated 20 times by default. No event timestamps are assumed.', flush=True)
     try:
         while state['last'] is None:
             if state['error']:
@@ -88,7 +95,7 @@ def main():
             if stop.wait(.25):
                 return
         capture = LiveCapture(args.output_root, time.monotonic, {'signal': DEFAULT_SIGNAL, 'model_version': 'guided-collection-no-model'})
-        capture.meta.update(kind='neural_emg_guided', wearing_session=args.wearing_session,
+        capture.meta.update(kind='neural_emg_guided', wearing_session=args.wearing_session, band_source=band_source,
                             supervision='participant_confirmed_clip_labels_no_event_timestamps',
                             dataset_role='training_only_weak_labels' if args.role == 'train' else 'untouched_guided_count_check')
         print('Saving to '+str(capture.directory.resolve()), flush=True)

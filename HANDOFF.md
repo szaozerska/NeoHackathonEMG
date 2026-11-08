@@ -81,6 +81,9 @@ snaps, start a new Kinesis raw recording at a chosen path, then run:
   --wearing-session partner-wearing-01 --kind snap --repetitions 20
 ```
 
+Omitting `--kinesis-file` makes the collector ask for the URL from Kinesis's
+**stream** tab instead, so no raw-recording save path is needed.
+
 Follow each countdown and confirm the actual count (`0` for a missed snap,
 `x` to discard uncertainty). Instructions cover soft/firm snaps with minimal,
 natural and exaggerated wrist rotation. Then collect `--kind negative` blocks

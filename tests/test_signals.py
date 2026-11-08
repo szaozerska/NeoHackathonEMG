@@ -1,6 +1,6 @@
 import numpy as np
 from spelltrain.signals import SignalWindows
-from spelltrain.feeds import sse_events, normalize_sse, decode_kinesis_raw, BatchTimeline
+from spelltrain.feeds import sse_events, normalize_sse, decode_kinesis_raw, BatchTimeline, KINESIS_STREAM_ADAPTER
 
 
 def test_filter_features_are_invariant_to_batch_boundaries():
@@ -80,3 +80,13 @@ def test_tail_waits_for_new_recording_file(tmp_path):
     finally:
         stop.set()
         thread.join(2)
+
+
+def test_kinesis_stream_emg_event_keeps_host_uptime_and_band_clock():
+    rows=[[i*8+c for c in range(8)] for i in range(16)]
+    payload={'schema_version':1,'type':'emg','stream_session_id':'s','event_sequence':40,'host_time_s':812.25,
+             'band_timestamp_us':123456,'payload':{'sequence':9,'sample_rate_hz':2048,'layout':'sample_major','values':rows}}
+    packet=normalize_sse(payload,'emg',KINESIS_STREAM_ADAPTER)
+    assert packet=={'samples':rows,'source_seq':9,'source_t':123456,'source_uptime':812.25}
+    assert normalize_sse({**payload,'type':'status'},'status',KINESIS_STREAM_ADAPTER) is None
+    assert 'source_uptime' not in normalize_sse({'type':'emg','samples':rows},'emg')

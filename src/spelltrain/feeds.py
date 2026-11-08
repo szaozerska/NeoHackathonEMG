@@ -9,7 +9,12 @@ import numpy as np
 from .common import finite
 
 DEFAULT_ADAPTER = {"type_path": "type", "emg_type": "emg", "samples_path": "samples",
-                   "layout": "sample_major", "sequence_path": "sequence", "timestamp_path": "timestamp"}
+                   "layout": "sample_major", "sequence_path": "sequence", "timestamp_path": "timestamp",
+                   "uptime_path": None}
+# Kinesis SensorStreamEvent schema 1: host_time_s is Mac monotonic receipt uptime.
+KINESIS_STREAM_ADAPTER = {"type_path": "type", "emg_type": "emg", "samples_path": "payload.values",
+                          "layout": "sample_major", "sequence_path": "payload.sequence",
+                          "timestamp_path": "band_timestamp_us", "uptime_path": "host_time_s"}
 
 
 def get_path(value, path, default=None):
@@ -57,8 +62,11 @@ def normalize_sse(payload, event="message", config=None):
         raise ValueError("EMG must have shape [samples, 8] with finite values")
     if np.any((x < 0) | (x > 65535)):
         raise ValueError("ADC counts must be unsigned 16-bit values")
-    return {"samples": x.tolist(), "source_seq": get_path(payload, c["sequence_path"]),
-            "source_t": get_path(payload, c["timestamp_path"])}
+    packet = {"samples": x.tolist(), "source_seq": get_path(payload, c["sequence_path"]),
+              "source_t": get_path(payload, c["timestamp_path"])}
+    if c["uptime_path"]:
+        packet["source_uptime"] = finite(get_path(payload, c["uptime_path"]))
+    return packet
 
 
 def _varint(data, i):
