@@ -1,21 +1,22 @@
-// Crystal UI panel on a plain quad: a translucent ice-tinted slab with cut (chamfered) corners, a bright rim, a faceted
-// bevel just inside the rim, a slow diagonal highlight streak, a soft outer glow and an optional accent strip along the
-// top edge. Sizes are in metres; UiStyle scales the quad to the rect plus the glow margin on every side and passes the
-// rect in _Rect, so the cut corners keep their size whatever the panel's shape.
-// Passthrough: premultiplied-alpha "over" blending. The slab writes its (partial) coverage into alpha, so the room
-// shows through dimmed and tinted rather than at full strength or not at all; the glow fades to alpha 0 at the quad edge.
+// Opal crystal card on a plain quad (Smash Ultimate style): a milky, half-transparent white parallelogram slanted by
+// _Rect.z (tan of the skew), cut by two flat facet planes (a lighter one top right, a pastel-shimmer one bottom left),
+// with a bright white rim, an optional dark-ink outline outside the rim and an optional hard drop shadow below.
+// No textures, no blur, one pass. Sizes are in metres; UiStyle scales the quad to the card plus the slant and margin
+// and passes them in _Rect / _Facet.
+// Passthrough: premultiplied-alpha "over" blending. The body writes its partial coverage into alpha, so the room shows
+// through dimmed and milky rather than at full strength or not at all; outside the card alpha falls to 0.
 Shader "SpellGame/UI/CrystalPanel"
 {
     Properties
     {
-        _FillColor ("Crystal Tint (alpha = opacity)", Color) = (0.1, 0.26, 0.4, 0.5)
-        _RimColor ("Rim (alpha = opacity)", Color) = (0.88, 0.97, 1, 1)
-        _GlowColor ("Outer Glow (alpha = strength)", Color) = (0.55, 0.88, 1, 0.45)
-        _StripColor ("Top Strip (alpha = opacity, 0 = off)", Color) = (0.55, 0.88, 1, 0)
-        _Rect ("Rect: width, height, corner cut, glow margin (m)", Vector) = (0.6, 0.4, 0.02, 0.03)
-        _Facet ("Rim width, bevel width (m), highlight strength, strip height (m)", Vector) = (0.0022, 0.012, 0.25, 0.004)
+        _FillColor ("Body (alpha = opacity)", Color) = (0.97, 0.97, 1, 0.7)
+        _RimColor ("Rim (alpha = opacity)", Color) = (1, 1, 1, 1)
+        _OutlineColor ("Outer Outline (alpha = opacity)", Color) = (0.165, 0.184, 0.271, 0)
+        _ShimmerColor ("Lower Facet Shimmer (alpha = strength)", Color) = (0.86, 0.8, 1, 0.5)
+        _ShadowColor ("Drop Shadow (alpha = opacity)", Color) = (0.165, 0.184, 0.271, 0.35)
+        _Rect ("Rect: width, height, skew (tan), margin (m)", Vector) = (0.6, 0.2, 0.2126, 0.015)
+        _Facet ("Rim width, outline width, facet strength, shadow drop (m)", Vector) = (0.003, 0, 1, 0.006)
     }
-
     SubShader
     {
         Tags
@@ -47,8 +48,9 @@ Shader "SpellGame/UI/CrystalPanel"
             CBUFFER_START(UnityPerMaterial)
                 float4 _FillColor;
                 float4 _RimColor;
-                float4 _GlowColor;
-                float4 _StripColor;
+                float4 _OutlineColor;
+                float4 _ShimmerColor;
+                float4 _ShadowColor;
                 float4 _Rect;
                 float4 _Facet;
             CBUFFER_END
@@ -77,14 +79,18 @@ Shader "SpellGame/UI/CrystalPanel"
                 return output;
             }
 
-            // Signed distance (negative inside) to a box centred on the origin with its corners cut off at 45°.
-            float CutBox(float2 p, float2 halfSize, float cut)
+            // Signed distance (negative inside) to a parallelogram centred on the origin: a box of halfSize whose top edge
+            // is shifted right by skew * height. Exact along the edges that matter here.
+            float Slanted(float2 p, float2 halfSize, float skew)
             {
-                p = abs(p);
-                float2 q = p - halfSize;
-                float box = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0);
-                float corner = (p.x + p.y - (halfSize.x + halfSize.y - cut)) * 0.70710678;
-                return max(box, corner);
+                float c = rsqrt(1.0 + skew * skew);
+                float2 q = abs(float2((p.x - skew * p.y) * c, p.y)) - float2(halfSize.x * c, halfSize.y);
+                return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0);
+            }
+
+            float Fill(float d, float aa)
+            {
+                return saturate(0.5 - d / aa);
             }
 
             // Premultiplied "over".
@@ -100,54 +106,44 @@ Shader "SpellGame/UI/CrystalPanel"
 
                 float2 size = _Rect.xy;
                 float2 halfSize = 0.5 * size;
-                float cut = min(_Rect.z, 0.5 * min(size.x, size.y));
+                float skew = _Rect.z;
                 float margin = max(_Rect.w, 1e-4);
                 float rim = _Facet.x;
-                float bevel = max(_Facet.y, 1e-4);
+                float outline = _Facet.y;
+                float facet = _Facet.z;
+                float drop = _Facet.w;
 
-                float2 p = (input.uv - 0.5) * (size + 2.0 * margin);
-                float d = CutBox(p, halfSize, cut);
+                float2 quad = float2(size.x + abs(skew) * size.y, size.y) + 2.0 * margin;
+                float2 p = (input.uv - 0.5) * quad;
+                float d = Slanted(p, halfSize, skew);
                 float aa = max(fwidth(d), 1e-5);
-                float inside = saturate(0.5 - d / aa);
+                float4 c = 0;
 
-                // Outer glow, outside the slab only.
-                float glow = pow(saturate(1.0 - d / margin), 2.2) * (1.0 - inside) * _GlowColor.a;
-                float4 c = float4(_GlowColor.rgb * glow, glow);
+                // Hard drop shadow: the same card moved down, visible only below it.
+                if (drop > 0.0)
+                    Over(c, _ShadowColor.rgb, _ShadowColor.a * Fill(Slanted(p + float2(0.0, drop), halfSize, skew), aa));
 
-                // Crystal slab: thicker (brighter, more opaque) in the bevel band along the rim, with the bevel facets lit
-                // from the top left so the cut reads as 3D.
-                float band = smoothstep(-bevel, 0.0, d);
-                float2 n = normalize(p / max(halfSize, 1e-4) + 1e-5);
-                float lit = 0.5 + 0.5 * dot(n, float2(-0.6, 0.8));
-                float3 slab = lerp(_FillColor.rgb, _RimColor.rgb, band * (0.25 + 0.35 * lit));
-                slab *= 1.0 + 0.25 * saturate(p.y / max(halfSize.y, 1e-4));
-                float slabAlpha = lerp(_FillColor.a, saturate(_FillColor.a + 0.3), band);
-                Over(c, slab, slabAlpha * inside);
+                // Ink outline around the rim (selected cards).
+                if (outline > 0.0)
+                    Over(c, _OutlineColor.rgb, _OutlineColor.a * Fill(d - outline, aa));
 
-                // Facet line where the bevel meets the flat face.
-                float facet = saturate(1.0 - abs(d + bevel) / aa) * 0.35 * _RimColor.a;
-                Over(c, _RimColor.rgb, facet * inside);
+                // Body: two flat facet planes on the milky base, split along diagonals (in metres, so they stay crisp).
+                float inside = Fill(d, aa);
+                float2 n = p / max(halfSize, 1e-4);
+                float upper = Fill(-(n.y + 0.55 * n.x - 0.3) * halfSize.y, aa);
+                float lower = Fill((n.y + 0.9 * n.x + 0.35) * halfSize.y, aa);
+                float3 body = _FillColor.rgb;
+                float alpha = _FillColor.a;
+                body = lerp(body, 1.0, upper * 0.5 * facet);
+                alpha = lerp(alpha, saturate(alpha + 0.12), upper * facet);
+                body = lerp(body, _ShimmerColor.rgb, lower * _ShimmerColor.a * facet);
+                alpha = lerp(alpha, saturate(alpha + 0.06), lower * facet);
+                body *= 0.95 + 0.05 * saturate(0.5 + 0.5 * n.y);
+                Over(c, body, alpha * inside);
 
-                // Highlight streak sweeping slowly across the face, diagonally.
-                float s = (p.x + 0.6 * p.y) / max(size.x, 1e-4);
-                float sweep = frac(_Time.y * 0.07) * 2.6 - 1.3;
-                float streak = (exp(-pow((s - sweep) / 0.05, 2.0)) + 0.5 * exp(-pow((s - sweep + 0.09) / 0.018, 2.0)));
-                streak *= _Facet.z * inside * (1.0 - band);
-                c.rgb += _RimColor.rgb * streak;
-                c.a = saturate(c.a + 0.4 * streak);
-
-                // Bright rim.
-                float rimMask = saturate((0.5 * rim - abs(d + 0.5 * rim)) / aa + 0.5);
-                Over(c, _RimColor.rgb, _RimColor.a * rimMask);
-
-                // Accent strip along the top edge, between the cut corners.
-                float stripHeight = max(_Facet.w, 1e-4);
-                float2 stripHalf = float2(max(halfSize.x - cut - rim, 1e-4), 0.5 * stripHeight);
-                float2 stripCentre = float2(0.0, halfSize.y - rim - stripHalf.y - 0.5 * rim);
-                float ds = CutBox(p - stripCentre, stripHalf, stripHalf.y);
-                float strip = saturate(0.5 - ds / aa) * _StripColor.a;
-                c.rgb += _StripColor.rgb * exp(-max(ds, 0.0) / (2.0 * stripHeight)) * inside * _StripColor.a * 0.35;
-                Over(c, _StripColor.rgb, strip);
+                // Bright rim just inside the edge.
+                if (rim > 0.0)
+                    Over(c, _RimColor.rgb, _RimColor.a * saturate((0.5 * rim - abs(d + 0.5 * rim)) / aa + 0.5));
 
                 return float4(min(c.rgb, 1.0), saturate(c.a));
             }

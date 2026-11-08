@@ -10,7 +10,7 @@ namespace SpellGame.Editor
 {
     /// <summary>
     /// Generates the <see cref="UiTheme"/> behind <see cref="UiStyle"/>: imports TMP Essential Resources if the project
-    /// doesn't have them yet, makes dynamic SDF font assets from the Rajdhani TTFs in <see cref="FontFolder"/>, the text
+    /// doesn't have them yet, makes dynamic SDF font assets from the Chakra Petch TTFs in <see cref="FontFolder"/>, the text
     /// materials (outline + underlay) and the crystal panel material, and saves the theme into Resources.
     /// Called first thing by <see cref="MainSceneBuilder.Build"/>. Existing assets are reused, so tweaks to them survive.
     /// </summary>
@@ -32,8 +32,8 @@ namespace SpellGame.Editor
             if (!EnsureTmpEssentials())
                 return false;
 
-            var display = FontAsset("Rajdhani-Bold");
-            var body = FontAsset("Rajdhani-SemiBold");
+            var display = FontAsset("ChakraPetch-BoldItalic");
+            var body = FontAsset("ChakraPetch-Bold");
 
             var path = $"{ResourcesFolder}/{UiTheme.ResourceName}.asset";
             var theme = AssetDatabase.LoadAssetAtPath<UiTheme>(path);
@@ -166,14 +166,14 @@ namespace SpellGame.Editor
 
         private static void ApplyTextDefaults(Material material)
         {
-            material.SetFloat("_FaceDilate", 0.05f);
-            material.SetColor("_OutlineColor", UiStyle.TextOutline);
-            material.SetFloat("_OutlineWidth", 0.14f);
-            material.SetColor("_UnderlayColor", UiStyle.TextShadow);
-            material.SetFloat("_UnderlayOffsetX", 0f);
-            material.SetFloat("_UnderlayOffsetY", 0f);
-            material.SetFloat("_UnderlayDilate", 0.3f);
-            material.SetFloat("_UnderlaySoftness", 0.45f);
+            material.SetFloat("_FaceDilate", 0.1f);
+            material.SetColor("_OutlineColor", UiStyle.Ink);
+            material.SetFloat("_OutlineWidth", 0.22f);
+            material.SetColor("_UnderlayColor", UiStyle.Ink);
+            material.SetFloat("_UnderlayOffsetX", 0.7f);
+            material.SetFloat("_UnderlayOffsetY", -0.7f);
+            material.SetFloat("_UnderlayDilate", 0.25f);
+            material.SetFloat("_UnderlaySoftness", 0f);
         }
 
         private static Material CrystalMaterial()

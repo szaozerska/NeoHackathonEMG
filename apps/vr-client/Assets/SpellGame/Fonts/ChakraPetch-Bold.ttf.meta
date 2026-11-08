@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 33c69b62c62e4e898b38785cbbd92f52
+guid: 4b857f328a75481aabe75d8ac215f00b
 TrueTypeFontImporter:
   externalObjects: {}
   serializedVersion: 4
@@ -9,7 +9,7 @@ TrueTypeFontImporter:
   characterPadding: 1
   includeFontData: 1
   fontNames:
-  - Rajdhani
+  - Chakra Petch
   fallbackFontReferences: []
   customCharacters: 
   fontRenderingMode: 0

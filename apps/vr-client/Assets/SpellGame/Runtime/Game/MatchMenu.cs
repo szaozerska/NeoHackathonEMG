@@ -359,9 +359,9 @@ namespace SpellGame.Game
                 var name = fighter == Me ? $"{fighter} (you)" : fighter == _match.AiId ? "AI mage" : fighter;
                 var aligned = _match.Mode != MatchMode.Versus || AlignedFighters().Contains(fighter);
                 var ready = _match.Ready.Contains(fighter)
-                    ? $"<color={UiStyle.Hex(UiStyle.Accent)}>READY</color>"
+                    ? "<b>READY</b>"
                     : "not ready";
-                lines.Add($"<color={UiStyle.Hex(UiStyle.PlayerColor(fighter))}><b>{name}</b></color>   {ready}{(aligned ? "" : "  ·  not in the room frame")}");
+                lines.Add($"<color={UiStyle.Hex(UiStyle.PlayerInk(fighter))}><b>{name}</b></color>   {ready}{(aligned ? "" : "  ·  not in the room frame")}");
             }
             if (_match.Mode == MatchMode.Versus)
                 lines.Add("Stand on your spot facing the other player,\nthen press I'm ready.");
@@ -400,12 +400,11 @@ namespace SpellGame.Game
 
         private static string ControlsText()
         {
-            var key = UiStyle.Hex(UiStyle.Accent);
             return string.Join("\n",
-                $"<color={key}><b>FIREBALL</b></color>   snap your fingers (trigger), then throw overhand",
-                $"<color={key}><b>SWORD</b></color>   make a fist (grip) at your opposite hip,",
+                "<b>FIREBALL</b>   snap your fingers (trigger), then throw overhand",
+                "<b>SWORD</b>   make a fist (grip) at your opposite hip,",
                 "draw up and across, then slash",
-                $"<color={key}><b>SHIELD</b></color>   open palm forward (A); push it to parry a sword",
+                "<b>SHIELD</b>   open palm forward (A); push it to parry a sword",
                 "",
                 "Dodge! Fireballs fly straight, so step out of the way.",
                 "Band: B / Y to pair   ·   Room: click left stick to align",
@@ -432,57 +431,66 @@ namespace SpellGame.Game
 
         private static string Minutes(float seconds) => $"{seconds / 60f:0.#} min";
 
-        /// <summary>Glowing title, body text, then a column of buttons on a crystal panel sized to fit; status text hangs below.</summary>
+        /// <summary>
+        /// Smash-style stack: a big slanted title card, a card for the body text, then the slanted button cards, each a
+        /// little further right; status text hangs below.
+        /// </summary>
         private void Layout(Panel panel, string title, string body, params (string Label, Kind Kind, Action OnPress)[] buttons)
         {
-            const float pad = 0.042f;
+            const float pad = 0.03f;
             const float gap = 0.022f;
+            const float stagger = 0.02f;
             var root = panel.Root;
             var titleText = string.IsNullOrEmpty(title)
                 ? null
-                : UiStyle.CreateText("Title", root, title, Vector3.zero, 0.05f * textScale, UiStyle.Text, display: true, glow: UiStyle.Accent, spacing: 6f);
+                : UiStyle.CreateText("Title", root, title, Vector3.zero, 0.075f * textScale, UiStyle.Text, display: true,
+                    look: UiStyle.Look.Title, spacing: 2f);
             var bodyText = string.IsNullOrEmpty(body)
                 ? null
-                : UiStyle.CreateText("Body", root, body, Vector3.zero, 0.024f * textScale, UiStyle.TextDim);
-            var titleHeight = titleText != null ? UiStyle.Height(titleText) : 0f;
-            var bodyHeight = bodyText != null ? UiStyle.Height(bodyText) : 0f;
+                : UiStyle.CreateText("Body", root, body, Vector3.zero, 0.024f * textScale, UiStyle.Ink, look: UiStyle.Look.Ink);
+            var titleHeight = titleText != null ? UiStyle.Height(titleText) + pad : 0f;
+            var bodyHeight = bodyText != null ? UiStyle.Height(bodyText) + 2f * pad : 0f;
             var buttonsHeight = buttons.Length * buttonHeight + Mathf.Max(0, buttons.Length - 1) * buttonGap;
-            var height = pad + titleHeight + (bodyText != null ? (titleText != null ? gap * 0.5f : 0f) + bodyHeight : 0f) +
-                         (buttons.Length > 0 && (titleText != null || bodyText != null) ? gap : 0f) + buttonsHeight + pad;
+            var parts = (titleText != null ? 1 : 0) + (bodyText != null ? 1 : 0) + (buttons.Length > 0 ? 1 : 0);
+            var height = titleHeight + bodyHeight + buttonsHeight + Mathf.Max(0, parts - 1) * gap;
 
-            UiStyle.CreateCrystal("Panel", root, new Vector2(panelWidth, height), UiStyle.Panel, Vector3.zero, UiStyle.SortPanel, panel.Materials);
-            panel.Footer = UiStyle.CreateText("Status", root, "", new Vector3(0f, -height * 0.5f - 0.045f, -0.003f), 0.017f * textScale,
-                UiStyle.TextDim, alignment: TextAlignmentOptions.Top);
+            panel.Footer = UiStyle.CreateText("Status", root, "", new Vector3(0f, -height * 0.5f - 0.03f, -0.003f), 0.017f * textScale,
+                UiStyle.Text, alignment: TextAlignmentOptions.Top);
             panel.Footer.rectTransform.pivot = new Vector2(0.5f, 1f);
 
-            var y = height * 0.5f - pad;
+            var y = height * 0.5f;
             if (titleText != null)
             {
-                titleText.transform.localPosition = new Vector3(0f, y - titleHeight * 0.5f, -0.003f);
-                y -= titleHeight;
+                var cy = y - titleHeight * 0.5f;
+                var w = Mathf.Max(panelWidth * 0.8f, UiStyle.Width(titleText) + 0.1f);
+                UiStyle.CreateCrystal("Title Card", root, new Vector2(w, titleHeight), UiStyle.Panel, new Vector3(-0.03f, cy, 0f),
+                    UiStyle.SortPanel, panel.Materials);
+                titleText.transform.localPosition = new Vector3(-0.03f, cy, -0.004f);
+                y -= titleHeight + gap;
             }
             if (bodyText != null)
             {
-                if (titleText != null)
-                    y -= gap * 0.5f;
-                bodyText.transform.localPosition = new Vector3(0f, y - bodyHeight * 0.5f, -0.003f);
-                y -= bodyHeight;
+                var cy = y - bodyHeight * 0.5f;
+                var w = Mathf.Max(panelWidth, UiStyle.Width(bodyText) + 2f * pad + UiStyle.Skew * bodyHeight);
+                UiStyle.CreateCrystal("Body Card", root, new Vector2(w, bodyHeight), UiStyle.Card, new Vector3(0f, cy, 0f),
+                    UiStyle.SortPanel, panel.Materials);
+                bodyText.transform.localPosition = new Vector3(0f, cy, -0.004f);
+                y -= bodyHeight + gap;
             }
-            if (titleText != null || bodyText != null)
-                y -= gap;
 
-            var width = panelWidth - 2f * pad;
+            var width = panelWidth * 0.85f;
+            var x = -0.5f * stagger * Mathf.Max(0, buttons.Length - 1);
             foreach (var (label, kind, onPress) in buttons)
             {
-                var center = new Vector2(0f, y - buttonHeight * 0.5f);
+                var center = new Vector2(x, y - buttonHeight * 0.5f);
                 var size = new Vector2(width, buttonHeight);
                 var style = kind == Kind.Primary ? UiStyle.Primary : UiStyle.Secondary;
                 var back = UiStyle.CreateCrystal("Button", root, size, style, new Vector3(center.x, center.y, -0.002f), UiStyle.SortSurface, panel.Materials);
-                var dwell = UiStyle.CreateCrystal("Dwell", root, new Vector2(0f, 0.0055f), UiStyle.Bar,
-                    new Vector3(center.x, center.y - buttonHeight * 0.3f, -0.004f), UiStyle.SortBar, panel.Materials);
+                var dwell = UiStyle.CreateCrystal("Dwell", root, new Vector2(0f, 0.005f), UiStyle.Bar,
+                    new Vector3(center.x, center.y - buttonHeight * 0.32f, -0.004f), UiStyle.SortBar, panel.Materials);
                 dwell.Transform.gameObject.SetActive(false);
-                var text = UiStyle.CreateText("Label", root, label, new Vector3(center.x, center.y + buttonHeight * 0.05f, -0.005f),
-                    0.03f * textScale, UiStyle.Text, display: true, spacing: 4f);
+                var text = UiStyle.CreateText("Label", root, label, new Vector3(center.x, center.y + buttonHeight * 0.04f, -0.005f),
+                    0.032f * textScale, UiStyle.Ink, display: true, look: UiStyle.Look.Ink, spacing: 2f);
                 text.fontStyle = FontStyles.UpperCase;
                 panel.Buttons.Add(new Button
                 {
@@ -493,6 +501,7 @@ namespace SpellGame.Game
                     OnPress = onPress,
                 });
                 y -= buttonHeight + buttonGap;
+                x += stagger;
             }
         }
 
@@ -655,7 +664,6 @@ namespace SpellGame.Game
             }
             var pulse = urgent ? 0.5f + 0.5f * Mathf.Sin(Time.time * 8f) : 0f;
             _timerBack.Apply(UiStyle.Pulsing(UiStyle.Hud, urgent ? 0.5f + 0.5f * pulse : 0f));
-            _timerText.color = Color.Lerp(UiStyle.Text, UiStyle.Accent, pulse);
             _timerBadge.localScale = Vector3.one * (1f + 0.06f * pulse);
         }
 
@@ -682,8 +690,8 @@ namespace SpellGame.Game
             _timerBadge = new GameObject("Match Timer").transform;
             _timerBadge.SetParent(transform, false);
             _timerBack = UiStyle.CreateCrystal("Back", _timerBadge, new Vector2(0.2f, 0.066f), UiStyle.Hud, Vector3.zero);
-            _timerText = UiStyle.CreateText("Time", _timerBadge, "1:00", new Vector3(0f, 0.003f, -0.003f), 0.042f, UiStyle.Text,
-                display: true, glow: UiStyle.Accent, spacing: 3f);
+            _timerText = UiStyle.CreateText("Time", _timerBadge, "1:00", new Vector3(0f, 0.003f, -0.003f), 0.042f, UiStyle.Ink,
+                display: true, look: UiStyle.Look.Ink, spacing: 2f);
             _timerBadge.gameObject.SetActive(false);
         }
 

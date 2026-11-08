@@ -10,7 +10,7 @@ namespace SpellGame.Editor
 {
     /// <summary>
     /// Regenerates the scene: passthrough OVRCameraRig + Movement SDK body tracking + debug skeletons + GameClient + shared-space aligner + spell views + match menus + match moments + AI avatar.
-    /// Also imports TMP Essential Resources and builds the Rajdhani TextMeshPro font asset on first run.
+    /// Also imports TMP Essential Resources and builds the Chakra Petch TextMeshPro font asset on first run.
     /// Headless: <c>Unity -batchmode -quit -projectPath . -executeMethod SpellGame.Editor.MainSceneBuilder.Build</c>
     /// </summary>
     public static class MainSceneBuilder
@@ -22,8 +22,8 @@ namespace SpellGame.Editor
         private const string CameraRigPrefabPath = "Packages/com.meta.xr.sdk.core/Prefabs/OVRCameraRig.prefab";
         private const string UnlitShaderName = "Universal Render Pipeline/Unlit";
         private const string MomentsFolder = "Assets/SpellGame/Moments";
-        private const string FontPath = "Assets/SpellGame/Fonts/Rajdhani-Bold.ttf";
-        private const string FontAssetPath = "Assets/SpellGame/Fonts/Rajdhani-Bold SDF.asset";
+        private const string FontPath = "Assets/SpellGame/Fonts/ChakraPetch-BoldItalic.ttf";
+        private const string FontAssetPath = "Assets/SpellGame/Fonts/ChakraPetch-BoldItalic SDF.asset";
         private const string TmpShaderName = "TextMeshPro/Distance Field";
         private const string MomentCharacters = "0123456789 !.:FIGHTKOSUDENATHMfightkosudenathm";
 
@@ -348,7 +348,7 @@ namespace SpellGame.Editor
             return false;
         }
 
-        /// <summary>Dynamic SDF font asset for Rajdhani Bold, created next to the .ttf on first build (atlas + material as sub-assets).</summary>
+        /// <summary>Dynamic SDF font asset for Chakra Petch Bold Italic, created next to the .ttf on first build (atlas + material as sub-assets).</summary>
         private static TMP_FontAsset MomentsFont()
         {
             var existing = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontAssetPath);

@@ -215,84 +215,104 @@ namespace SpellGame.Game
 
         // ---------------------------------------------------------------- result cards
 
-        /// <summary>One crystal card per fighter (name in their colour, HP left, stats, award badges); returns the cards' height.</summary>
+        /// <summary>
+        /// One slanted crystal card per fighter, Smash style: big place number, name in their colour, ink stats, award
+        /// tags. The winner (then most HP left) comes first; later places sit a little lower and smaller. Returns the height.
+        /// </summary>
         private float BuildCards()
         {
             foreach (Transform child in _cards)
                 Destroy(child.gameObject);
             UiStyle.DestroyAll(_cardMaterials);
-            var fighters = _match.Fighters.ToList();
+            var fighters = _match.Fighters
+                .OrderByDescending(f => f == _match.Winner)
+                .ThenByDescending(HpOf)
+                .ToList();
             if (fighters.Count == 0)
                 return 0f;
 
             var awards = Awards(fighters);
-            var width = Mathf.Min(0.62f, (BannerWidth - 2f * BannerPad - CardGap * (fighters.Count - 1)) / fighters.Count);
+            var width = Mathf.Min(0.58f, (BannerWidth - CardGap * (fighters.Count - 1)) / fighters.Count);
             var cards = new List<(Transform Root, string Fighter)>();
             var height = 0f;
             for (var i = 0; i < fighters.Count; i++)
             {
                 var card = new GameObject($"Card {fighters[i]}").transform;
                 card.SetParent(_cards, false);
-                card.localPosition = new Vector3((i - (fighters.Count - 1) * 0.5f) * (width + CardGap), 0f, -0.002f);
-                height = Mathf.Max(height, FillCard(card, fighters[i], width, awards[fighters[i]]));
+                var place = i == 0 || _match.Winner != null ? i + 1 : 1;
+                card.localPosition = new Vector3((i - (fighters.Count - 1) * 0.5f) * (width + CardGap), i > 0 ? -0.03f : 0f, -0.002f);
+                card.localScale = Vector3.one * (i > 0 ? 0.92f : 1f);
+                height = Mathf.Max(height, FillCard(card, fighters[i], place, width, awards[fighters[i]]));
                 cards.Add((card, fighters[i]));
             }
             foreach (var (root, fighter) in cards)
             {
-                var style = fighter == _match.Winner ? UiStyle.Pulsing(UiStyle.Card, 0.5f) : UiStyle.Card;
+                // Follow the slant: shift each row by how far it sits above the card's bottom edge.
+                foreach (Transform child in root)
+                {
+                    var p = child.localPosition;
+                    child.localPosition = new Vector3(p.x + UiStyle.Skew * (p.y + height * 0.5f), p.y, p.z);
+                }
+                var style = fighter == _match.Winner ? UiStyle.Pulsing(UiStyle.Card, 0.35f) : UiStyle.Card;
                 UiStyle.CreateCrystal("Back", root, new Vector2(width, height), style, new Vector3(0f, -height * 0.5f, 0f),
                     UiStyle.SortSurface, _cardMaterials);
             }
-            return height;
+            return height + 0.03f;
         }
 
+        private float HpOf(string fighter) =>
+            Mathf.Max(0f, _state?.Players.FirstOrDefault(p => p.PlayerId == fighter)?.Hp ?? 0f);
+
         /// <summary>Lays a card's contents out downwards from its top edge (the card's origin); returns the height used.</summary>
-        private float FillCard(Transform card, string fighter, float width, List<string> awards)
+        private float FillCard(Transform card, string fighter, int place, float width, List<string> awards)
         {
             var stats = StatsFor(fighter);
-            var hp = Mathf.Max(0f, _state?.Players.FirstOrDefault(p => p.PlayerId == fighter)?.Hp ?? 0f);
             var inner = width - 2f * CardPad;
             var left = -width * 0.5f + CardPad;
-            var y = -CardPad;
+            var y = -CardPad * 0.6f;
 
-            TextMeshPro Row(string name, string text, float size, Color color, bool display, TextAlignmentOptions alignment, Color? glow = null)
+            var number = UiStyle.CreateText("Place", card, place.ToString(), Vector3.zero, 0.13f, UiStyle.Text, display: true,
+                look: UiStyle.Look.Title, alignment: TextAlignmentOptions.Left, width: 0.12f);
+            var numberWidth = UiStyle.Width(number);
+            var numberHeight = UiStyle.Height(number);
+            number.transform.localPosition = new Vector3(left + 0.06f, y - numberHeight * 0.5f, -0.004f);
+            var name = UiStyle.CreateText("Name", card, NameOf(fighter).ToUpperInvariant(), Vector3.zero, 0.055f,
+                UiStyle.PlayerColor(fighter), display: true, alignment: TextAlignmentOptions.Left, width: inner);
+            name.transform.localPosition = new Vector3(numberWidth + 0.015f, y - numberHeight * 0.6f, -0.004f);
+            y -= numberHeight * 0.9f;
+
+            TextMeshPro Row(string label, string text, float size)
             {
-                var label = UiStyle.CreateText(name, card, text, Vector3.zero, size, color, display, glow, alignment, inner);
-                label.transform.localPosition = new Vector3(0f, y - UiStyle.Height(label) * 0.5f, -0.004f);
-                return label;
+                var row = UiStyle.CreateText(label, card, text, Vector3.zero, size, UiStyle.Ink, look: UiStyle.Look.Ink,
+                    alignment: TextAlignmentOptions.Left, width: inner);
+                var h = UiStyle.Height(row);
+                row.transform.localPosition = new Vector3(0f, y - h * 0.5f, -0.004f);
+                y -= h;
+                return row;
             }
 
-            var nameLabel = Row("Name", NameOf(fighter).ToUpperInvariant(), 0.05f, UiStyle.PlayerColor(fighter), true, TextAlignmentOptions.Left);
-            if (fighter == _match.Winner)
-                Row("Winner", "WINNER", 0.032f, UiStyle.Accent, true, TextAlignmentOptions.Right).characterSpacing = 8f;
-            y -= UiStyle.Height(nameLabel);
-
-            var hpLabel = Row("HP", $"{hp:0}<size=40%>  HP LEFT</size>", 0.085f, UiStyle.Text, true, TextAlignmentOptions.Left, UiStyle.Accent);
-            y -= UiStyle.Height(hpLabel) + 0.01f;
-
             var aim = stats.Throws > 0 ? $"{Mathf.RoundToInt(100f * stats.FireballHits / stats.Throws)}%" : "–";
-            Row("Stat Values", string.Join("\n", $"{stats.Dealt:0}  <size=75%>in {stats.Hits} hits</size>", aim, stats.Blocks.ToString(), $"{stats.BiggestHit:0}"),
-                0.03f, UiStyle.Text, true, TextAlignmentOptions.Right);
-            var statNames = Row("Stat Names", "DAMAGE\nAIM\nBLOCKS\nBEST HIT", 0.03f, UiStyle.TextDim, false, TextAlignmentOptions.Left);
-            y -= UiStyle.Height(statNames);
+            Row("Stats", $"{HpOf(fighter):0} HP · {stats.Dealt:0} dmg · {aim} aim", 0.034f);
+            Row("More Stats", $"{stats.Hits} hits · {stats.Blocks} blocks · best hit {stats.BiggestHit:0}", 0.025f);
 
             if (awards.Count > 0)
             {
-                const float badgeHeight = 0.042f;
+                const float badgeHeight = 0.036f;
                 const float badgeGap = 0.012f;
-                y -= 0.02f;
+                y -= 0.015f;
                 var x = left;
                 foreach (var award in awards)
                 {
-                    var text = UiStyle.CreateText("Award", card, award, Vector3.zero, 0.024f, UiStyle.Text, display: true, spacing: 6f);
-                    var badgeWidth = UiStyle.Width(text) + 0.035f;
+                    var text = UiStyle.CreateText("Award", card, award, Vector3.zero, 0.022f, UiStyle.Ink, display: true,
+                        look: UiStyle.Look.Ink, spacing: 3f);
+                    var badgeWidth = UiStyle.Width(text) + 0.03f;
                     if (x > left && x + badgeWidth > left + inner)
                     {
                         x = left;
                         y -= badgeHeight + badgeGap;
                     }
                     var center = new Vector3(x + badgeWidth * 0.5f, y - badgeHeight * 0.5f, 0f);
-                    text.transform.localPosition = center + new Vector3(0f, 0.002f, -0.006f);
+                    text.transform.localPosition = center + new Vector3(0f, 0.001f, -0.006f);
                     UiStyle.CreateCrystal("Badge", card, new Vector2(badgeWidth, badgeHeight), UiStyle.Badge, center + new Vector3(0f, 0f, -0.003f),
                         UiStyle.SortBar, _cardMaterials);
                     x += badgeWidth + badgeGap;
@@ -409,29 +429,32 @@ namespace SpellGame.Game
         {
             _banner = new GameObject("End Banner").transform;
             _banner.SetParent(transform, false);
-            _bannerBack = UiStyle.CreateCrystal("Back", _banner, new Vector2(BannerWidth, 0.5f), UiStyle.Panel, Vector3.zero);
-            _title = UiStyle.CreateText("Title", _banner, "", new Vector3(0f, 0f, -0.004f), 0.15f, UiStyle.Text, display: true,
-                glow: UiStyle.Accent, width: BannerWidth, spacing: 8f);
-            _subtitle = UiStyle.CreateText("Reason", _banner, "", new Vector3(0f, 0f, -0.004f), 0.042f, UiStyle.TextDim, display: true,
-                width: BannerWidth, spacing: 12f);
+            _bannerBack = UiStyle.CreateCrystal("Title Card", _banner, new Vector2(1f, 0.3f), UiStyle.Panel, Vector3.zero);
+            _title = UiStyle.CreateText("Title", _banner, "", new Vector3(0f, 0f, -0.004f), 0.17f, UiStyle.Text, display: true,
+                look: UiStyle.Look.Title, width: BannerWidth, spacing: 2f);
+            _subtitle = UiStyle.CreateText("Reason", _banner, "", new Vector3(0f, 0f, -0.004f), 0.036f, UiStyle.Ink, display: true,
+                look: UiStyle.Look.Ink, width: BannerWidth, spacing: 6f);
             _cards = new GameObject("Cards").transform;
             _cards.SetParent(_banner, false);
             _banner.gameObject.SetActive(false);
         }
 
-        /// <summary>Title, reason, then the cards, top to bottom; the crystal back is sized to fit.</summary>
+        /// <summary>Big slanted title card (title + reason) on top, the result cards under it.</summary>
         private void LayoutBanner(float cardsHeight)
         {
             var titleHeight = UiStyle.Height(_title);
             var subtitleHeight = UiStyle.Height(_subtitle);
-            var height = BannerPad + titleHeight + subtitleHeight + (cardsHeight > 0f ? CardGap + cardsHeight : 0f) + BannerPad;
-            _bannerBack.Resize(new Vector2(BannerWidth, height));
-            var y = height * 0.5f - BannerPad;
+            var cardHeight = titleHeight + subtitleHeight + BannerPad;
+            var cardWidth = Mathf.Max(0.9f, Mathf.Max(UiStyle.Width(_title), UiStyle.Width(_subtitle)) + 0.25f);
+            var height = cardHeight + (cardsHeight > 0f ? CardGap + cardsHeight : 0f);
+            var top = height * 0.5f;
+            _bannerBack.Transform.localPosition = new Vector3(0f, top - cardHeight * 0.5f, 0f);
+            _bannerBack.Resize(new Vector2(cardWidth, cardHeight));
+            var y = top - BannerPad * 0.5f;
             _title.transform.localPosition = new Vector3(0f, y - titleHeight * 0.5f, -0.004f);
             y -= titleHeight;
-            _subtitle.transform.localPosition = new Vector3(0f, y - subtitleHeight * 0.5f, -0.004f);
-            y -= subtitleHeight + CardGap;
-            _cards.localPosition = new Vector3(0f, y, 0f);
+            _subtitle.transform.localPosition = new Vector3(-UiStyle.Skew * subtitleHeight, y - subtitleHeight * 0.5f, -0.004f);
+            _cards.localPosition = new Vector3(0f, top - cardHeight - CardGap, 0f);
         }
 
         private void CreateCrown()

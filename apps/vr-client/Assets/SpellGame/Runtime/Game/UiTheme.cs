@@ -11,9 +11,9 @@ namespace SpellGame.Game
     {
         public const string ResourceName = "SpellGameUiTheme";
 
-        [Tooltip("Titles, buttons, big numbers (Rajdhani Bold SDF).")]
+        [Tooltip("Titles, buttons, big numbers (Chakra Petch Bold Italic SDF).")]
         [SerializeField] private TMP_FontAsset displayFont;
-        [Tooltip("Body text and stats (Rajdhani SemiBold SDF).")]
+        [Tooltip("Body text and stats (Chakra Petch Bold SDF).")]
         [SerializeField] private TMP_FontAsset bodyFont;
         [Tooltip("Display font material with outline + underlay enabled (UiStyle recolours copies of it).")]
         [SerializeField] private Material displayMaterial;
