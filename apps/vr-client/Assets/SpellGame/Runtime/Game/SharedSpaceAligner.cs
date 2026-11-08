@@ -41,6 +41,24 @@ namespace SpellGame.Game
 
         private void OnDisable() => gameClient.SpaceReceived -= OnSpace;
 
+        // OVRManager.display is created in OVRManager.Awake, so subscribe once every Awake has run.
+        private void Start() => OVRManager.display.RecenteredPose += OnRecentered;
+
+        private void OnDestroy() => OVRManager.display.RecenteredPose -= OnRecentered;
+
+        /// <summary>
+        /// A recenter moves the headset's tracking origin, so the offset from the last alignment no longer lands on the
+        /// shared frame: align again (to the anchor automatically; floor spots need the player back on their spot).
+        /// </summary>
+        private void OnRecentered()
+        {
+            if (_alignedTo == null)
+                return;
+
+            _alignedTo = null;
+            Advance();
+        }
+
         private void Update()
         {
             if (_space == null)
@@ -236,14 +254,18 @@ namespace SpellGame.Game
             return new Pose(position, rotation);
         }
 
-        /// <summary>Moves the camera rig so <paramref name="originInWorld"/> becomes the world origin (yaw only, floor kept).</summary>
+        /// <summary>
+        /// Moves the camera rig so <paramref name="originInWorld"/> becomes the world origin, height included: the
+        /// anchor on the host's floor becomes everyone's floor, whatever floor height each headset estimated. Only yaw
+        /// is taken from the origin's rotation, so gravity stays straight down.
+        /// </summary>
         private void AlignTo(Pose originInWorld)
         {
             var trackingSpace = cameraRig.trackingSpace;
             var position = trackingSpace.InverseTransformPoint(originInWorld.position);
             var yaw = (Quaternion.Inverse(trackingSpace.rotation) * originInWorld.rotation).eulerAngles.y;
             var rotation = Quaternion.Euler(0f, -yaw, 0f);
-            cameraRig.transform.SetPositionAndRotation(rotation * -new Vector3(position.x, 0f, position.z), rotation);
+            cameraRig.transform.SetPositionAndRotation(rotation * -position, rotation);
         }
 
         private static string FloorSpotKey(SpaceMessage space) => $"{AlignMethod.FloorSpots}:{space.GroupUuid}";

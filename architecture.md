@@ -171,6 +171,7 @@ Both headsets share one physical room, so every pose, projectile and hit has to 
   1. The host creates an `OVRSpatialAnchor` on the floor between the players (its +z pointing from P1 towards P2), saves it, and calls `ShareAsync` with the `group_uuid` from `space`.
   2. The host sends `anchor_shared` with the anchor's UUID. The server announces it in `space` to every headset.
   3. Every headset, including the host, loads the anchor from the group and aligns its tracking space to it: Meta's `Alignment.cs` sample, or MRUK's `SetCustomWorldLockAnchor`. Then it sends `aligned` with `method: anchor` and the anchor's UUID.
+     Alignment takes the anchor's full position (height too) and its yaw, so the host's floor becomes every headset's floor. A system recenter moves the tracking origin, so a headset that recenters aligns to the anchor again and re-sends `aligned`.
   4. The server rejects `anchor_shared` from a headset that isn't the host. It also rejects an `aligned` naming any anchor other than the current one. A newly shared anchor clears every headset's aligned flag.
 - **Fallback: marked floor spots.** Use this if anchor sharing fails (no internet, no Meta account, no Space Setup).
   - Mark the two spots on the floor `--spot-distance` apart (default 3 m). P1 stands at `(0, 0, -d/2)` facing +z; P2 stands at `(0, 0, +d/2)` facing -z.
