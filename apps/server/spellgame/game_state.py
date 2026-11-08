@@ -12,7 +12,16 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from . import protocol as p
-from .geometry import UP, body_forward, body_right, closest_point_on_segment, normalize, segment_distance, vec
+from .geometry import (
+    UP,
+    body_forward,
+    body_right,
+    closest_point_on_segment,
+    normalize,
+    segment_disc_contact,
+    segment_distance,
+    vec,
+)
 
 
 @dataclass
@@ -67,6 +76,18 @@ class Tuning:
     sword_rehit_s: float = 0.5
     """A swing hits each target at most once in this window, so one pass isn't counted every tick."""
 
+    shield_radius: float = 0.3
+    shield_offset: float = 0.08
+    """The disc sits this far in front of the palm."""
+    shield_push_min_speed: float = 1.0
+    """m/s of hand speed along the shield normal. Slower pushes give no boost."""
+    shield_push_full_speed: float = 3.0
+    shield_boost_decay_s: float = 0.3
+    """A full boost fades to zero over this time."""
+    shield_parry_min_boost: float = 0.3
+    shield_parry_lock_s: float = 1.5
+    """After a parry the attacker can't draw a sword for this long."""
+
 
 @dataclass
 class PlayerInput:
@@ -86,6 +107,7 @@ class Item:
     NONE = "none"
     FIREBALL = "fireball"
     SWORD = "sword"
+    SHIELD = "shield"
 
 
 class HandTracker:
@@ -141,7 +163,9 @@ class PlayerState:
     """Time and hand position of the last fist sample in the pocket, while a draw is possible."""
     sword_tip: np.ndarray | None = None
     sword_hits: dict[str, float] = field(default_factory=dict)
-    """Target ID to the time the sword last hit them."""
+    """Target ID to the time the sword last hit or was blocked by them."""
+    sword_locked_until: float = 0.0
+    shield_boost: float = 0.0
 
     @property
     def alive(self) -> bool:
@@ -203,6 +227,7 @@ class GameState:
         for player in self.players.values():
             events.extend(self._step_fireball(player))
             events.extend(self._step_sword(player, dt))
+            events.extend(self._step_shield(player, dt))
         events.extend(self._step_projectiles(dt))
         return events
 
@@ -219,6 +244,7 @@ class GameState:
                     item=player.item,
                     band_hand=player.band_hand,
                     cooldown=round(max(0.0, player.cooldown_until - self.time), 3),
+                    shield_boost=round(player.shield_boost, 3),
                 )
                 for player in self.players.values()
             ],
@@ -348,8 +374,12 @@ class GameState:
         remaining: list[Projectile] = []
         for projectile in self.projectiles:
             start, end = projectile.pos, projectile.pos + projectile.vel * dt
-            target = self._first_hit(projectile, start, end)
-            if target is not None:
+            blocked = self._shield_contact(projectile.owner_id, start, end, tuning.fireball_radius, projectile.vel)
+            target = self._first_hit(projectile, start, end) if blocked is None else None
+            if blocked is not None:
+                shielder, contact = blocked
+                events.append(self._impact(projectile, contact, "blocked", shielder.player_id))
+            elif target is not None:
                 events.append(self._damage(target, projectile.owner_id, tuning.fireball_damage, Item.FIREBALL, end))
                 events.append(self._impact(projectile, end, "hit", target.player_id))
             elif self.time - projectile.born >= tuning.fireball_lifetime_s:
@@ -364,7 +394,7 @@ class GameState:
         able = player.alive and player.connected and player.sign == p.Sign.FIST
         if player.item == Item.SWORD:
             return self._swing(player, dt) if able else [self._sheathe(player)]
-        if not able or player.item != Item.NONE:
+        if not able or player.item != Item.NONE or self.time < player.sword_locked_until:
             player.draw_start = None
             return []
 
@@ -437,14 +467,25 @@ class GameState:
         if previous_tip is None or dt <= 0.0:
             return []
         tip_speed = float(np.linalg.norm(tip - previous_tip)) / dt
-        if tip_speed < tuning.sword_min_tip_speed:
-            return []
+        fast = tip_speed >= tuning.sword_min_tip_speed
 
         events: list[p.Message] = []
         reach = tuning.sword_radius + tuning.body_radius
         for target in self._targets(player.player_id):
             last_hit = player.sword_hits.get(target.player_id)
-            if last_hit is not None and self.time - last_hit < tuning.sword_rehit_s:
+            rehit_ready = last_hit is None or self.time - last_hit >= tuning.sword_rehit_s
+            shield_contact = self._shield_contact_with(target, hilt, tip, tuning.sword_radius, tip - hilt)
+            if shield_contact is not None:
+                if target.shield_boost >= tuning.shield_parry_min_boost:
+                    player.sword_locked_until = self.time + tuning.shield_parry_lock_s
+                    events.append(self._sword_impact(player, shield_contact, "parried", target.player_id))
+                    events.append(self._sheathe(player))
+                    return events
+                if fast and rehit_ready:
+                    player.sword_hits[target.player_id] = self.time
+                    events.append(self._sword_impact(player, shield_contact, "blocked", target.player_id))
+                continue
+            if not fast or not rehit_ready:
                 continue
             capsule = target.body_capsule(tuning)
             if capsule is None or segment_distance(hilt, tip, *capsule) > reach:
@@ -457,6 +498,74 @@ class GameState:
             contact = closest_point_on_segment(on_body, hilt, tip)
             events.append(self._damage(target, player.player_id, amount, Item.SWORD, contact))
         return events
+
+    def _step_shield(self, player: PlayerState, dt: float) -> list[p.Message]:
+        tuning = self.tuning
+        player.shield_boost = max(0.0, player.shield_boost - dt / tuning.shield_boost_decay_s)
+        able = player.alive and player.connected and player.sign == p.Sign.OPEN_PALM
+        if player.item == Item.SHIELD and not able:
+            player.item = Item.NONE
+            player.shield_boost = 0.0
+            return [self._spell_event(player, p.SpellState.SHEATHED, None, spell=Item.SHIELD)]
+        if player.item == Item.NONE and able:
+            player.item = Item.SHIELD
+            player.item_since = self.time
+            disc = self._shield_disc(player)
+            return [self._spell_event(player, p.SpellState.CAST, disc[1] if disc else None, spell=Item.SHIELD)]
+        if player.item != Item.SHIELD:
+            return []
+
+        disc, velocity = self._shield_disc(player), player.band_hand_tracker.velocity()
+        if disc is not None and velocity is not None:
+            push = float(velocity @ disc[1])
+            speed_range = tuning.shield_push_full_speed - tuning.shield_push_min_speed
+            if push >= tuning.shield_push_min_speed:
+                strength = float(np.clip((push - tuning.shield_push_min_speed) / speed_range, 0.0, 1.0))
+                player.shield_boost = max(player.shield_boost, strength)
+        return []
+
+    def _shield_disc(self, player: PlayerState) -> tuple[np.ndarray, np.ndarray] | None:
+        """Centre and outward normal. The palm is taken to face away from the chest, through the hand."""
+        if player.item != Item.SHIELD:
+            return None
+        hand, chest = player.band_hand_tracker.position, player.chest_position()
+        if hand is None or chest is None or player.pose is None:
+            return None
+        normal = normalize(hand - chest)
+        if not normal.any():
+            normal = body_forward(player.pose.joints)
+        return hand + normal * self.tuning.shield_offset, normal
+
+    def _shield_contact_with(
+        self, shielder: PlayerState, a: np.ndarray, b: np.ndarray, margin: float, incoming: np.ndarray
+    ) -> np.ndarray | None:
+        """Where segment a-b touches `shielder`'s raised shield from the front, or None."""
+        disc = self._shield_disc(shielder)
+        if disc is None:
+            return None
+        center, normal = disc
+        if float((a - center) @ normal) < -margin or float(incoming @ normal) >= 0.0:
+            return None
+        return segment_disc_contact(a, b, center, normal, self.tuning.shield_radius, margin)
+
+    def _shield_contact(
+        self, attacker_id: str, a: np.ndarray, b: np.ndarray, margin: float, incoming: np.ndarray
+    ) -> tuple[PlayerState, np.ndarray] | None:
+        for target in self._targets(attacker_id):
+            contact = self._shield_contact_with(target, a, b, margin, incoming)
+            if contact is not None:
+                return target, contact
+        return None
+
+    def _sword_impact(self, player: PlayerState, pos: np.ndarray, reason: str, target_id: str) -> p.Impact:
+        return p.Impact(
+            projectile_id=0,
+            kind=Item.SWORD,
+            owner_id=player.player_id,
+            pos=_round(pos),
+            reason=reason,
+            target_id=target_id,
+        )
 
     def _damage(self, target: PlayerState, source_id: str, amount: float, kind: str, pos: np.ndarray) -> p.Damage:
         target.hp = max(0.0, target.hp - amount)

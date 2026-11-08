@@ -24,7 +24,7 @@ Shape of the system: [architecture.md](architecture.md).
 - Cooldown: a shrinking ember on the hand (`players[].cooldown`).
 
 ### 1b. Sword
-Server done (`_step_sword` in `game_state.py`, all values in `Tuning.sword_*`); Unity blade view still to do.
+Server: `_step_sword` in `game_state.py`, all values in `Tuning.sword_*`. Unity: `SwordView.cs` (not yet compiled).
 - **Draw:** `fist` that starts within about 20 cm of the hip opposite the band hand ("left pocket" for a right-hand band),
   then pulls up diagonally across the body at least about 30 cm within 0.6 s.
 - **Release:** letting go of the fist removes the sword at once.
@@ -40,6 +40,11 @@ Server done (`_step_sword` in `game_state.py`, all values in `Tuning.sword_*`); 
   `kind: sword` and the contact `pos` (fireball damage now carries `kind`/`pos` too).
 
 ### 1c. Shield
+Server: `_step_shield` in `game_state.py`, all values in `Tuning.shield_*`. Unity view still to do.
+- **Server specifics:** the disc (0.3 m radius) sits 8 cm in front of the band hand, facing away from the chest through
+  the hand (no hand-rotation dependency). Boost = hand speed along that normal, 0 at 1 m/s to 1 at 3 m/s, fading over
+  0.3 s. Blocks only from the front. A sword touching the disc at boost ≥ 0.3 is parried: the sword is sheathed and the
+  attacker can't redraw for 1.5 s. Otherwise a fast blade on the shield is `blocked` (no damage).
 - **Raise:** `open_palm` with the palm facing away from the player (toward the opponent) raises a disc in front of the palm.
   It blocks fireballs and sword hits.
 - **Push boost:** boost comes from the *impulse* of the push, not its distance: peak push speed along the palm normal over
