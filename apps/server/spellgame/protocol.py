@@ -379,6 +379,8 @@ class PlayerSnapshot:
     """0-1 power from the last shield push; at `Tuning.shield_parry_min_boost` or more a sword contact is a parry."""
     aligned: bool = False
     """The headset has reported its poses are in the shared room frame (§5.1)."""
+    max_hp: float = 0.0
+    """Starting HP (`Tuning.max_hp`), so clients can scale HP bars without copying the tuning."""
 
     def to_dict(self) -> dict[str, Any]:
         return {f.name: getattr(self, f.name) for f in fields(self)}
