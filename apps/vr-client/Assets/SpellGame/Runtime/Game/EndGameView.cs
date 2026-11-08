@@ -91,6 +91,7 @@ namespace SpellGame.Game
             gameClient.DamageReceived += OnDamage;
             gameClient.ImpactReceived += OnImpact;
             gameClient.SpellReceived += OnSpell;
+            UiStyle.ThemeChanged += OnThemeChanged;
         }
 
         private void OnDisable()
@@ -99,6 +100,7 @@ namespace SpellGame.Game
             gameClient.DamageReceived -= OnDamage;
             gameClient.ImpactReceived -= OnImpact;
             gameClient.SpellReceived -= OnSpell;
+            UiStyle.ThemeChanged -= OnThemeChanged;
         }
 
         // ---------------------------------------------------------------- stats
@@ -201,6 +203,19 @@ namespace SpellGame.Game
                 _ash.Play();
         }
 
+        /// <summary>New theme: recolour the effects and, if the banner is up, rebuild it in the new style.</summary>
+        private void OnThemeChanged()
+        {
+            var confetti = UiStyle.Confetti;
+            for (var i = 0; i < _confettiMaterials.Length; i++)
+                _confettiMaterials[i].SetColor("_BaseColor", confetti[i % confetti.Length]);
+            UiStyle.Restyle(_title, true, UiStyle.Look.Title);
+            UiStyle.Restyle(_subtitle, true);
+            _subtitle.color = UiStyle.TextDim;
+            if (_banner.gameObject.activeSelf)
+                LayoutBanner(BuildCards());
+        }
+
         private void Hide()
         {
             _showAt = float.PositiveInfinity;
@@ -216,8 +231,8 @@ namespace SpellGame.Game
         // ---------------------------------------------------------------- result cards
 
         /// <summary>
-        /// One slanted crystal card per fighter, Smash style: big place number, name in their colour, ink stats, award
-        /// tags. The winner (then most HP left) comes first; later places sit a little lower and smaller. Returns the height.
+        /// One crystal card per fighter: big place number, name in their colour, stats, award tags. The winner (then most
+        /// HP left) comes first; later places sit a little lower and smaller. Returns the height.
         /// </summary>
         private float BuildCards()
         {
@@ -247,11 +262,12 @@ namespace SpellGame.Game
             }
             foreach (var (root, fighter) in cards)
             {
-                // Follow the slant: shift each row by how far it sits above the card's bottom edge.
+                // Follow the theme's slant (if any): shift each row by how far it sits above the card's bottom edge.
+                var skew = UiStyle.Shape.Skew;
                 foreach (Transform child in root)
                 {
                     var p = child.localPosition;
-                    child.localPosition = new Vector3(p.x + UiStyle.Skew * (p.y + height * 0.5f), p.y, p.z);
+                    child.localPosition = new Vector3(p.x + skew * (p.y + height * 0.5f), p.y, p.z);
                 }
                 var style = fighter == _match.Winner ? UiStyle.Pulsing(UiStyle.Card, 0.35f) : UiStyle.Card;
                 UiStyle.CreateCrystal("Back", root, new Vector2(width, height), style, new Vector3(0f, -height * 0.5f, 0f),
@@ -283,7 +299,7 @@ namespace SpellGame.Game
 
             TextMeshPro Row(string label, string text, float size)
             {
-                var row = UiStyle.CreateText(label, card, text, Vector3.zero, size, UiStyle.Ink, look: UiStyle.Look.Ink,
+                var row = UiStyle.CreateText(label, card, text, Vector3.zero, size, UiStyle.Text,
                     alignment: TextAlignmentOptions.Left, width: inner);
                 var h = UiStyle.Height(row);
                 row.transform.localPosition = new Vector3(0f, y - h * 0.5f, -0.004f);
@@ -303,8 +319,8 @@ namespace SpellGame.Game
                 var x = left;
                 foreach (var award in awards)
                 {
-                    var text = UiStyle.CreateText("Award", card, award, Vector3.zero, 0.022f, UiStyle.Ink, display: true,
-                        look: UiStyle.Look.Ink, spacing: 3f);
+                    var text = UiStyle.CreateText("Award", card, award, Vector3.zero, 0.022f, UiStyle.Text, display: true,
+                        spacing: 3f);
                     var badgeWidth = UiStyle.Width(text) + 0.03f;
                     if (x > left && x + badgeWidth > left + inner)
                     {
@@ -432,14 +448,14 @@ namespace SpellGame.Game
             _bannerBack = UiStyle.CreateCrystal("Title Card", _banner, new Vector2(1f, 0.3f), UiStyle.Panel, Vector3.zero);
             _title = UiStyle.CreateText("Title", _banner, "", new Vector3(0f, 0f, -0.004f), 0.17f, UiStyle.Text, display: true,
                 look: UiStyle.Look.Title, width: BannerWidth, spacing: 2f);
-            _subtitle = UiStyle.CreateText("Reason", _banner, "", new Vector3(0f, 0f, -0.004f), 0.036f, UiStyle.Ink, display: true,
-                look: UiStyle.Look.Ink, width: BannerWidth, spacing: 6f);
+            _subtitle = UiStyle.CreateText("Reason", _banner, "", new Vector3(0f, 0f, -0.004f), 0.036f, UiStyle.TextDim, display: true,
+                width: BannerWidth, spacing: 6f);
             _cards = new GameObject("Cards").transform;
             _cards.SetParent(_banner, false);
             _banner.gameObject.SetActive(false);
         }
 
-        /// <summary>Big slanted title card (title + reason) on top, the result cards under it.</summary>
+        /// <summary>Big title card (title + reason) on top, the result cards under it.</summary>
         private void LayoutBanner(float cardsHeight)
         {
             var titleHeight = UiStyle.Height(_title);
@@ -449,11 +465,11 @@ namespace SpellGame.Game
             var height = cardHeight + (cardsHeight > 0f ? CardGap + cardsHeight : 0f);
             var top = height * 0.5f;
             _bannerBack.Transform.localPosition = new Vector3(0f, top - cardHeight * 0.5f, 0f);
-            _bannerBack.Resize(new Vector2(cardWidth, cardHeight));
+            _bannerBack.Apply(UiStyle.Panel, new Vector2(cardWidth, cardHeight));
             var y = top - BannerPad * 0.5f;
             _title.transform.localPosition = new Vector3(0f, y - titleHeight * 0.5f, -0.004f);
             y -= titleHeight;
-            _subtitle.transform.localPosition = new Vector3(-UiStyle.Skew * subtitleHeight, y - subtitleHeight * 0.5f, -0.004f);
+            _subtitle.transform.localPosition = new Vector3(-UiStyle.Shape.Skew * subtitleHeight, y - subtitleHeight * 0.5f, -0.004f);
             _cards.localPosition = new Vector3(0f, top - cardHeight - CardGap, 0f);
         }
 

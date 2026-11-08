@@ -105,6 +105,8 @@ namespace SpellGame.Game
 
         private AudioSource _audio;
         private AudioClip _tick, _beep, _end;
+        private AudioClip _toneTick, _toneBeep, _toneEnd;
+        private int _themeVersion, _panelThemeVersion;
 
         private Transform Eye => cameraRig != null ? cameraRig.centerEyeAnchor : Camera.main.transform;
 
@@ -123,23 +125,35 @@ namespace SpellGame.Game
             _audio = gameObject.AddComponent<AudioSource>();
             _audio.playOnAwake = false;
             _audio.spatialBlend = 0f;
-            _tick = Tone("Tick", 1400f, 0.03f, 0.15f);
-            _beep = Tone("Beep", 660f, 0.18f, 0.35f);
-            _end = Tone("End", 440f, 0.6f, 0.35f);
             CreatePointer();
             CreateTimerBadge();
+            ApplyTheme();
+        }
+
+        /// <summary>Theme sounds (synthesised tones where the theme has none), pointer colour, and a rebuilt panel.</summary>
+        private void ApplyTheme()
+        {
+            var sounds = UiStyle.Sounds;
+            _tick = sounds.Hover != null ? sounds.Hover : _toneTick ??= Tone("Tick", 1400f, 0.03f, 0.15f);
+            _beep = sounds.Press != null ? sounds.Press : _toneBeep ??= Tone("Beep", 660f, 0.18f, 0.35f);
+            _end = sounds.TimeUp != null ? sounds.TimeUp : _toneEnd ??= Tone("End", 440f, 0.6f, 0.35f);
+            _pointer.sharedMaterial.SetColor("_BaseColor", UiStyle.Pointer);
+            UiStyle.Restyle(_timerText, true);
+            _themeVersion++;
         }
 
         private void OnEnable()
         {
             gameClient.StateReceived += OnState;
             gameClient.ConnectionChanged += OnConnectionChanged;
+            UiStyle.ThemeChanged += ApplyTheme;
         }
 
         private void OnDisable()
         {
             gameClient.StateReceived -= OnState;
             gameClient.ConnectionChanged -= OnConnectionChanged;
+            UiStyle.ThemeChanged -= ApplyTheme;
         }
 
         /// <summary>Forgets the last server's match, so a rejoin starts from the menu the new state puts it on.</summary>
@@ -234,7 +248,7 @@ namespace SpellGame.Game
                 _keyConnection = gameClient.Connection;
             }
             var key = _key;
-            if (_panel != null && _panel.Key == key)
+            if (_panel != null && _panel.Key == key && _panelThemeVersion == _themeVersion)
             {
                 FollowView(_panel);
                 UpdateFooter(_panel);
@@ -253,6 +267,7 @@ namespace SpellGame.Game
                 return;
 
             _panel = BuildPanel(view, key);
+            _panelThemeVersion = _themeVersion;
             _panel.Target = keep ?? PanelSpot();
             _panel.Root.position = _panel.Target;
             _panel.Placed = true;
@@ -361,7 +376,7 @@ namespace SpellGame.Game
                 var ready = _match.Ready.Contains(fighter)
                     ? "<b>READY</b>"
                     : "not ready";
-                lines.Add($"<color={UiStyle.Hex(UiStyle.PlayerInk(fighter))}><b>{name}</b></color>   {ready}{(aligned ? "" : "  ·  not in the room frame")}");
+                lines.Add($"<color={UiStyle.Hex(UiStyle.PlayerColor(fighter))}><b>{name}</b></color>   {ready}{(aligned ? "" : "  ·  not in the room frame")}");
             }
             if (_match.Mode == MatchMode.Versus)
                 lines.Add("Stand on your spot facing the other player,\nthen press I'm ready.");
@@ -431,15 +446,11 @@ namespace SpellGame.Game
 
         private static string Minutes(float seconds) => $"{seconds / 60f:0.#} min";
 
-        /// <summary>
-        /// Smash-style stack: a big slanted title card, a card for the body text, then the slanted button cards, each a
-        /// little further right; status text hangs below.
-        /// </summary>
+        /// <summary>A big title card, a card for the body text, then a column of button cards; status text hangs below.</summary>
         private void Layout(Panel panel, string title, string body, params (string Label, Kind Kind, Action OnPress)[] buttons)
         {
             const float pad = 0.03f;
             const float gap = 0.022f;
-            const float stagger = 0.02f;
             var root = panel.Root;
             var titleText = string.IsNullOrEmpty(title)
                 ? null
@@ -447,7 +458,7 @@ namespace SpellGame.Game
                     look: UiStyle.Look.Title, spacing: 2f);
             var bodyText = string.IsNullOrEmpty(body)
                 ? null
-                : UiStyle.CreateText("Body", root, body, Vector3.zero, 0.024f * textScale, UiStyle.Ink, look: UiStyle.Look.Ink);
+                : UiStyle.CreateText("Body", root, body, Vector3.zero, 0.024f * textScale, UiStyle.Text);
             var titleHeight = titleText != null ? UiStyle.Height(titleText) + pad : 0f;
             var bodyHeight = bodyText != null ? UiStyle.Height(bodyText) + 2f * pad : 0f;
             var buttonsHeight = buttons.Length * buttonHeight + Mathf.Max(0, buttons.Length - 1) * buttonGap;
@@ -463,15 +474,15 @@ namespace SpellGame.Game
             {
                 var cy = y - titleHeight * 0.5f;
                 var w = Mathf.Max(panelWidth * 0.8f, UiStyle.Width(titleText) + 0.1f);
-                UiStyle.CreateCrystal("Title Card", root, new Vector2(w, titleHeight), UiStyle.Panel, new Vector3(-0.03f, cy, 0f),
+                UiStyle.CreateCrystal("Title Card", root, new Vector2(w, titleHeight), UiStyle.Panel, new Vector3(0f, cy, 0f),
                     UiStyle.SortPanel, panel.Materials);
-                titleText.transform.localPosition = new Vector3(-0.03f, cy, -0.004f);
+                titleText.transform.localPosition = new Vector3(0f, cy, -0.004f);
                 y -= titleHeight + gap;
             }
             if (bodyText != null)
             {
                 var cy = y - bodyHeight * 0.5f;
-                var w = Mathf.Max(panelWidth, UiStyle.Width(bodyText) + 2f * pad + UiStyle.Skew * bodyHeight);
+                var w = Mathf.Max(panelWidth, UiStyle.Width(bodyText) + 2f * pad + UiStyle.Shape.Skew * bodyHeight);
                 UiStyle.CreateCrystal("Body Card", root, new Vector2(w, bodyHeight), UiStyle.Card, new Vector3(0f, cy, 0f),
                     UiStyle.SortPanel, panel.Materials);
                 bodyText.transform.localPosition = new Vector3(0f, cy, -0.004f);
@@ -479,10 +490,9 @@ namespace SpellGame.Game
             }
 
             var width = panelWidth * 0.85f;
-            var x = -0.5f * stagger * Mathf.Max(0, buttons.Length - 1);
             foreach (var (label, kind, onPress) in buttons)
             {
-                var center = new Vector2(x, y - buttonHeight * 0.5f);
+                var center = new Vector2(0f, y - buttonHeight * 0.5f);
                 var size = new Vector2(width, buttonHeight);
                 var style = kind == Kind.Primary ? UiStyle.Primary : UiStyle.Secondary;
                 var back = UiStyle.CreateCrystal("Button", root, size, style, new Vector3(center.x, center.y, -0.002f), UiStyle.SortSurface, panel.Materials);
@@ -490,7 +500,7 @@ namespace SpellGame.Game
                     new Vector3(center.x, center.y - buttonHeight * 0.32f, -0.004f), UiStyle.SortBar, panel.Materials);
                 dwell.Transform.gameObject.SetActive(false);
                 var text = UiStyle.CreateText("Label", root, label, new Vector3(center.x, center.y + buttonHeight * 0.04f, -0.005f),
-                    0.032f * textScale, UiStyle.Ink, display: true, look: UiStyle.Look.Ink, spacing: 2f);
+                    0.032f * textScale, UiStyle.Text, display: true, spacing: 2f);
                 text.fontStyle = FontStyles.UpperCase;
                 panel.Buttons.Add(new Button
                 {
@@ -501,7 +511,6 @@ namespace SpellGame.Game
                     OnPress = onPress,
                 });
                 y -= buttonHeight + buttonGap;
-                x += stagger;
             }
         }
 
@@ -690,8 +699,8 @@ namespace SpellGame.Game
             _timerBadge = new GameObject("Match Timer").transform;
             _timerBadge.SetParent(transform, false);
             _timerBack = UiStyle.CreateCrystal("Back", _timerBadge, new Vector2(0.2f, 0.066f), UiStyle.Hud, Vector3.zero);
-            _timerText = UiStyle.CreateText("Time", _timerBadge, "1:00", new Vector3(0f, 0.003f, -0.003f), 0.042f, UiStyle.Ink,
-                display: true, look: UiStyle.Look.Ink, spacing: 2f);
+            _timerText = UiStyle.CreateText("Time", _timerBadge, "1:00", new Vector3(0f, 0.003f, -0.003f), 0.042f, UiStyle.Text,
+                display: true, spacing: 2f);
             _timerBadge.gameObject.SetActive(false);
         }
 
