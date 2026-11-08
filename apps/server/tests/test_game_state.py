@@ -609,3 +609,32 @@ def test_grip_tension_shapes_damage_within_bounds_and_is_neutral_without_calibra
     full = game._tension_multiplier(player)
     player.tension = 1.0
     assert full == game._tension_multiplier(player) == game.tuning.tension_max_multiplier
+
+
+def test_fist_tension_scales_sword_damage_and_sharpens_the_grade():
+    game = GameState()
+    tuning = game.tuning
+    player = SimpleNamespace(fist_tension=None)
+    assert game._sword_tension_multiplier(player) == 1.0
+    player.fist_tension = 0.0
+    assert game._sword_tension_multiplier(player) == tuning.sword_tension_min_multiplier
+    player.fist_tension = 1.2
+    assert game._sword_tension_multiplier(player) == tuning.sword_tension_max_multiplier
+    medium_speed = (tuning.sword_min_tip_speed + tuning.sword_full_damage_tip_speed) / 2
+    slack = game._sword_grade(medium_speed, p.Zone.TORSO, tuning.sword_tension_min_multiplier)
+    firm = game._sword_grade(medium_speed, p.Zone.TORSO, tuning.sword_tension_max_multiplier)
+    grades = [p.Grade.GOOD, p.Grade.GREAT, p.Grade.EXCELLENT, p.Grade.PERFECT]
+    assert slack in grades and firm in grades and grades.index(firm) > grades.index(slack)
+
+
+def test_shield_hand_tension_caps_how_much_the_shield_blocks():
+    game = GameState()
+    tuning = game.tuning
+    shielder = SimpleNamespace(item_since=game.time, palm_tension=None)
+    assert game._shield_block_fraction(shielder) == 1.0
+    shielder.palm_tension = 0.0
+    assert game._shield_block_fraction(shielder) == tuning.shield_min_block
+    shielder.palm_tension = tuning.shield_full_block_tension / 2
+    assert tuning.shield_min_block < game._shield_block_fraction(shielder) < 1.0
+    shielder.palm_tension = tuning.shield_full_block_tension
+    assert game._shield_block_fraction(shielder) == 1.0

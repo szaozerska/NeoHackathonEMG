@@ -285,8 +285,8 @@ class SignMessage(Message):
 class Tension(Message):
     """How hard the band hand is squeezing (classifier → server), about 20 times a second.
 
-    PLACEHOLDER until the band's real tension signal is known: `value` is the hand-client's guess from raw EMG,
-    already scaled to this player's own calibrated range (0 = relaxed, 1 = their comfortable maximum squeeze).
+    `value` comes from the hand-client's filtered EMG envelope, scaled to this player's own calibration: 0 = relaxed,
+    0.7 = the "comfortably firm" fist / shield hand they held while calibrating, up to 1.2 when squeezing harder.
     """
 
     TYPE: ClassVar[str] = "tension"
@@ -295,12 +295,19 @@ class Tension(Message):
     hand: str
     value: float
     calibrated: bool = False
-    """False until the player has done the relax/squeeze calibration; the server ignores uncalibrated values."""
+    """False until the player has done the relax / fist / palm calibration; the server ignores uncalibrated values."""
+    fist: float | None = None
+    """Tension against the player's fist calibration alone (drives the sword), same scale as `value`."""
+    palm: float | None = None
+    """Tension against their shield-hand calibration alone (drives the shield); None if that step didn't register."""
 
 
 class CalibrationPhase:
     REST = "rest"
     SQUEEZE = "squeeze"
+    """Make a fist, comfortably firm (~70%)."""
+    PALM = "palm"
+    """Shield hand, palm out, comfortably firm (~70%)."""
     DONE = "done"
     FAILED = "failed"
 
