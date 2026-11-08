@@ -1,0 +1,14 @@
+[
+  {
+    "id": "open-001",
+    "kind": "open",
+    "instruction": "Hold your deliberate open shield hand",
+    "intended_count": 0,
+    "start": 6.681259666002006,
+    "end": 36.68379791600455,
+    "confirmed": true,
+    "reported_count": null,
+    "label_source": "participant_confirmation",
+    "exact_event_times_verified": false
+  }
+]
