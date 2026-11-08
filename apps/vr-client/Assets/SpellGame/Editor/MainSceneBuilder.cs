@@ -1,5 +1,6 @@
 using System.IO;
 using System.Linq;
+using Meta.XR.MRUtilityKit;
 using SpellGame.Game;
 using TMPro;
 using UnityEditor;
@@ -49,6 +50,7 @@ namespace SpellGame.Editor
             CreateControllerBand(client);
             CreatePairingButton(client);
             CreateDomainExpansionButton(client);
+            CreateMarkerTracking();
             var aligner = CreateSharedSpaceAligner(client, rig);
             CreateFireballView(client);
             CreateSwordView(client);
@@ -149,6 +151,18 @@ namespace SpellGame.Editor
             var serializedButton = new SerializedObject(button);
             serializedButton.FindProperty("gameClient").objectReferenceValue = client;
             serializedButton.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>MRUK only for QR code tracking (the floor marker): no room scan, and it must not move the tracking space.</summary>
+        private static void CreateMarkerTracking()
+        {
+            var mruk = new GameObject("MRUK").AddComponent<MRUK>();
+            mruk.EnableWorldLock = false;
+            mruk.SceneSettings ??= new MRUK.MRUKSettings();
+            mruk.SceneSettings.LoadSceneOnStartup = false;
+            var trackers = mruk.SceneSettings.TrackerConfiguration;
+            trackers.QRCodeTrackingEnabled = true;
+            mruk.SceneSettings.TrackerConfiguration = trackers;
         }
 
         private static SharedSpaceAligner CreateSharedSpaceAligner(GameClient client, OVRCameraRig rig)

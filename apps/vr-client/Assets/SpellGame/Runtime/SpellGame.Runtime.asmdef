@@ -3,6 +3,7 @@
     "rootNamespace": "SpellGame",
     "references": [
         "Oculus.VR",
+        "meta.xr.mrutilitykit",
         "Unity.TextMeshPro"
     ],
     "includePlatforms": [],

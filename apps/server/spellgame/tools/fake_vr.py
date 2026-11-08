@@ -35,7 +35,7 @@ class FakeAlignment:
     aligned_to: str | None = None
 
     def replies(self, space: p.Space, player_id: str) -> list[p.Message]:
-        if self.method in (p.AlignMethod.FLOOR_SPOTS, p.AlignMethod.CENTER):
+        if self.method in (p.AlignMethod.FLOOR_SPOTS, p.AlignMethod.CENTER, p.AlignMethod.MARKER):
             if self.aligned_to == space.group_uuid:
                 return []
             self.aligned_to = space.group_uuid
@@ -115,7 +115,7 @@ def main() -> None:
     parser.add_argument("--rate", type=float, default=60.0, help="pose send rate in Hz")
     parser.add_argument(
         "--align",
-        choices=[p.AlignMethod.ANCHOR, p.AlignMethod.FLOOR_SPOTS, p.AlignMethod.CENTER, "none"],
+        choices=[p.AlignMethod.ANCHOR, p.AlignMethod.FLOOR_SPOTS, p.AlignMethod.CENTER, p.AlignMethod.MARKER, "none"],
         default=p.AlignMethod.ANCHOR,
         help="how to report joining the shared room frame",
     )
