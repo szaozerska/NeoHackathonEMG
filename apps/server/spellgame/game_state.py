@@ -47,6 +47,8 @@ class Tuning:
     the fireball never leaves the hand."""
     throw_min_speed: float = 2.5
     """m/s of the held fireball's velocity. Slower, it never leaves the hand."""
+    throw_max_speed: float = 10.0
+    """Harder throws fly at this speed (0.3 s across a 3 m room), which also caps fireball damage."""
     throw_min_forward: float = 0.3
     """Minimum cosine between the held fireball's velocity and the thrower's facing, so the backswing doesn't throw."""
     aim_assist_cone_deg: float = 20.0
@@ -361,7 +363,7 @@ class GameState:
     def _throw_fireball(self, player: PlayerState, velocity: np.ndarray) -> p.Spell:
         tuning = self.tuning
         direction = self._aim_assist(player, normalize(velocity))
-        speed = float(np.linalg.norm(velocity))
+        speed = min(float(np.linalg.norm(velocity)), tuning.throw_max_speed)
         origin = player.band_hand_tracker.position
         assert origin is not None
         self.projectiles.append(
