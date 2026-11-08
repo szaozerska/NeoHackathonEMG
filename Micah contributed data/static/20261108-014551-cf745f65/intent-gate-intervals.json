@@ -1,0 +1,424 @@
+{
+  "intervals": [
+    {
+      "start": 0,
+      "end": 180.2941313330084,
+      "label": "non_intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": null,
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 180.2941313330084,
+      "end": 253.9143563748803,
+      "label": "intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": {
+        "motion": "shield_hold",
+        "effort": "low",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 253.9143563748803,
+      "end": 257.2689563749591,
+      "label": "non_intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": null,
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 257.2689563749591,
+      "end": 275.8133563748561,
+      "label": "intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": {
+        "motion": "shield_hold",
+        "effort": "medium",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 275.8133563748561,
+      "end": 277.6203665828798,
+      "label": "non_intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": null,
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 277.6203665828798,
+      "end": 331.8464305829257,
+      "label": "intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": {
+        "motion": "shield_hold",
+        "effort": "high",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 331.8464305829257,
+      "end": 333.49803058302496,
+      "label": "non_intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": null,
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 333.49803058302496,
+      "end": 337.0516130409669,
+      "label": "intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": {
+        "motion": "shield_hold",
+        "effort": "high",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 337.0516130409669,
+      "end": 337.5951130409958,
+      "label": "non_intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": null,
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 337.5951130409958,
+      "end": 337.8777130410308,
+      "label": "intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": {
+        "motion": "shield_hold",
+        "effort": "high",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 337.8777130410308,
+      "end": 337.8923130410258,
+      "label": "non_intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": null,
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 337.8923130410258,
+      "end": 338.28621304105036,
+      "label": "intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": {
+        "motion": "shield_hold",
+        "effort": "high",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 338.28621304105036,
+      "end": 339.19641304109246,
+      "label": "non_intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": null,
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 339.19641304109246,
+      "end": 339.351813041023,
+      "label": "intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": {
+        "motion": "shield_hold",
+        "effort": "high",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 339.351813041023,
+      "end": 340.4993130409857,
+      "label": "non_intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": null,
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 340.4993130409857,
+      "end": 394.67991616600193,
+      "label": "intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": {
+        "motion": "sword_hold",
+        "effort": "low",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 394.67991616600193,
+      "end": 438.5622535829898,
+      "label": "non_intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": null,
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 438.5622535829898,
+      "end": 466.4438114160439,
+      "label": "intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": {
+        "motion": "sword_hold",
+        "effort": "low",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 466.4438114160439,
+      "end": 467.931411416037,
+      "label": "non_intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": null,
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 467.931411416037,
+      "end": 496.58849683299195,
+      "label": "intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": {
+        "motion": "sword_hold",
+        "effort": "medium",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 496.58849683299195,
+      "end": 498.7266968329204,
+      "label": "non_intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": null,
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 498.7266968329204,
+      "end": 504.3190968328854,
+      "label": "intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": {
+        "motion": "sword_hold",
+        "effort": "medium",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 504.3190968328854,
+      "end": 506.0676968329353,
+      "label": "non_intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": null,
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 506.0676968329353,
+      "end": 564.6486968331737,
+      "label": "intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": {
+        "motion": "sword_hold",
+        "effort": "high",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 564.6486968331737,
+      "end": 567.8747968330281,
+      "label": "non_intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": null,
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 567.8747968330281,
+      "end": 578.2616740410449,
+      "label": "intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": {
+        "motion": "sword_hold",
+        "effort": "high",
+        "source": "participant_selection",
+        "performed_verified": false
+      },
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    },
+    {
+      "start": 578.2616740410449,
+      "end": 602.4896774580702,
+      "label": "non_intended",
+      "wearing_session": "micah-wearing-01",
+      "dataset_role": "training_only_weak_labels",
+      "source": "participant_spacebar_untrimmed",
+      "supervision": "weak_interval_label",
+      "gesture_label": null,
+      "selected_motion": null,
+      "exact_action_times_verified": false,
+      "test_condition": "static"
+    }
+  ],
+  "gesture_labels_required": false,
+  "interaction_guard_seconds": 0.0,
+  "postprocessing_required": true,
+  "policy": "Untrimmed participant windows; use raw EMG and baseline context for later cleanup. Missing samples are not imputed."
+}

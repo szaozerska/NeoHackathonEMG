@@ -1,0 +1,350 @@
+[
+  {
+    "capture_t": 0.0,
+    "guard_seconds": 0.0,
+    "kind": "record_start"
+  },
+  {
+    "capture_t": 146.38140137505252,
+    "guard_seconds": 0,
+    "kind": "mouse",
+    "clock_uncertainty_seconds": 0.0007500000000106866,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 146.46787975006737,
+    "guard_seconds": 0,
+    "kind": "motion_selection",
+    "clock_uncertainty_seconds": 0.0,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 147.17300137504935,
+    "guard_seconds": 0,
+    "kind": "mouse",
+    "clock_uncertainty_seconds": 0.0007500000000106866,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 147.31030470796395,
+    "guard_seconds": 0,
+    "kind": "motion_selection",
+    "clock_uncertainty_seconds": 0.0,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 159.02883133292198,
+    "guard_seconds": 0,
+    "kind": "focus_lost",
+    "clock_uncertainty_seconds": 0.0006999999880861196,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 162.451981332968,
+    "guard_seconds": 3.4231500000460073,
+    "kind": "focus_regained",
+    "clock_uncertainty_seconds": 0.0006999999880861196,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 176.13073133293074,
+    "guard_seconds": 0,
+    "kind": "mouse",
+    "clock_uncertainty_seconds": 0.0006999999880861196,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 176.24953633302357,
+    "guard_seconds": 0,
+    "kind": "motion_selection",
+    "clock_uncertainty_seconds": 0.0,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 179.34893133293372,
+    "guard_seconds": 0,
+    "kind": "keyboard",
+    "clock_uncertainty_seconds": 0.0006999999880861196,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 180.2941313330084,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.0006999999880861196,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 253.9143563748803,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.00105000001190092,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 256.75525637483224,
+    "guard_seconds": 0,
+    "kind": "mouse",
+    "clock_uncertainty_seconds": 0.00105000001190092,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 256.87588941596914,
+    "guard_seconds": 0,
+    "kind": "motion_selection",
+    "clock_uncertainty_seconds": 0.0,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 257.2689563749591,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.00105000001190092,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 275.8133563748561,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.00105000001190092,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 277.00606658298057,
+    "guard_seconds": 0,
+    "kind": "mouse",
+    "clock_uncertainty_seconds": 0.000649999976133131,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 277.11711025005206,
+    "guard_seconds": 0,
+    "kind": "motion_selection",
+    "clock_uncertainty_seconds": 0.0,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 277.6203665828798,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.000649999976133131,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 331.8464305829257,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.0007499999999822649,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 333.49803058302496,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.0007499999999822649,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 337.0516130409669,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.0011999999880458745,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 337.5951130409958,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.0011999999880458745,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 337.8777130410308,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.0011999999880458745,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 337.8923130410258,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.0011999999880458745,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 338.28621304105036,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.0011999999880458745,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 339.19641304109246,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.0011999999880458745,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 339.351813041023,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.0011999999880458745,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 340.007013040944,
+    "guard_seconds": 0,
+    "kind": "mouse",
+    "clock_uncertainty_seconds": 0.0011999999880458745,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 340.1282668330241,
+    "guard_seconds": 0,
+    "kind": "motion_selection",
+    "clock_uncertainty_seconds": 0.0,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 340.4993130409857,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.0011999999880458745,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 394.67991616600193,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.0010000000000331966,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 396.2053161660442,
+    "guard_seconds": 0,
+    "kind": "focus_lost",
+    "clock_uncertainty_seconds": 0.0010000000000331966,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 416.47328487446066,
+    "guard_seconds": 20.267968708474655,
+    "kind": "focus_regained",
+    "clock_uncertainty_seconds": 0.0018500000238645953,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 438.5622535829898,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.0018500000238645953,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 466.4438114160439,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.0008000000119068318,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 467.48301141604315,
+    "guard_seconds": 0,
+    "kind": "mouse",
+    "clock_uncertainty_seconds": 0.0008000000119068318,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 467.62955112499185,
+    "guard_seconds": 0,
+    "kind": "motion_selection",
+    "clock_uncertainty_seconds": 0.0,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 467.931411416037,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.0008000000119068318,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 496.58849683299195,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.001199999988102718,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 498.7266968329204,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.001199999988102718,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 504.3190968328854,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.001199999988102718,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 505.5002968328772,
+    "guard_seconds": 0,
+    "kind": "mouse",
+    "clock_uncertainty_seconds": 0.001199999988102718,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 505.6481441659853,
+    "guard_seconds": 0,
+    "kind": "motion_selection",
+    "clock_uncertainty_seconds": 0.0,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 506.0676968329353,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.001199999988102718,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 564.6486968331737,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.001099999964253584,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 567.8747968330281,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.001099999964253584,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 578.2616740410449,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.0006999999880576979,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 602.3741740410915,
+    "guard_seconds": 0,
+    "kind": "mouse",
+    "clock_uncertainty_seconds": 0.0006999999880576979,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 602.4839983750135,
+    "guard_seconds": 0,
+    "kind": "record_finish",
+    "clock_uncertainty_seconds": 0.0,
+    "applied_to_export": false
+  }
+]

@@ -1,0 +1,58 @@
+[
+  {
+    "capture_t": 146.46845029096585,
+    "motion": "shield_hold",
+    "effort": "low",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 147.31115475005936,
+    "motion": "sword_hold",
+    "effort": "high",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 176.2500861249864,
+    "motion": "shield_hold",
+    "effort": "low",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 256.87679345801007,
+    "motion": "shield_hold",
+    "effort": "medium",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 277.1194415410282,
+    "motion": "shield_hold",
+    "effort": "high",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 340.1308270409936,
+    "motion": "sword_hold",
+    "effort": "low",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 467.6309082079679,
+    "motion": "sword_hold",
+    "effort": "medium",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 505.6502533330349,
+    "motion": "sword_hold",
+    "effort": "high",
+    "source": "participant_selection",
+    "performed_verified": false
+  }
+]

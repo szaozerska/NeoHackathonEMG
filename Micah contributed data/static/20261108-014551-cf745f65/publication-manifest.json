@@ -1,0 +1,103 @@
+{
+  "source_session": "20261108-014551-cf745f65",
+  "test_condition": "static",
+  "participant_labels_modified": false,
+  "files": {
+    "collection-plan.json": {
+      "original_name": "collection-plan.json",
+      "original_bytes": 3,
+      "original_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "published_bytes": 3
+    },
+    "collection-report.json": {
+      "original_name": "collection-report.json",
+      "original_bytes": 863,
+      "original_sha256": "9be73f8512a0c2e1c4427b42c2acb1b04166f490606cfb6667c3cd4e164b1387",
+      "published_bytes": 863
+    },
+    "corrections.json": {
+      "original_name": "corrections.json",
+      "original_bytes": 3,
+      "original_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "published_bytes": 3
+    },
+    "failure-flags.json": {
+      "original_name": "failure-flags.json",
+      "original_bytes": 3,
+      "original_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "published_bytes": 3
+    },
+    "guided-manifest.json": {
+      "original_name": "guided-manifest.json",
+      "original_bytes": 1496,
+      "original_sha256": "4550a64c8eab05c0f0e7f45abc4527a344626f9ed9d566ca5589a460cf123e9e",
+      "published_bytes": 1496
+    },
+    "guided-trials.json": {
+      "original_name": "guided-trials.json",
+      "original_bytes": 3,
+      "original_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "published_bytes": 3
+    },
+    "intent-gate-intervals.json": {
+      "original_name": "intent-gate-intervals.json",
+      "original_bytes": 13855,
+      "original_sha256": "5830518093e3c28ccf3f3ca78ec8c062d44a6c0493c9a4f3bc179a37a24625cc",
+      "published_bytes": 13855
+    },
+    "intent-gate-trials.json": {
+      "original_name": "intent-gate-trials.json",
+      "original_bytes": 3,
+      "original_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "published_bytes": 3
+    },
+    "intent-toggle-markers.json": {
+      "original_name": "intent-toggle-markers.json",
+      "original_bytes": 17818,
+      "original_sha256": "3cdaba5261ccc9b75deaf758f1d5a2470d96f8b0031abb2c25a5e7fb1b4c2aa3",
+      "published_bytes": 17818
+    },
+    "intent-trials.json": {
+      "original_name": "intent-trials.json",
+      "original_bytes": 3,
+      "original_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "published_bytes": 3
+    },
+    "interaction-exclusions.json": {
+      "original_name": "interaction-exclusions.json",
+      "original_bytes": 8966,
+      "original_sha256": "95aee4777fa122d973a6f03bec1c3ca7d69b1ce7760d4d4ff73e066cf5afa3b1",
+      "published_bytes": 8966
+    },
+    "metadata.json": {
+      "original_name": "metadata.json",
+      "original_bytes": 3758,
+      "original_sha256": "50f8e464a0faaa312e49f6d80ea091597a44b8f258a4f75ecb7fc7f2bbfb6177",
+      "published_bytes": 3758
+    },
+    "motion-selections.json": {
+      "original_name": "motion-selections.json",
+      "original_bytes": 1339,
+      "original_sha256": "6c320562bc041c7f174707beb2faee806199043c07af8fb646bdbf7e0c0d7385",
+      "published_bytes": 1339
+    },
+    "signal-coverage.json": {
+      "original_name": "signal-coverage.json",
+      "original_bytes": 98378,
+      "original_sha256": "b1f2b960f9b5933f6fbe44c9992235e65932f196d394e8fdb02be120658eaac2",
+      "published_bytes": 98378
+    },
+    "streams.jsonl.gz": {
+      "original_name": "streams.jsonl",
+      "original_bytes": 118466093,
+      "original_sha256": "a6552679634e4a53f12d74f773ce932aa0725498d12dd8c74e40763f439c9149",
+      "published_bytes": 23471603
+    },
+    "truth-values.json": {
+      "original_name": "truth-values.json",
+      "original_bytes": 17523,
+      "original_sha256": "9bbb588cb9c1a2f2eeabbd5a15df3794601c248ca22f1dffc1282e082bf3bf13",
+      "published_bytes": 17523
+    }
+  }
+}

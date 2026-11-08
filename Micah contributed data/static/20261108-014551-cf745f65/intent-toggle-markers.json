@@ -1,0 +1,515 @@
+[
+  {
+    "capture_t": 0.0,
+    "label": "non_intended",
+    "source": "participant_toggle_at_record_start",
+    "uncertainty_seconds": 0.0
+  },
+  {
+    "capture_t": 180.2941313330084,
+    "label": "intended",
+    "source": "participant_spacebar_press",
+    "uncertainty_seconds": 0.0006999999880861196,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.6120500829,
+      "uncertainty_seconds": 0.0006999999880861196,
+      "client_sync_t": 450.08090000003574,
+      "round_trip_seconds": 0.0013999999761722393,
+      "client_event_t": 473.65180000007155,
+      "mapped_host_event_uptime": 590799.263850083,
+      "server_received_host_uptime": 590799.266310625
+    },
+    "selected_motion": {
+      "motion": "shield_hold",
+      "effort": "low",
+      "source": "participant_selection",
+      "performed_verified": false
+    }
+  },
+  {
+    "capture_t": 253.9143563748803,
+    "label": "non_intended",
+    "source": "participant_spacebar_release",
+    "uncertainty_seconds": 0.00105000001190092,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.6120751249,
+      "uncertainty_seconds": 0.00105000001190092,
+      "client_sync_t": 540.0822500000596,
+      "round_trip_seconds": 0.00210000002380184,
+      "client_event_t": 547.272,
+      "mapped_host_event_uptime": 590872.8840751249,
+      "server_received_host_uptime": 590872.88701375
+    },
+    "selected_motion": null
+  },
+  {
+    "capture_t": 257.2689563749591,
+    "label": "intended",
+    "source": "participant_spacebar_press",
+    "uncertainty_seconds": 0.00105000001190092,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.6120751249,
+      "uncertainty_seconds": 0.00105000001190092,
+      "client_sync_t": 540.0822500000596,
+      "round_trip_seconds": 0.00210000002380184,
+      "client_event_t": 550.6266000000238,
+      "mapped_host_event_uptime": 590876.238675125,
+      "server_received_host_uptime": 590876.2411545
+    },
+    "selected_motion": {
+      "motion": "shield_hold",
+      "effort": "medium",
+      "source": "participant_selection",
+      "performed_verified": false
+    }
+  },
+  {
+    "capture_t": 275.8133563748561,
+    "label": "non_intended",
+    "source": "participant_spacebar_release",
+    "uncertainty_seconds": 0.00105000001190092,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.6120751249,
+      "uncertainty_seconds": 0.00105000001190092,
+      "client_sync_t": 540.0822500000596,
+      "round_trip_seconds": 0.00210000002380184,
+      "client_event_t": 569.171,
+      "mapped_host_event_uptime": 590894.7830751248,
+      "server_received_host_uptime": 590894.784664666
+    },
+    "selected_motion": null
+  },
+  {
+    "capture_t": 277.6203665828798,
+    "label": "intended",
+    "source": "participant_spacebar_press",
+    "uncertainty_seconds": 0.000649999976133131,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.6121853329,
+      "uncertainty_seconds": 0.000649999976133131,
+      "client_sync_t": 570.0774500000477,
+      "round_trip_seconds": 0.001299999952266262,
+      "client_event_t": 570.9778999999761,
+      "mapped_host_event_uptime": 590896.5900853329,
+      "server_received_host_uptime": 590896.592720291
+    },
+    "selected_motion": {
+      "motion": "shield_hold",
+      "effort": "high",
+      "source": "participant_selection",
+      "performed_verified": false
+    }
+  },
+  {
+    "capture_t": 331.8464305829257,
+    "label": "non_intended",
+    "source": "participant_spacebar_release",
+    "uncertainty_seconds": 0.0007499999999822649,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.6120493329,
+      "uncertainty_seconds": 0.0007499999999822649,
+      "client_sync_t": 600.0835500000715,
+      "round_trip_seconds": 0.0014999999999645297,
+      "client_event_t": 625.2041000000238,
+      "mapped_host_event_uptime": 590950.8161493329,
+      "server_received_host_uptime": 590950.818075458
+    },
+    "selected_motion": null
+  },
+  {
+    "capture_t": 333.49803058302496,
+    "label": "intended",
+    "source": "participant_spacebar_press",
+    "uncertainty_seconds": 0.0007499999999822649,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.6120493329,
+      "uncertainty_seconds": 0.0007499999999822649,
+      "client_sync_t": 600.0835500000715,
+      "round_trip_seconds": 0.0014999999999645297,
+      "client_event_t": 626.8557000000477,
+      "mapped_host_event_uptime": 590952.467749333,
+      "server_received_host_uptime": 590952.472881041
+    },
+    "selected_motion": {
+      "motion": "shield_hold",
+      "effort": "high",
+      "source": "participant_selection",
+      "performed_verified": false
+    }
+  },
+  {
+    "capture_t": 337.0516130409669,
+    "label": "non_intended",
+    "source": "participant_spacebar_release",
+    "uncertainty_seconds": 0.0011999999880458745,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.612331791,
+      "uncertainty_seconds": 0.0011999999880458745,
+      "client_sync_t": 630.0864000000358,
+      "round_trip_seconds": 0.002399999976091749,
+      "client_event_t": 630.409,
+      "mapped_host_event_uptime": 590956.021331791,
+      "server_received_host_uptime": 590956.024411833
+    },
+    "selected_motion": null
+  },
+  {
+    "capture_t": 337.5951130409958,
+    "label": "intended",
+    "source": "participant_spacebar_press",
+    "uncertainty_seconds": 0.0011999999880458745,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.612331791,
+      "uncertainty_seconds": 0.0011999999880458745,
+      "client_sync_t": 630.0864000000358,
+      "round_trip_seconds": 0.002399999976091749,
+      "client_event_t": 630.9525,
+      "mapped_host_event_uptime": 590956.564831791,
+      "server_received_host_uptime": 590956.569302916
+    },
+    "selected_motion": {
+      "motion": "shield_hold",
+      "effort": "high",
+      "source": "participant_selection",
+      "performed_verified": false
+    }
+  },
+  {
+    "capture_t": 337.8777130410308,
+    "label": "non_intended",
+    "source": "participant_spacebar_release",
+    "uncertainty_seconds": 0.0011999999880458745,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.612331791,
+      "uncertainty_seconds": 0.0011999999880458745,
+      "client_sync_t": 630.0864000000358,
+      "round_trip_seconds": 0.002399999976091749,
+      "client_event_t": 631.2351000000239,
+      "mapped_host_event_uptime": 590956.847431791,
+      "server_received_host_uptime": 590956.851770416
+    },
+    "selected_motion": null
+  },
+  {
+    "capture_t": 337.8923130410258,
+    "label": "intended",
+    "source": "participant_spacebar_press",
+    "uncertainty_seconds": 0.0011999999880458745,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.612331791,
+      "uncertainty_seconds": 0.0011999999880458745,
+      "client_sync_t": 630.0864000000358,
+      "round_trip_seconds": 0.002399999976091749,
+      "client_event_t": 631.2497000000477,
+      "mapped_host_event_uptime": 590956.862031791,
+      "server_received_host_uptime": 590956.865753666
+    },
+    "selected_motion": {
+      "motion": "shield_hold",
+      "effort": "high",
+      "source": "participant_selection",
+      "performed_verified": false
+    }
+  },
+  {
+    "capture_t": 338.28621304105036,
+    "label": "non_intended",
+    "source": "participant_spacebar_release",
+    "uncertainty_seconds": 0.0011999999880458745,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.612331791,
+      "uncertainty_seconds": 0.0011999999880458745,
+      "client_sync_t": 630.0864000000358,
+      "round_trip_seconds": 0.002399999976091749,
+      "client_event_t": 631.6436000000239,
+      "mapped_host_event_uptime": 590957.255931791,
+      "server_received_host_uptime": 590957.257774541
+    },
+    "selected_motion": null
+  },
+  {
+    "capture_t": 339.19641304109246,
+    "label": "intended",
+    "source": "participant_spacebar_press",
+    "uncertainty_seconds": 0.0011999999880458745,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.612331791,
+      "uncertainty_seconds": 0.0011999999880458745,
+      "client_sync_t": 630.0864000000358,
+      "round_trip_seconds": 0.002399999976091749,
+      "client_event_t": 632.5538000000715,
+      "mapped_host_event_uptime": 590958.1661317911,
+      "server_received_host_uptime": 590958.168346958
+    },
+    "selected_motion": {
+      "motion": "shield_hold",
+      "effort": "high",
+      "source": "participant_selection",
+      "performed_verified": false
+    }
+  },
+  {
+    "capture_t": 339.351813041023,
+    "label": "non_intended",
+    "source": "participant_spacebar_release",
+    "uncertainty_seconds": 0.0011999999880458745,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.612331791,
+      "uncertainty_seconds": 0.0011999999880458745,
+      "client_sync_t": 630.0864000000358,
+      "round_trip_seconds": 0.002399999976091749,
+      "client_event_t": 632.7092000000476,
+      "mapped_host_event_uptime": 590958.321531791,
+      "server_received_host_uptime": 590958.323027958
+    },
+    "selected_motion": null
+  },
+  {
+    "capture_t": 340.4993130409857,
+    "label": "intended",
+    "source": "participant_spacebar_press",
+    "uncertainty_seconds": 0.0011999999880458745,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.612331791,
+      "uncertainty_seconds": 0.0011999999880458745,
+      "client_sync_t": 630.0864000000358,
+      "round_trip_seconds": 0.002399999976091749,
+      "client_event_t": 633.8567000000477,
+      "mapped_host_event_uptime": 590959.469031791,
+      "server_received_host_uptime": 590959.471633416
+    },
+    "selected_motion": {
+      "motion": "sword_hold",
+      "effort": "low",
+      "source": "participant_selection",
+      "performed_verified": false
+    }
+  },
+  {
+    "capture_t": 394.67991616600193,
+    "label": "non_intended",
+    "source": "participant_spacebar_release",
+    "uncertainty_seconds": 0.0010000000000331966,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.612234916,
+      "uncertainty_seconds": 0.0010000000000331966,
+      "client_sync_t": 660.0833999999761,
+      "round_trip_seconds": 0.002000000000066393,
+      "client_event_t": 688.0373999999762,
+      "mapped_host_event_uptime": 591013.649634916,
+      "server_received_host_uptime": 591013.654350541
+    },
+    "selected_motion": null
+  },
+  {
+    "capture_t": 438.5622535829898,
+    "label": "intended",
+    "source": "participant_spacebar_press",
+    "uncertainty_seconds": 0.0018500000238645953,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.6121723329,
+      "uncertainty_seconds": 0.0018500000238645953,
+      "client_sync_t": 720.4053500000239,
+      "round_trip_seconds": 0.0037000000477291906,
+      "client_event_t": 731.9198000000715,
+      "mapped_host_event_uptime": 591057.531972333,
+      "server_received_host_uptime": 591057.544401166
+    },
+    "selected_motion": {
+      "motion": "sword_hold",
+      "effort": "low",
+      "source": "participant_selection",
+      "performed_verified": false
+    }
+  },
+  {
+    "capture_t": 466.4438114160439,
+    "label": "non_intended",
+    "source": "participant_spacebar_release",
+    "uncertainty_seconds": 0.0008000000119068318,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.612130166,
+      "uncertainty_seconds": 0.0008000000119068318,
+      "client_sync_t": 750.082800000012,
+      "round_trip_seconds": 0.0016000000238136636,
+      "client_event_t": 759.8013999999762,
+      "mapped_host_event_uptime": 591085.413530166,
+      "server_received_host_uptime": 591085.418610333
+    },
+    "selected_motion": null
+  },
+  {
+    "capture_t": 467.931411416037,
+    "label": "intended",
+    "source": "participant_spacebar_press",
+    "uncertainty_seconds": 0.0008000000119068318,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.612130166,
+      "uncertainty_seconds": 0.0008000000119068318,
+      "client_sync_t": 750.082800000012,
+      "round_trip_seconds": 0.0016000000238136636,
+      "client_event_t": 761.289,
+      "mapped_host_event_uptime": 591086.901130166,
+      "server_received_host_uptime": 591086.906029125
+    },
+    "selected_motion": {
+      "motion": "sword_hold",
+      "effort": "medium",
+      "source": "participant_selection",
+      "performed_verified": false
+    }
+  },
+  {
+    "capture_t": 496.58849683299195,
+    "label": "non_intended",
+    "source": "participant_spacebar_release",
+    "uncertainty_seconds": 0.001199999988102718,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.6124155829,
+      "uncertainty_seconds": 0.001199999988102718,
+      "client_sync_t": 780.0815000000596,
+      "round_trip_seconds": 0.002399999976205436,
+      "client_event_t": 789.9458000000715,
+      "mapped_host_event_uptime": 591115.558215583,
+      "server_received_host_uptime": 591115.561391625
+    },
+    "selected_motion": null
+  },
+  {
+    "capture_t": 498.7266968329204,
+    "label": "intended",
+    "source": "participant_spacebar_press",
+    "uncertainty_seconds": 0.001199999988102718,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.6124155829,
+      "uncertainty_seconds": 0.001199999988102718,
+      "client_sync_t": 780.0815000000596,
+      "round_trip_seconds": 0.002399999976205436,
+      "client_event_t": 792.084,
+      "mapped_host_event_uptime": 591117.6964155829,
+      "server_received_host_uptime": 591117.698241333
+    },
+    "selected_motion": {
+      "motion": "sword_hold",
+      "effort": "medium",
+      "source": "participant_selection",
+      "performed_verified": false
+    }
+  },
+  {
+    "capture_t": 504.3190968328854,
+    "label": "non_intended",
+    "source": "participant_spacebar_release",
+    "uncertainty_seconds": 0.001199999988102718,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.6124155829,
+      "uncertainty_seconds": 0.001199999988102718,
+      "client_sync_t": 780.0815000000596,
+      "round_trip_seconds": 0.002399999976205436,
+      "client_event_t": 797.6763999999762,
+      "mapped_host_event_uptime": 591123.2888155829,
+      "server_received_host_uptime": 591123.291077166
+    },
+    "selected_motion": null
+  },
+  {
+    "capture_t": 506.0676968329353,
+    "label": "intended",
+    "source": "participant_spacebar_press",
+    "uncertainty_seconds": 0.001199999988102718,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.6124155829,
+      "uncertainty_seconds": 0.001199999988102718,
+      "client_sync_t": 780.0815000000596,
+      "round_trip_seconds": 0.002399999976205436,
+      "client_event_t": 799.425,
+      "mapped_host_event_uptime": 591125.0374155829,
+      "server_received_host_uptime": 591125.040603916
+    },
+    "selected_motion": {
+      "motion": "sword_hold",
+      "effort": "high",
+      "source": "participant_selection",
+      "performed_verified": false
+    }
+  },
+  {
+    "capture_t": 564.6486968331737,
+    "label": "non_intended",
+    "source": "participant_spacebar_release",
+    "uncertainty_seconds": 0.001099999964253584,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.612115583,
+      "uncertainty_seconds": 0.001099999964253584,
+      "client_sync_t": 840.0834000000358,
+      "round_trip_seconds": 0.002199999928507168,
+      "client_event_t": 858.0063000000715,
+      "mapped_host_event_uptime": 591183.6184155832,
+      "server_received_host_uptime": 591183.624470583
+    },
+    "selected_motion": null
+  },
+  {
+    "capture_t": 567.8747968330281,
+    "label": "intended",
+    "source": "participant_spacebar_press",
+    "uncertainty_seconds": 0.001099999964253584,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.612115583,
+      "uncertainty_seconds": 0.001099999964253584,
+      "client_sync_t": 840.0834000000358,
+      "round_trip_seconds": 0.002199999928507168,
+      "client_event_t": 861.2323999999761,
+      "mapped_host_event_uptime": 591186.844515583,
+      "server_received_host_uptime": 591186.847322625
+    },
+    "selected_motion": {
+      "motion": "sword_hold",
+      "effort": "high",
+      "source": "participant_selection",
+      "performed_verified": false
+    }
+  },
+  {
+    "capture_t": 578.2616740410449,
+    "label": "non_intended",
+    "source": "participant_spacebar_release",
+    "uncertainty_seconds": 0.0006999999880576979,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 590325.612092791,
+      "uncertainty_seconds": 0.0006999999880576979,
+      "client_sync_t": 870.0806999999882,
+      "round_trip_seconds": 0.0013999999761153958,
+      "client_event_t": 871.6193000000716,
+      "mapped_host_event_uptime": 591197.231392791,
+      "server_received_host_uptime": 591197.233094541
+    },
+    "selected_motion": null
+  }
+]
