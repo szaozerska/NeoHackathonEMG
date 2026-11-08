@@ -320,17 +320,26 @@ def test_no_sword_without_a_fist():
     assert match.p1.item == Item.NONE
 
 
-def test_the_sword_rides_out_a_short_drop_in_the_fist_reading_but_not_a_long_one_or_an_open_palm():
+def test_the_sword_stays_out_after_the_fist_until_an_open_palm_replaces_it():
     match = sword_match()
+    match.draw_sword()
+    match.run(3.0, p1_hand=SWORD_DRAWN_HAND, sign=p.Sign.NONE)
+    match.run(1.0, p1_hand=SWORD_DRAWN_HAND, sign=p.Sign.INFINITE_VOID)
+    assert match.p1.item == Item.SWORD
+    match.step(p1_hand=SWORD_DRAWN_HAND, sign=p.Sign.OPEN_PALM)
+    match.step(p1_hand=SWORD_DRAWN_HAND, sign=p.Sign.OPEN_PALM)
+    assert match.p1.item == Item.SHIELD
+
+
+def test_without_a_sticky_sword_it_rides_out_a_short_drop_but_not_a_long_one():
+    match = Match(tuning=Tuning(aim_assist_strength=0.0, sword_sticky=False), p2_position=(0.0, 1.0))
     match.draw_sword()
     match.run(0.3, p1_hand=SWORD_DRAWN_HAND, sign=p.Sign.NONE)
     assert match.p1.item == Item.SWORD
     match.run(0.2, p1_hand=SWORD_DRAWN_HAND, sign=p.Sign.FIST)
-    match.run(0.6, p1_hand=SWORD_DRAWN_HAND, sign=p.Sign.NONE)
+    events = match.run(match.game.tuning.sword_release_grace_s + 2 * DT, p1_hand=SWORD_DRAWN_HAND, sign=p.Sign.NONE)
     assert match.p1.item == Item.NONE
-    match.draw_sword()
-    match.step(p1_hand=SWORD_DRAWN_HAND, sign=p.Sign.OPEN_PALM)
-    assert match.p1.item != Item.SWORD
+    assert [(e.spell, e.state) for e in of_type(events, p.Spell)] == [(Item.SWORD, p.SpellState.SHEATHED)]
 
 
 def test_snap_right_after_drawing_the_sword_replaces_it_with_a_fireball():
@@ -346,12 +355,12 @@ def test_snap_right_after_drawing_the_sword_replaces_it_with_a_fireball():
     ]
 
 
-def test_snap_while_holding_the_sword_for_long_is_ignored():
+def test_snap_replaces_the_sword_however_long_it_has_been_out():
     match = sword_match()
     match.draw_sword()
-    match.run(match.game.tuning.snap_replaces_sword_s + 0.1, p1_hand=SWORD_DRAWN_HAND)
-    assert not of_type(match.step(p1_hand=SWORD_DRAWN_HAND, snap=True), p.Spell)
-    assert match.p1.item == Item.SWORD
+    match.run(5.0, p1_hand=SWORD_DRAWN_HAND, sign=p.Sign.NONE)
+    match.step(p1_hand=SWORD_DRAWN_HAND, snap=True)
+    assert match.p1.item == Item.FIREBALL
 
 
 def test_no_sword_just_after_a_snap():
@@ -365,15 +374,6 @@ def test_no_sword_just_after_a_snap():
     assert match.p1.item == Item.NONE
     match.run(3 * DT, p1_hand=SWORD_DRAWN_HAND)
     assert match.p1.item == Item.SWORD
-
-
-def test_releasing_the_fist_sheathes_the_sword_after_the_grace():
-    match = sword_match()
-    match.draw_sword()
-    events = match.run(match.game.tuning.sword_release_grace_s + 2 * DT, p1_hand=SWORD_DRAWN_HAND, sign=p.Sign.NONE)
-
-    assert match.p1.item == Item.NONE
-    assert [(e.spell, e.state) for e in of_type(events, p.Spell)] == [(Item.SWORD, p.SpellState.SHEATHED)]
 
 
 def test_swing_through_the_opponent_hits_once_with_speed_scaled_damage():
@@ -622,6 +622,18 @@ def test_domain_expansion_cancels_a_held_fireball_and_blocks_snaps():
     match.inputs["P2"].snapped = True
     match.step()
     assert match.game.players["P2"].item == Item.NONE
+
+
+def test_domain_expansion_replaces_the_casters_sword():
+    match = sword_match()
+    match.draw_sword()
+    match.run(1.0, p1_hand=SWORD_DRAWN_HAND, sign=p.Sign.NONE)
+    assert match.p1.item == Item.SWORD
+    match.inputs["P1"].domain_expanded = True
+    events = match.step(p1_hand=SWORD_DRAWN_HAND)
+    assert of_type(events, p.DomainExpansion)
+    assert (Item.SWORD, p.SpellState.SHEATHED) in [(e.spell, e.state) for e in of_type(events, p.Spell)]
+    assert match.p1.item == Item.NONE
 
 
 def test_only_one_domain_runs_at_a_time_and_a_stunned_player_cannot_expand():
