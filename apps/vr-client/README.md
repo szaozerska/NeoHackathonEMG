@@ -82,6 +82,10 @@ The client ignores its own pose when the server echoes it back.
 - On first launch the headset asks for body-tracking permission. Grant it, or no pose packets are sent.
 - **Pairing a Neural Band:** press **B or Y** on either controller (or `p` in the server's monitor) to start pairing mode.
   The status label tells the prompted player to pinch and everyone else whose turn it is, then shows "band paired".
+- **No Guardian boundary:** the app asks the OS to hide the boundary while passthrough is on
+  (`OVRManager.shouldBoundaryVisibilityBeSuppressed`, Boundary Visibility Support in **Configure Quest Project**), so
+  players can move around the whole room. The OS may still ask for a boundary at launch and can refuse to hide it;
+  the boundary size you set doesn't matter then.
 - **Shared room frame (§5.1):** both headsets have to be in one coordinate frame before hits between players mean anything.
   - The anchor host (the first headset to join) should stand on their spot facing the other player when the app starts.
     About 3 s after joining it places a Shared Spatial Anchor there, shares it, and every headset aligns to it.
