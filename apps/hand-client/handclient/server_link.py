@@ -19,7 +19,8 @@ RECONNECT_DELAY_S = 1.0
 
 
 class ServerLink:
-    """Connects as a classifier, learns its player ID once paired, and reconnects (reclaiming that ID) if dropped.
+    """Connects as a classifier, learns its player ID once paired, and reconnects asking for that ID back if dropped;
+    until the server confirms it with `paired`, the link is unpaired and pinches go out to pair again.
 
     Input that arrives while disconnected is dropped: it is real-time and stale by the time a reconnect completes.
     """
@@ -105,6 +106,7 @@ class ServerLink:
                 log.warning("can't reach the game server at %s:%d (%s); retrying", self._host, self._port, exc)
                 await asyncio.sleep(RECONNECT_DELAY_S)
                 continue
+            self.player_id = None
             log.info("connected to the game server at %s:%d, waiting to pair", self._host, self._port)
             return conn
 
