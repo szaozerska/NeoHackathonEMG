@@ -203,3 +203,54 @@ def test_ready_sent_straight_after_setup_counts_and_spectators_ready_is_ignored(
     match.step(game, ["P1", "P3"], DT)
     assert match.phase == p.MatchPhase.COUNTDOWN
     assert match.snapshot().ready == ["P1", p.AI_PLAYER_ID]
+
+
+def test_pause_freezes_the_clock_is_limited_per_fighter_and_resumes_after_a_countdown():
+    game, match = setup_versus()
+    start(game, match)
+    left = match.time_left
+    match.pause("P1", True)
+    assert match.paused and not match.can_cast("P1") and not match.can_cast("P2")
+    run(game, match, 5.0)
+    assert match.time_left == left
+    match.pause("P2", False)
+    run(game, match, match.rules.resume_countdown_s - DT)
+    assert match.paused
+    run(game, match, 2 * DT)
+    assert not match.paused and match.can_cast("P2")
+    match.pause("P1", True)
+    match.pause("P1", False)
+    run(game, match, match.rules.resume_countdown_s + DT)
+    match.pause("P1", True)
+    assert not match.paused
+    assert match.snapshot().pauses_left == [0, 2]
+
+
+def test_a_pause_runs_out_by_itself():
+    game, match = setup_versus()
+    start(game, match)
+    match.pause("P2", True)
+    run(game, match, match.rules.max_pause_s + match.rules.resume_countdown_s + 2 * DT)
+    assert not match.paused and match.phase == p.MatchPhase.PLAYING
+
+
+def test_restart_needs_every_fighter_and_starts_a_fresh_countdown():
+    game, match = setup_versus()
+    start(game, match)
+    game.players["P2"].hp = 10.0
+    run(game, match, 5.0)
+    match.vote_restart("P1", game)
+    assert match.phase == p.MatchPhase.PLAYING and match.snapshot().restart_votes == ["P1"]
+    match.vote_restart("P2", game)
+    assert match.phase == p.MatchPhase.COUNTDOWN
+    assert game.players["P2"].hp == game.tuning.max_hp and match.time_left == match.duration_s
+    assert match.snapshot().restart_votes == []
+
+
+def test_solo_restart_is_immediate():
+    game, match = GameState(), Match()
+    game.add_player("P1")
+    match.setup("P1", p.MatchMode.SOLO, 60.0)
+    start(game, match, ["P1"])
+    match.vote_restart("P1", game)
+    assert match.phase == p.MatchPhase.COUNTDOWN
