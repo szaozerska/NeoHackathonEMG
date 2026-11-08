@@ -82,6 +82,7 @@ namespace SpellGame.Game
         private bool _seenControls;
 
         private const string MenuThemePref = "SpellGame.MenuTheme";
+        private const string MenuThemeVersionPref = "SpellGame.MenuThemeVersion";
         private UiTheme[] _menuThemes;
         private string[] _menuThemeNames;
         private int _paletteStart;
@@ -155,7 +156,7 @@ namespace SpellGame.Game
         }
 
         /// <summary>
-        /// The menu style picked in Settings last time. Default Midnight (plain black) when its theme asset exists, then the
+        /// The menu style picked in Settings last time. Default Amethyst (purple), then Midnight (plain black) when that theme asset exists, then the
         /// crystal theme asset's own palette (Smoky Opal) and its other <see cref="UiPalette.Presets"/>.
         /// </summary>
         private void LoadMenuColours()
@@ -164,14 +165,23 @@ namespace SpellGame.Game
             if (baseTheme == null)
                 return;
             var midnight = UiTheme.Load(UiTheme.MidnightResourceName);
-            _paletteStart = midnight != null ? 1 : 0;
-            _menuThemeNames = (midnight != null ? new[] { midnight.DisplayName } : Array.Empty<string>())
+            var minimal = midnight != null
+                ? new[] { midnight.WithPalette("Amethyst", UiPalette.Amethyst), midnight }
+                : Array.Empty<UiTheme>();
+            _paletteStart = minimal.Length;
+            _menuThemeNames = minimal.Select(theme => theme.DisplayName)
                 .Concat(UiPalette.Presets.Select(preset => preset.Name)).ToArray();
             _menuThemes = new UiTheme[_menuThemeNames.Length];
-            if (midnight != null)
-                _menuThemes[0] = midnight;
+            for (var i = 0; i < minimal.Length; i++)
+                _menuThemes[i] = minimal[i];
             _menuThemes[_paletteStart] = baseTheme;
             _menuColours = Mathf.Max(0, Array.IndexOf(_menuThemeNames, PlayerPrefs.GetString(MenuThemePref, _menuThemeNames[0])));
+            // Amethyst became the default after Midnight; a saved Midnight from before is treated as unset.
+            if (PlayerPrefs.GetInt(MenuThemeVersionPref, 0) < 2)
+            {
+                _menuColours = 0;
+                PlayerPrefs.SetInt(MenuThemeVersionPref, 2);
+            }
             UiStyle.Theme = MenuTheme(_menuColours);
         }
 

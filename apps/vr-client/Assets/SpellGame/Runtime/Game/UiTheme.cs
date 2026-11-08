@@ -58,6 +58,27 @@ namespace SpellGame.Game
             Confetti = new[] { Color.white, Rgba(200, 200, 200, 1f), Rgba(120, 120, 120, 1f) },
         };
 
+        /// <summary>
+        /// "Amethyst" (default menu style): half-transparent deep purple-black with a lavender hairline and white text.
+        /// On minimal themes the facet colours shade buttons from lighter violet (top right) to near-black (bottom left).
+        /// </summary>
+        public static UiPalette Amethyst
+        {
+            get
+            {
+                var p = Midnight;
+                p.Fill = Rgba(30, 25, 62, 0.7f);
+                p.FacetLight = Rgba(76, 60, 150, 0.85f);
+                p.FacetDark = Rgba(24, 20, 50, 0.65f);
+                p.Rim = Rgba(214, 200, 255, 0.45f);
+                p.Ink = Rgba(12, 10, 28, 1f);
+                p.TextDim = Rgba(214, 206, 240, 1f);
+                p.Accent = Rgba(153, 99, 246, 1f);
+                p.Confetti = new[] { Color.white, Rgba(153, 99, 246, 1f), Rgba(214, 200, 255, 1f) };
+                return p;
+            }
+        }
+
         /// <summary>Warm amber glass.</summary>
         public static UiPalette EmberGlass
         {
