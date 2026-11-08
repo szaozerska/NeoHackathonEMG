@@ -805,7 +805,7 @@ MonoBehaviour:
   debugSkeletons: {fileID: 849742212}
   statusLabel: {fileID: 2015826540}
   manualServerHost: 
-  manualServerPort: 9000
+  manualServerPort: 9100
   discoveryPort: 47777
   poseSendRateHz: 30
 --- !u!114 &1862704755

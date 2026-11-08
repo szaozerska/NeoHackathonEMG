@@ -2,7 +2,7 @@
 
 The game server from [architecture.md](../../architecture.md) §2.3. Python 3.11+ and `asyncio`.
 
-- TCP on 9000: `hello` handshake, pairing mode for bands (§5), the shared room frame (§5.1: anchor host, `space`, `aligned`), and a 30 Hz tick that broadcasts `pose`, `state` and events.
+- TCP on 9100: `hello` handshake, pairing mode for bands (§5), the shared room frame (§5.1: anchor host, `space`, `aligned`), and a 30 Hz tick that broadcasts `pose`, `state` and events.
 - A paired band's `gesture` messages (its built-in decoded taps, swipes and pinches) are relayed straight to every headset.
 - UDP discovery beacon `SPELLGAME <port>` on 47777 (§4.1).
 - Game logic in `spellgame/game_state.py`, a pure `GameState.step(inputs, dt)` with no networking. Fireball is implemented (§9); sword and shield are next.
