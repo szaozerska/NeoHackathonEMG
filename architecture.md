@@ -179,6 +179,17 @@ Both headsets share one physical room, so every pose, projectile and hit has to 
 - **Re-anchoring:** press `a` in the server monitor, or have any client send `space_reset`. This drops the anchor, makes a new group UUID, clears every aligned flag and announces a fresh `space`. Use it after a headset lost tracking or the anchor drifted.
 - `state.players[].aligned` shows each headset whether the others are aligned. Until both players are aligned, their poses aren't comparable, and fireball and sword hits between them are meaningless.
 
+### 5.2 Match flow
+
+The server owns the match; every `state` carries it as `match`.
+
+- **Phases:** `lobby` → `match_setup` → `ready` → every fighter sent `ready` → `countdown` (3 s) → `playing` → `ended` → `rematch` (back to `ready`) or `match_quit` (back to `lobby`).
+- **Modes:** `solo` pairs the headset that set the match up with the AI opponent (player ID `AI`, always ready). `versus` takes the first two connected headsets in join order; anyone else watches.
+- **Length:** `duration_s`, 60/120/300 s from the menu (the server clamps to 10–600 s).
+- **Rules:** a KO ends the match at once. At time-out the higher HP wins; a tie goes to sudden death (`time_left` stays 0, next hit wins). A fighter's headset disconnecting ends it for the other (`reason: disconnect`), and `match_quit` from either fighter ends it with no winner (`reason: quit`, `ended_by`).
+- **Spells:** in `lobby` and `ready` they're free practice, and a defeated player respawns at full HP. When the countdown starts the fighters' HP, items and cooldowns reset and projectiles clear. Nobody can cast during the countdown or on the results screen, and spectators can't cast while a match is playing.
+- **AI opponent** (`spellgame/ai.py`): exists from `ready` to the end of a solo match. It stands 2.5 m in front of its target, strafes, throws a fireball every 2–3 s with a little aim error, and sometimes raises its shield against an incoming one. Its poses go through the same pipeline as a headset's (broadcast as `pose` with `player_id: AI`), so every spell view renders it.
+
 ## 6. Message types (default schema)
 
 | Type | Direction | Fields |
@@ -195,10 +206,13 @@ Both headsets share one physical room, so every pose, projectile and hit has to 
 | `sign` | classifier → server | `player_id`, `t`, `hand` (`left`/`right`, the hand wearing the band), `sign` (`fist`, `open_palm`, `snap` or `none`), `confidence`. `snap` is momentary: the server acts on the transition into it |
 | `wrist` *(optional)* | classifier → server | `player_id`, `t`, `hand`, `rot:[w,x,y,z]` |
 | `spell` | server → VR | `caster_id`, `spell`, `state` (`charging`/`cast`/`cancelled`/`sheathed`), `charge` (0–1), `origin`, `direction`. Lifecycle events; continuous state is in `state`. Fireball: `charging` on snap, `cast` on throw, `cancelled` on fizzle. Sword: `cast` on draw, `sheathed` on release |
-| `state` | server → VR, every tick | `tick`, `players[{player_id, hp, connected, band_paired, sign, item, band_hand, cooldown, shield_boost, aligned}]` (`aligned`: the headset reported it is in the shared room frame, §5.1; `cooldown`: seconds until the player can conjure again; `shield_boost`: 0–1 push power, a sword contact at ≥ 0.3 is a parry), `projectiles[{id, kind, owner_id, pos, vel}]` |
+| `state` | server → VR, every tick | `tick`, `players[{player_id, hp, connected, band_paired, sign, item, band_hand, cooldown, shield_boost, aligned}]` (`aligned`: the headset reported it is in the shared room frame, §5.1; `cooldown`: seconds until the player can conjure again; `shield_boost`: 0–1 push power, a sword contact at ≥ 0.3 is a parry), `projectiles[{id, kind, owner_id, pos, vel}]`, `match{phase, mode, duration_s, time_left, countdown, fighters, ready, sudden_death, winner, reason, ended_by, ai_id}` (§5.2) |
+| `match_setup` | VR → server | `mode` (`solo` vs the AI, or `versus`), `duration_s` (the menu offers 60, 120, 300): set up the next match and wait for ready (§5.2) |
+| `ready` | VR → server | `ready` (bool), on the ready screen |
+| `match_quit` / `rematch` | VR → server | `match_quit` ends a running match early, or leaves the ready or results screen for the lobby; `rematch` on the results screen goes back to ready with the same settings |
 | `impact` | server → VR | `projectile_id` (0 for sword contacts), `kind`, `owner_id`, `pos`, `reason` (`hit`/`blocked`/`expired` for fireballs; `blocked`/`parried` for swords), `target_id` (player hit or shielding) |
 | `damage` | server → VR | `target_id`, `source_id`, `amount`, `hp_after`, `kind` (`fireball`/`sword`), `pos` (where the hit landed) |
-| `haptic` | server → one player's classifier | `duration_ms` (1–2000). The hand-sign client forwards it to Kinesis's `POST /haptics`, which buzzes that player's band once. Sent on spell `charging` (40 ms) and `cast` (120 ms) to the caster, and on `damage` to the target (300 ms) and the source (60 ms); durations live in `spellgame/haptics.py` |
+| `haptic` | server → one player's classifier | `duration_ms` (1–2000). The hand-sign client forwards it to Kinesis's `POST /haptics`, which buzzes that player's band once. Sent on spell `charging` (40 ms) and `cast` (120 ms) to the caster, on `damage` to the target (300 ms) and the source (60 ms), and to both fighters when a match starts (250 ms) and ends (500 ms); durations live in `spellgame/haptics.py` |
 
 Timestamps (`t`) are sender-local and used only for ordering within one stream. Never compare the band's clock, a Mac clock, and the Quest clock directly.
 

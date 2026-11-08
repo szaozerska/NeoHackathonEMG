@@ -322,3 +322,39 @@ def test_first_headset_hosts_the_anchor_and_both_report_aligned_to_it():
             await server.stop()
 
     run(scenario())
+
+
+def test_solo_match_with_the_ai_counts_down_plays_and_quits_back_to_the_lobby():
+    def phase_is(phase):
+        return lambda m: isinstance(m, p.State) and m.match is not None and m.match.phase == phase
+
+    async def scenario():
+        server = GameServer(host="127.0.0.1", port=0, beacon_address=None)
+        await server.start()
+        try:
+            vr = await Connection.open("127.0.0.1", server.port)
+            await vr.handshake(p.Role.VR)
+            vr.send(standing_pose("P1", 0.0))
+            vr.send(p.MatchSetup(mode=p.MatchMode.SOLO, duration_s=60.0))
+            ready = await until(vr, phase_is(p.MatchPhase.READY))
+            assert ready.match.fighters == ["P1", p.AI_PLAYER_ID]
+            assert ready.match.ready == [p.AI_PLAYER_ID]
+            assert p.AI_PLAYER_ID in {player.player_id for player in ready.players}
+            await until(vr, lambda m: isinstance(m, p.Pose) and m.player_id == p.AI_PLAYER_ID)
+
+            vr.send(p.Ready(ready=True))
+            await until(vr, phase_is(p.MatchPhase.COUNTDOWN))
+            playing = await until(vr, phase_is(p.MatchPhase.PLAYING), timeout=5.0)
+            assert playing.match.time_left <= 60.0
+
+            vr.send(p.MatchQuit())
+            ended = await until(vr, phase_is(p.MatchPhase.ENDED))
+            assert (ended.match.reason, ended.match.ended_by) == (p.MatchEndReason.QUIT, "P1")
+            vr.send(p.MatchQuit())
+            lobby = await until(vr, phase_is(p.MatchPhase.LOBBY))
+            assert p.AI_PLAYER_ID not in {player.player_id for player in lobby.players}
+            await vr.close()
+        finally:
+            await server.stop()
+
+    run(scenario())

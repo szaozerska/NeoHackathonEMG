@@ -385,6 +385,96 @@ class ProjectileSnapshot:
         return {f.name: getattr(self, f.name) for f in fields(self)}
 
 
+class MatchPhase:
+    """Server-owned match flow (architecture.md §5.2): `lobby` → `ready` → `countdown` → `playing` → `ended`."""
+
+    LOBBY = "lobby"
+    """Menus; spells work as free practice and a defeated player respawns."""
+    READY = "ready"
+    """A match is set up; waiting for every fighter's `ready`."""
+    COUNTDOWN = "countdown"
+    PLAYING = "playing"
+    ENDED = "ended"
+    """Results; `rematch` goes back to `ready`, `match_quit` to the lobby."""
+
+
+class MatchMode:
+    SOLO = "solo"
+    """One headset against the server's AI opponent."""
+    VERSUS = "versus"
+    """The first two connected headsets against each other."""
+
+
+class MatchEndReason:
+    KO = "ko"
+    TIME = "time"
+    QUIT = "quit"
+    DISCONNECT = "disconnect"
+
+
+MATCH_DURATIONS_S = (60.0, 120.0, 300.0)
+"""The durations the headset menu offers; the server accepts any length within `MatchRules`."""
+AI_PLAYER_ID = "AI"
+
+
+@dataclass
+class MatchSetup(Message):
+    """VR → server, in the lobby or while waiting for ready: choose the mode and length of the next match."""
+
+    TYPE: ClassVar[str] = "match_setup"
+    mode: str
+    duration_s: float = 60.0
+
+
+@dataclass
+class Ready(Message):
+    """VR → server, while the match is `ready`: this fighter is (or is no longer) ready to start."""
+
+    TYPE: ClassVar[str] = "ready"
+    ready: bool = True
+
+
+@dataclass
+class MatchQuit(Message):
+    """VR → server: end the running match early, or leave the ready or results screen for the lobby."""
+
+    TYPE: ClassVar[str] = "match_quit"
+
+
+@dataclass
+class Rematch(Message):
+    """VR → server, on the results screen: same mode and length again, back to waiting for ready."""
+
+    TYPE: ClassVar[str] = "rematch"
+
+
+@dataclass
+class MatchSnapshot:
+    phase: str = MatchPhase.LOBBY
+    mode: str | None = None
+    duration_s: float = 0.0
+    time_left: float = 0.0
+    """Seconds of play left; stays at the full duration until `playing`, and at 0 during sudden death."""
+    countdown: float = 0.0
+    """Seconds until `playing`, during `countdown`."""
+    fighters: list[str] = field(default_factory=list)
+    """The players in the match; other headsets watch."""
+    ready: list[str] = field(default_factory=list)
+    sudden_death: bool = False
+    """Time ran out on equal HP: the next hit wins."""
+    winner: str | None = None
+    """Set when `ended`; None for a draw or a quit."""
+    reason: str | None = None
+    """A `MatchEndReason`, when `ended`."""
+    ended_by: str | None = None
+    """Who sent `match_quit`, for a quit."""
+    ai_id: str | None = None
+    """The AI opponent's player ID in a solo match; its poses arrive like any other player's."""
+
+    def to_dict(self) -> dict[str, Any]:
+        return {f.name: _to_json(getattr(self, f.name)) for f in fields(self)}
+
+
 @dataclass
 class State(Message):
     """Full game state, broadcast every server tick."""
@@ -393,13 +483,16 @@ class State(Message):
     tick: int
     players: list[PlayerSnapshot] = field(default_factory=list)
     projectiles: list[ProjectileSnapshot] = field(default_factory=list)
+    match: MatchSnapshot | None = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> State:
+        match = data.get("match")
         return cls(
             tick=int(data["tick"]),
             players=[PlayerSnapshot(**player) for player in data.get("players", [])],
             projectiles=[ProjectileSnapshot(**projectile) for projectile in data.get("projectiles", [])],
+            match=MatchSnapshot(**match) if match is not None else None,
         )
 
 

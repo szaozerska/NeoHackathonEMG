@@ -31,13 +31,14 @@ Without a headset or a band, the fake clients stand in for them (each finds the 
 uv run python -m spellgame.tools.fake_vr --position 0,0 --facing 0 --throw-every 2   # P1, throws every 2 s
 uv run python -m spellgame.tools.fake_vr --position 0,3 --facing 180                 # P2, stands 3 m away
 uv run python -m spellgame.tools.fake_band --pinch-on-prompt --snap-every 2          # a band, snaps every 2 s
+uv run python -m spellgame.tools.fake_vr --match solo --duration 60                  # a 1-minute match vs the AI
 ```
 
 Bands connect unpaired. Press `p` in the server's monitor (or have any client send `pair_start`) to start pairing mode:
 the server prompts each headset without a band in join order, and the next band to pinch pairs with the prompted player.
 The monitor shows who is being prompted. `--pinch-on-prompt` makes `fake_band` pinch on every prompt until it's
 paired. Without `--snap-every`, `fake_band` reads gestures from stdin: `s` snap, `f` fist, `p` open palm, `n` none,
-`i` pinch. `fake_vr` prints the `spell`, `damage` and `impact` events it receives. It also plays its part in §5.1: as anchor host it shares a made-up anchor, then reports itself aligned (`--align floor_spots` uses the fallback, `--align none` never aligns).
+`i` pinch. `fake_vr` prints the `spell`, `damage` and `impact` events it receives. It also plays its part in §5.1: as anchor host it shares a made-up anchor, then reports itself aligned (`--align floor_spots` uses the fallback, `--align none` never aligns). `--match solo|versus` sets up a match (§5.2) and readies up for it, `--duration` sets its length, and `fake_vr` logs each match phase change.
 
 ## Test
 
@@ -55,6 +56,8 @@ spellgame/
   shared_space.py shared room frame (§5.1): anchor host, current anchor, floor spots, who is aligned
   discovery.py    UDP beacon + client-side find_server() / discover_servers()
   game_state.py   simulation: gesture state machines, projectiles, hits, damage; Tuning constants
+  match.py        match flow (§5.2): phases, ready, countdown, timer, KO / time-out / sudden death
+  ai.py           AI opponent for solo matches: scripted poses and signs
   geometry.py     segment distance, body facing, quaternion rotation (Unity frame)
   sim.py          synthetic poses and throw motion for fake clients and tests
   client.py       client connection helpers
