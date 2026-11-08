@@ -5,8 +5,8 @@ using UnityEngine;
 namespace SpellGame.Game
 {
     /// <summary>
-    /// Prompts for the band's grip calibration (hand-client <c>tension.py</c>): "Relax your band hand", then "Squeeze as
-    /// hard as is comfortable", with a progress row, then a short confirmation. It's placed in the room a metre ahead,
+    /// Prompts for the band's grip calibration (hand-client <c>tension.py</c>): "Relax your band hand", then a comfortably
+    /// firm fist, then a comfortably firm shield hand (each read as 70% strength), with a progress row, then a short confirmation. It's placed in the room a metre ahead,
     /// just below eye level, when each step starts (not head-locked). It only shows the local player's calibration.
     /// <see cref="Recalibrate"/> asks the band to run it again (e.g. from a menu button).
     /// </summary>
@@ -53,7 +53,10 @@ namespace SpellGame.Game
                     _label.text = $"Relax your band hand\n<size=60%>{Dots(status.Progress)}</size>";
                     break;
                 case CalibrationPhase.Squeeze:
-                    _label.text = $"Squeeze as hard as is comfortable\n<size=60%>{Dots(status.Progress)}</size>";
+                    _label.text = $"Make a fist, comfortably firm\n<size=60%>{Dots(status.Progress)}</size>";
+                    break;
+                case CalibrationPhase.Palm:
+                    _label.text = $"Shield hand: palm out, comfortably firm\n<size=60%>{Dots(status.Progress)}</size>";
                     break;
                 case CalibrationPhase.Done:
                     _label.text = "Grip calibrated!";

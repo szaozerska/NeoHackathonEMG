@@ -61,12 +61,20 @@ class Tuning:
     sword_full_damage_tip_speed: float = 8.0
     sword_min_damage: float = 6.0
     sword_max_damage: float = 15.0
-    # Grip tension (PLACEHOLDER: retune once the band's real tension data is known). Tension shapes a hit rather than
-    # deciding it: damage × 0.85–1.15 and the shield fades up to 15% slower, with no extra gain past `tension_full_at`
-    # of a player's own calibrated range so nobody has to strain.
+    # Grip tension: 0 relaxed, 0.7 = the comfortably firm clench the player calibrated, up to 1.2 squeezing harder.
+    # Fireball: overall tension at release, damage × 0.85–1.15, no extra gain past `tension_full_at`.
     tension_min_multiplier: float = 0.85
     tension_max_multiplier: float = 1.15
-    tension_full_at: float = 0.8
+    tension_full_at: float = 0.9
+    # Sword: fist tension scales damage linearly (× 0.7 relaxed, ~1.1 at the calibrated clench, 1.3 from
+    # `sword_tension_full_at`) and sharpens the hit grade the same way.
+    sword_tension_min_multiplier: float = 0.7
+    sword_tension_max_multiplier: float = 1.3
+    sword_tension_full_at: float = 1.0
+    # Shield: shield-hand tension caps the share a raised shield can block, from `shield_min_block` with a relaxed
+    # hand to all of it from `shield_full_block_tension` (the calibrated clench) up. The usual fade still applies.
+    shield_min_block: float = 0.5
+    shield_full_block_tension: float = 0.7
     sword_rehit_s: float = 0.5
     """A swing hits each target at most once in this window, so one pass isn't counted every tick."""
 
@@ -110,7 +118,11 @@ class PlayerInput:
     connected: bool = True
     aligned: bool = False
     tension: float | None = None
-    """Calibrated grip tension 0–1 from the band, or None (uncalibrated / no data → neutral strength)."""
+    """Calibrated grip tension (0 relaxed, 0.7 comfortable clench) from the band, or None (uncalibrated → neutral)."""
+    fist_tension: float | None = None
+    """The same against the fist calibration alone (sword)."""
+    palm_tension: float | None = None
+    """The same against the shield-hand calibration alone (shield)."""
 
 
 class Item:
@@ -168,6 +180,8 @@ class PlayerState:
     item: str = Item.NONE
     item_since: float = 0.0
     tension: float | None = None
+    fist_tension: float | None = None
+    palm_tension: float | None = None
     cooldown_until: float = 0.0
     held_fireball_velocity: np.ndarray = field(default_factory=lambda: np.zeros(3))
     """The held fireball lags the hand by `Tuning.fireball_inertia_s`; this is its velocity."""
@@ -285,6 +299,8 @@ class GameState:
         player.aligned = player_input.aligned
         player.sign = player_input.sign
         player.tension = player_input.tension
+        player.fist_tension = player_input.fist_tension
+        player.palm_tension = player_input.palm_tension
         player.band_hand = player_input.hand if player_input.hand in player.hands else p.Hand.RIGHT
         stunned = self.time < player.stunned_until
         if stunned:
@@ -517,7 +533,7 @@ class GameState:
                     return events
                 if fast and rehit_ready:
                     player.sword_hits[target.player_id] = self.time
-                    damage = round(self._sword_damage(tip_speed) * self._tension_multiplier(player), 1)
+                    damage = round(self._sword_damage(tip_speed) * self._sword_tension_multiplier(player), 1)
                     events.extend(self._shield_leak(target, player.player_id, damage, Item.SWORD, shield_contact))
                     block = self._sword_impact(player, shield_contact, "blocked", target.player_id)
                     block.grade = self._block_grade(target)
@@ -529,9 +545,10 @@ class GameState:
             if body is None:
                 continue
             player.sword_hits[target.player_id] = self.time
-            damage = round(self._sword_damage(tip_speed) * self._tension_multiplier(player), 1)
+            sharpness = self._sword_tension_multiplier(player)
+            damage = round(self._sword_damage(tip_speed) * sharpness, 1)
             hit_event = self._damage(target, player.player_id, damage, Item.SWORD, body.pos, body.zone)
-            hit_event.grade = self._sword_grade(tip_speed, body.zone)
+            hit_event.grade = self._sword_grade(tip_speed, body.zone, sharpness)
             events.append(hit_event)
         return events
 
@@ -553,12 +570,14 @@ class GameState:
         centred = float(np.clip(1.0 - offset / 0.35, 0.0, 1.0))
         return self._grade(0.5 * speed + 0.5 * centred)
 
-    def _sword_grade(self, tip_speed: float, zone: str) -> str:
+    def _sword_grade(self, tip_speed: float, zone: str, sharpness: float = 1.0) -> str:
+        """Faster swings grade higher; a firm fist (`sharpness` above 1) lifts the grade, a slack one lowers it."""
         if zone == p.Zone.HEAD:
             return p.Grade.PERFECT
         tuning = self.tuning
         speed_range = tuning.sword_full_damage_tip_speed - tuning.sword_min_tip_speed
-        return self._grade(float(np.clip((tip_speed - tuning.sword_min_tip_speed) / speed_range, 0.0, 1.0)))
+        speed = float(np.clip((tip_speed - tuning.sword_min_tip_speed) / speed_range, 0.0, 1.0))
+        return self._grade(float(np.clip(speed * sharpness, 0.0, 1.0)))
 
     def _block_grade(self, shielder: PlayerState) -> str:
         """Late, last-moment blocks score higher than a shield held up all along."""
@@ -605,10 +624,25 @@ class GameState:
         eased = 1.0 - (1.0 - effort) ** 2
         return tuning.tension_min_multiplier + (tuning.tension_max_multiplier - tuning.tension_min_multiplier) * eased
 
+    def _sword_tension_multiplier(self, player: PlayerState) -> float:
+        """1 without calibrated fist tension; otherwise linear from min (relaxed) to max at `sword_tension_full_at`."""
+        tuning = self.tuning
+        if player.fist_tension is None:
+            return 1.0
+        effort = float(np.clip(player.fist_tension / tuning.sword_tension_full_at, 0.0, 1.0))
+        return (
+            tuning.sword_tension_min_multiplier
+            + (tuning.sword_tension_max_multiplier - tuning.sword_tension_min_multiplier) * effort
+        )
+
     def _shield_block_fraction(self, shielder: PlayerState) -> float:
-        """`_base_shield_block_fraction`, with a harder grip slowing the fade (a weaker one speeding it up)."""
+        """`_base_shield_block_fraction`, capped by how firmly the shield hand is held (no cap without calibration)."""
+        tuning = self.tuning
         base = self._base_shield_block_fraction(shielder)
-        return float(np.clip(1.0 - (1.0 - base) / self._tension_multiplier(shielder), 0.0, 1.0))
+        if shielder.palm_tension is None:
+            return base
+        firmness = float(np.clip(shielder.palm_tension / tuning.shield_full_block_tension, 0.0, 1.0))
+        return base * (tuning.shield_min_block + (1.0 - tuning.shield_min_block) * firmness)
 
     def _base_shield_block_fraction(self, shielder: PlayerState) -> float:
         """Share of damage the raised shield blocks: 1 while fresh, then a logistic fade to 0 over `shield_fade_s`."""

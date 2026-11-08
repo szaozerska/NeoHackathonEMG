@@ -24,6 +24,8 @@ log = logging.getLogger(__name__)
 HELLO_TIMEOUT_S = 10.0
 MAX_WRITE_BUFFER = 1 << 20
 RECENT_PACKETS_KEPT = 50
+MAX_TENSION = 1.2
+"""The hand-client caps tension here (`handclient.tension.MAX_VALUE`); 0.7 is the calibrated comfortable clench."""
 
 
 @dataclass(frozen=True)
@@ -299,7 +301,9 @@ class GameServer:
             slot.input.sign = message.sign
             slot.input.hand = message.hand
         elif conn is slot.classifier and isinstance(message, p.Tension):
-            slot.input.tension = min(1.0, max(0.0, message.value)) if message.calibrated else None
+            slot.input.tension = _tension(message.value, message.calibrated)
+            slot.input.fist_tension = _tension(message.fist, message.calibrated)
+            slot.input.palm_tension = _tension(message.palm, message.calibrated)
         elif conn is slot.classifier and isinstance(message, p.CalibrationStatus):
             message.player_id = slot.player_id
             self._broadcast([message])
@@ -448,3 +452,7 @@ class GameServer:
 
 def _host(peer: object) -> object:
     return peer[0] if isinstance(peer, tuple) else peer
+
+
+def _tension(value: float | None, calibrated: bool) -> float | None:
+    return min(MAX_TENSION, max(0.0, value)) if calibrated and value is not None else None

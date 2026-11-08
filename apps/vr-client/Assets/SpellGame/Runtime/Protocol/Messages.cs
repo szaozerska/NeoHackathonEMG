@@ -314,6 +314,7 @@ namespace SpellGame.Protocol
     {
         public const string Rest = "rest";
         public const string Squeeze = "squeeze";
+        public const string Palm = "palm";
         public const string Done = "done";
         public const string Failed = "failed";
     }
