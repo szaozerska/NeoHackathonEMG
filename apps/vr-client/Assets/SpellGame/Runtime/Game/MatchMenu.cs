@@ -390,6 +390,8 @@ namespace SpellGame.Game
                     lines.Add("\n<b>CALIBRATE THE ROOM</b>\n" +
                               "Look down at the QR marker in the middle of the room\n" +
                               "and keep it in view until this says calibrated.\n" +
+                              "No marker? Meet in the middle, touch right controller tips\n" +
+                              "(each pointing at the other) and click the LEFT thumbstick.\n" +
                               "The match can't start until both players are calibrated.");
                 else
                     lines.Add("\n<b>CALIBRATE THE ROOM</b> (both players)\n" +
@@ -444,6 +446,7 @@ namespace SpellGame.Game
                 "Dodge! Fireballs fly straight, so step out of the way.",
                 "Band: B / Y to pair",
                 "Room: after I'm ready, look at the QR marker in the middle of the room",
+                "No marker: touch right controller tips in the middle, click left stick",
                 "Menu button: end a match, or bring this panel back");
         }
 
