@@ -8,16 +8,16 @@
  }
  async function sync(){
   const samples=[];
-  for(let i=0;i<5;i++){const start=performance.now()/1000,response=await fetch('/api/clock',{cache:'no-store'}),clock=await response.json(),end=performance.now()/1000;samples.push({host_offset_seconds:clock.host_uptime-(start+end)/2,uncertainty_seconds:(end-start)/2})}
-  alignment=samples.sort((a,b)=>a.uncertainty_seconds-b.uncertainty_seconds)[0];
+  for(let i=0;i<5;i++){const start=performance.now()/1000,response=await fetch('/api/clock',{cache:'no-store'}),clock=await response.json(),end=performance.now()/1000;samples.push({host_offset_seconds:clock.host_uptime-(start+end)/2,uncertainty_seconds:(end-start)/2,client_sync_t:(start+end)/2,round_trip_seconds:end-start})}
+  alignment=samples.sort((a,b)=>a.uncertainty_seconds-b.uncertainty_seconds)[0];if(ownSession())await api('collection/clock-sync',{alignment});
  }
  function ownSession(){return !!live?.collection&&live?.recording_profile==='micah_emg'}
  function render(){
   if(!live)return;
-  const active=ownSession(),intended=live.collection?.annotation?.label==='intended',motion=live.collection?.selected_motion;
+  const active=ownSession(),motionReady=live.band_context?.gyro?.age_seconds<1.5&&live.band_context?.orientation?.age_seconds<1.5&&!!live.sensor_timing?.forearm&&!!live.sensor_timing?.delivered_sensor_hz?.gyro&&!!live.sensor_timing?.delivered_sensor_hz?.orientation,intended=pending>0?spaceHeld:live.collection?.annotation?.label==='intended',motion=live.collection?.selected_motion;
   $('signal').dataset.live=String(!!live.connected);$('signal').textContent=live.connected?'EMG connected · 8 channels · 2,048 Hz nominal':'Waiting for fresh EMG from Kinesis';
   $('setup').hidden=active;$('recording').hidden=!active;
-  $('start').disabled=busy||!live.connected||!!live.recording?.active;$('connect').disabled=busy||!!live.recording?.active;
+  $('start').disabled=busy||!live.connected||!motionReady||!!live.recording?.active;$('connect').disabled=busy||!!live.recording?.active;
   $('stop').disabled=busy||pending>0||spaceHeld;
   $('intent').className=intended?'intended':'';$('intentTitle').textContent=intended?'Intended · GREEN':'Non-intended · RED';
   $('intentInstruction').textContent=intended?'Perform the selected motion while holding Space. Release when finished.':'Rest or move naturally. Hold Space when ready for the selected action.';
@@ -28,11 +28,11 @@
   }
   $('selectedMotion').textContent=motion?'Next motion: '+motion.motion.replace('_',' ')+(motion.effort?' · '+motion.effort+' relative effort':''):'Select a motion before holding Space.';
   if(active){
-   const remaining=live.collection.annotation.labeling_paused_seconds;
-   $('guardState').textContent=!live.connected?'Signal gap: this missing period will not be labeled.':remaining>0?'Keyboard / mouse guard · '+remaining.toFixed(1)+' s remaining':'Label interval active';
+   $('guardState').textContent=!live.connected?'No fresh EMG · missing data is flagged separately.':intended?'Intended active now · cleanup deferred':'Non-intended baseline active · cleanup deferred';
    $('elapsed').textContent=live.recording.duration.toFixed(1)+' seconds recorded';$('markers').textContent=Math.max(0,live.collection.annotation.markers-1)+' key boundaries';$('path').textContent='Saving locally: '+live.recording.path;
   }
-  $('source').textContent=live.input_kind==='stream'?'Using Kinesis live feed; this capture retains EMG only.':'Following Kinesis recording: '+live.band_file;
+  const timing=live.sensor_timing||{},hz=timing.delivered_sensor_hz||{},hostHz=timing.host_delivery_hz||{},pose=timing.forearm;const number=(v,d=1)=>typeof v==='number'&&Number.isFinite(v)?v.toFixed(d):'unavailable';$('timing').textContent='Arrival excess estimate: '+number(timing.arrival_delay_excess_estimate_seconds==null?null:timing.arrival_delay_excess_estimate_seconds*1000)+' ms · Kinesis→collector: '+number(timing.kinesis_to_python_seconds==null?null:timing.kinesis_to_python_seconds*1000)+' ms · Gyro / orientation: '+number(hz.gyro)+' / '+number(hz.orientation)+' Hz (band clock) · Host delivery: '+number(hostHz.gyro)+' / '+number(hostHz.orientation)+' Hz · Forearm elevation: '+number(pose?.forearm_elevation_degrees)+'° · Relative compass: '+number(pose?.forearm_compass_degrees)+'° · Key clock uncertainty: '+number(alignment?alignment.uncertainty_seconds*1000:null)+' ms';$('motionHint').textContent=motionReady?'Motion streams are live. Compass is relative; arrival delay is excess over the best observed offset, not absolute radio latency.':'Connect Kinesis local sensor feed below and choose your wrist in Kinesis. EMG-only recording files do not contain gyro/orientation; Start waits for the requested motion streams.';
+  $('source').textContent=live.input_kind==='stream'?'Using Kinesis live feed: EMG plus available timestamped motion/context.':'Following Kinesis recording: '+live.band_file;
  }
  async function refresh(){
   if(polling||pending)return;polling=true;
@@ -41,17 +41,17 @@
   finally{polling=false}
  }
  async function work(action){if(busy||pending)return;busy=true;$('error').textContent='';render();try{await action()}catch(error){$('error').textContent=error.message}finally{busy=false;await refresh();render()}}
- $('start').onclick=()=>work(async()=>{await sync();await api('collection/start',{profile:'micah_emg',wearing_session:$('wearing').value.trim(),role:$('role').value,focus:'live_intent',initial_intent:'non_intended',interaction_guard:Number($('guard').value)});$('saved').textContent='';$('start').blur();});
+ $('start').onclick=()=>work(async()=>{await sync();await api('collection/start',{profile:'micah_emg',wearing_session:$('wearing').value.trim(),role:$('role').value,focus:'live_intent',initial_intent:'non_intended',interaction_guard:0,clock_alignment:alignment});$('saved').textContent='';$('start').blur();});
  for(const button of document.querySelectorAll('[data-motion]'))button.onclick=()=>work(async()=>{await api('collection/select-motion',{motion:button.dataset.motion,effort:button.dataset.effort||null});button.blur();});
  function mark(label,client_t){
   if(!ownSession()||!alignment)return;
-  pending++;render();
-  queue=queue.then(async()=>{const result=await api('collection/intent-mark',{label,client_t,alignment});if(live?.collection)live.collection.annotation=result;})
+  const eventAlignment={...alignment};pending++;render();
+  queue=queue.then(async()=>{const result=await api('collection/intent-mark',{label,client_t,alignment:eventAlignment});if(live?.collection)live.collection.annotation=result;})
    .catch(error=>{$('error').textContent=error.message;})
    .finally(()=>{pending--;render();if(!pending)refresh();});
   return queue;
  }
- $('stop').onclick=()=>work(async()=>{const result=await api('collection/finish');$('saved').textContent='Saved '+result.report.intended_seconds.toFixed(1)+' intended seconds and '+result.report.non_intended_seconds.toFixed(1)+' non-intended seconds to '+result.recording.path+'. Labels: truth-values.json. Short guarded intervals are excluded.';$('stop').blur();spaceHeld=false;});
+ $('stop').onclick=()=>work(async()=>{const result=await api('collection/finish');$('saved').textContent='Saved '+result.report.intended_seconds.toFixed(1)+' intended seconds and '+result.report.non_intended_seconds.toFixed(1)+' non-intended seconds to '+result.recording.path+'. Labels: truth-values.json. All reported intervals are retained for later post-processing.';$('stop').blur();spaceHeld=false;});
  $('connect').onclick=()=>work(async()=>{await api('source/stream',{url:$('streamUrl').value.trim()});$('streamUrl').value='';});
  async function interaction(kind){if(!ownSession()||!alignment)return;try{await api('collection/interaction',{kind,client_t:performance.now()/1000,alignment})}catch{}}
  document.addEventListener('keydown',event=>{
@@ -69,5 +69,5 @@
  window.addEventListener('blur',()=>{if(ownSession()){interaction('focus_lost');if(spaceHeld){spaceHeld=false;mark('non_intended',performance.now()/1000)}}});
  window.addEventListener('focus',()=>{if(ownSession())interaction('focus_regained')});
  window.addEventListener('beforeunload',event=>{if(ownSession()){event.preventDefault();event.returnValue=''}});
- setInterval(refresh,150);refresh();
+ setInterval(refresh,150);setInterval(()=>{if(ownSession()&&!pending&&!busy)sync().catch(error=>{$('error').textContent='Clock recalibration failed: '+error.message})},30000);refresh();
 })();

@@ -18,6 +18,7 @@ from .decisions import DecisionMemory,EffortMemory
 from .live_capture import LiveCapture
 from .intent import FireballOption
 from .intent_collection import IntentCollection,EquipmentPreview
+from .sensor_timing import SensorTiming
 
 
 class LiveTester:
@@ -53,6 +54,7 @@ class LiveTester:
         self.contribution_root=Path(__file__).resolve().parents[2]/'Micah data contribution'
         self.equipment_preview=EquipmentPreview()
         self.band_context={};self.band_event_counts={};self.target_hand='Right'
+        self.sensor_timing=SensorTiming()
         if auto_source:
             from .live_source import LiveInput
             state=Path(__file__).resolve().parents[2]/'.local/kinesis-stream-url'
@@ -65,9 +67,13 @@ class LiveTester:
         if not isinstance(host,(int,float)) or not math.isfinite(host) or abs(self.clock()-host)>2:return
         if value.get('type')!=kind or value.get('schema_version')!=1:return
         with self.lock:
+            payload=value.get('payload',{})
+            status=payload.get('status',{}) if kind=='hello' else payload if kind=='status' else {}
+            self.sensor_timing.identity(value.get('stream_session_id'),status.get('band_connection_id'),status.get('hand'))
+            timing=self.sensor_timing.observe(kind,value.get('band_timestamp_us'),host,self.clock(),payload.get('values')) if kind in ('gyro','orientation','gesture') else None
             self.band_context[kind]={'host_uptime':host,'event':value}
             self.band_event_counts[kind]=self.band_event_counts.get(kind,0)+1
-            if self.capture and not self.emg_contribution():self.capture.append('band_'+kind,host,event=value)
+            if self.capture:self.capture.append('band_'+kind,host,event=value,timing=timing)
             if self.collection:self.collection.context(kind,value,host)
 
     def collection_action(self,action,value):
@@ -78,18 +84,28 @@ class LiveTester:
                 wearing=value.get('wearing_session','')
                 if not isinstance(wearing,str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,80}',wearing):raise ValueError('Enter a wearing-session ID.')
                 if value.get('role','train') not in ('train','evaluation') or value.get('hand','Right') not in ('Right','Left') or value.get('focus','full') not in ('full','live_intent','intent','snaps','controls','states','transitions'):raise ValueError('Invalid role, hand or focus')
-                guard=float(value.get('interaction_guard',1.))
-                if not math.isfinite(guard) or not .5<=guard<=3 or value.get('initial_intent','non_intended') not in ('intended','non_intended'):raise ValueError('Invalid click guard or initial toggle state')
                 contribution=value.get('profile')=='micah_emg'
+                if contribution:
+                    telemetry=self.sensor_timing.status(self.clock());rates=telemetry['delivered_sensor_hz']
+                    motion_fresh=all(kind in self.band_context and self.clock()-self.band_context[kind]['host_uptime']<1.5 for kind in ('gyro','orientation'))
+                    if not motion_fresh or telemetry['forearm'] is None or not all(rates.get(kind) for kind in ('gyro','orientation')):
+                        raise ValueError('Connect Kinesis local sensor feed and select the band wrist; fresh gyro/orientation are required for synchronized contributions.')
+                guard=0. if contribution else float(value.get('interaction_guard',1.))
+                if not math.isfinite(guard) or not (0 if contribution else .5)<=guard<=3 or value.get('initial_intent','non_intended') not in ('intended','non_intended'):raise ValueError('Invalid click guard or initial toggle state')
                 if contribution and (value.get('focus')!='live_intent' or value.get('initial_intent')!='non_intended'):
                     raise ValueError('Micah EMG sessions start in non-intended mode.')
                 self.start_capture(root=self.contribution_root if contribution else None,emg_only=contribution);self.target_hand=value.get('hand','Right')
-                self.collection=IntentCollection(self.capture,self.clock,wearing,value.get('role','train'),self.target_hand,value.get('focus','full'),value.get('initial_intent','non_intended'),guard)
+                self.collection=IntentCollection(self.capture,self.clock,wearing,value.get('role','train'),self.target_hand,value.get('focus','full'),value.get('initial_intent','non_intended'),guard,defer_cleanup=contribution)
                 if contribution:
                     self.capture.meta.update(kind='micah_emg_intent_contribution',contributor='Micah',
                         collection_protocol='spacebar-held-motion-intent-v1',camera_policy='disabled',
-                        input_modalities=['emg'],classification_policy='participant_motion_selection_only_no_model_predictions',
-                        label_policy='Participant truth reports: Space down marks intended, Space up marks non-intended. Motion/effort are participant selections, not verified success or force. Exclude keyboard/mouse guards and signal gaps.')
+                        input_modalities=['emg'],recorded_context=['available_gyro','available_orientation','available_band_events'],classification_policy='participant_motion_selection_only_no_model_predictions',
+                        timing_policy='Native band microseconds, Kinesis receipt uptime, Python receipt uptime and browser alignment all retained. Arrival delay and forearm angles are estimates in the documented Kinesis frame.',
+                        postprocessing_required=True,cleanup_applied=False,
+                        browser_clock_alignment_at_start=value.get('clock_alignment'),
+                        host_monotonic_clock=time.get_clock_info('monotonic').implementation,
+                        sensor_timing_at_start=self.sensor_timing.status(self.clock()),
+                        label_policy='Immediate participant reports: Space down marks intended, Space up marks non-intended. No keyboard-edge clipping or fixed minimum interval. Preserve baseline context, key times and sensor coverage for later cleanup. Motion/effort are participant selections, not verified physical onsets or force.')
                     self.capture.meta.pop('equipment_rule',None)
                     self.collection._save()
                 return {'collection':self.collection.status(),'recording':self.capture.status()}
@@ -99,8 +115,14 @@ class LiveTester:
                 alignment=value.get('alignment',{})
                 host=float(value['client_t'])+float(alignment['host_offset_seconds'])
                 uncertainty=float(alignment['uncertainty_seconds'])
-                if action=='intent-mark':return self.collection.mark_intent(value['label'],host,uncertainty)
+                if action=='intent-mark':return self.collection.mark_intent(value['label'],host,uncertainty,{**alignment,'client_event_t':value['client_t'],'mapped_host_event_uptime':host,'server_received_host_uptime':self.clock()})
                 self.collection.interaction(host,uncertainty,value.get('kind','button'));return {'saved':True}
+            if action=='clock-sync':
+                calibration=value['alignment'];host=float(calibration['client_sync_t'])+float(calibration['host_offset_seconds'])
+                uncertainty=float(calibration['uncertainty_seconds'])
+                if not math.isfinite(host) or abs(self.clock()-host)>5 or not math.isfinite(uncertainty) or not 0<=uncertainty<=.5:raise ValueError('Invalid clock calibration')
+                self.capture.append('clock_sync',self.clock(),alignment=calibration)
+                return {'saved':True}
             if action=='trial':return self.collection.start_trial(self.status()['connected'])
             if action=='confirm':return self.collection.confirm(value)
             if action=='flag':return self.collection.flag(value['kind'],value.get('note',''))
@@ -116,6 +138,7 @@ class LiveTester:
 
     def source_changed(self,kind,path):
         with self.lock:
+            self.sensor_timing.reset()
             self.input_kind=kind
             self.band_context={}
             if path:self.band_file=path
@@ -135,6 +158,8 @@ class LiveTester:
             return
         row={'kind':'emg','received':now-self.origin,'t':now-self.origin,**packet}
         with self.lock:
+            self.sensor_timing.identity(packet.get('stream_session'))
+            row['timing']=self.sensor_timing.observe('emg',packet.get('source_t'),packet.get('source_uptime'),now)
             generation=packet.get('input_generation')
             if generation!=self.input_generation:
                 if self.input_generation is not None and self.collection and self.collection.current:
@@ -165,7 +190,7 @@ class LiveTester:
             predictions=[] if self.emg_contribution() else self.predictor.feed(row)
             self.last_packet=now;self.packets+=1
             self.errors.clear()
-            if self.collection:self.collection.packet(packet)
+            if self.collection:self.collection.packet({**packet,'timing':row.get('timing')})
             for prediction in predictions:
                 if self.capture:self.capture.append('prediction',now,prediction=prediction)
                 kind=prediction['kind']
@@ -253,6 +278,8 @@ class LiveTester:
         with self.lock:
             if self.capture:
                 if self.camera and not self.camera.complete:raise ValueError('Save or explicitly abandon camera upload before stopping EMG')
+                if self.emg_contribution():
+                    self.capture.meta['sensor_timing_at_stop']=self.sensor_timing.status(self.clock())
                 self.last_capture=self.capture.finish()
                 if not self.emg_contribution():review_capture(self.capture.directory)
                 self.capture=None
@@ -293,7 +320,8 @@ class LiveTester:
                     'equipment_preview':self.equipment_preview.status(fresh),
                     'band_context':{kind:{'age_seconds':max(0,now-value['host_uptime']),'event':value['event']} for kind,value in self.band_context.items()},
                     'band_event_counts':dict(self.band_event_counts),
-                    'packet_age_seconds':now-self.last_packet if self.packets else None,
+                    'sensor_timing':self.sensor_timing.status(now),
+                    'packet_age_seconds':now-self.last_packet if self.packets and math.isfinite(self.last_packet) else None,
                     'session':{'id':'live-model-test','subject':self.artifact.get('report',{}).get('subject','player-a'),
                                'mode':'tester','band_file':self.band_file}}
 

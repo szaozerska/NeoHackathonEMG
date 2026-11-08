@@ -26,6 +26,8 @@ def pump():
             seq+=1;now=start+seq/128
             tester.packet({'source_seq':seq,'source_t':seq*7812.5,'source_uptime':now,'samples':[[32768]*8]*16})
             if seq%8==0:
+                tester.band_event('status',{'schema_version':1,'type':'status','host_time_s':now,
+                    'payload':{'hand':'right','band_connection_id':'synthetic-band','connected':True}})
                 for kind,values in [('orientation',[1,0,0,0]),('gyro',[0,0,0])]:
                     tester.band_event(kind,{'schema_version':1,'type':kind,'host_time_s':now,'band_timestamp_us':seq*7812.5,'payload':{'values':values}})
 threading.Thread(target=pump,daemon=True).start()

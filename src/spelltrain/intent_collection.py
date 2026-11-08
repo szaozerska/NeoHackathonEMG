@@ -73,24 +73,26 @@ def protocol():
 
 
 class IntentCollection:
-    def __init__(self,capture,clock,wearing_session,role,hand='Right',focus='full',initial_intent='non_intended',interaction_guard=1.):
+    def __init__(self,capture,clock,wearing_session,role,hand='Right',focus='full',initial_intent='non_intended',interaction_guard=1.,defer_cleanup=False):
         if not re.fullmatch(r'[A-Za-z0-9_-]{1,80}',wearing_session):
             raise ValueError('Use a wearing-session ID with letters, numbers, hyphens or underscores.')
         if role not in ('train','evaluation') or hand not in ('Right','Left'):
             raise ValueError('Invalid collection role or hand')
         self.capture,self.clock=capture,clock
         if focus not in ('full','live_intent','intent','snaps','controls','states','transitions'):raise ValueError('Invalid collection focus')
-        if initial_intent not in ('intended','non_intended') or not math.isfinite(interaction_guard) or not .5<=interaction_guard<=3:raise ValueError('Invalid initial intent or click guard')
+        if initial_intent not in ('intended','non_intended') or not math.isfinite(interaction_guard) or not (0 if defer_cleanup else .5)<=interaction_guard<=3:raise ValueError('Invalid initial intent or click guard')
         kinds={'intent':('intent',),'snaps':('snap',),'controls':('negative',),'states':('open_hold','fist'),'transitions':('transition',)}
         self.plan=[] if focus=='live_intent' else [t for t in protocol() if focus=='full' or t['kind'] in kinds[focus]]
         self.index=0;self.phase='live' if focus=='live_intent' else 'ready';self.current=None;self.trials=[];self.flags=[]
         self.wearing_session,self.role,self.hand=wearing_session,role,hand
         self.interaction_guard=interaction_guard
+        self.defer_cleanup=defer_cleanup
         self.intent_markers=[{'capture_t':0.,'label':initial_intent,'source':'participant_toggle_at_record_start','uncertainty_seconds':0.}]
         self.interactions=[{'capture_t':0.,'guard_seconds':interaction_guard,'kind':'record_start'}]
         self.space_down=None
         self.selected_motion=None;self.motion_selections=[];self.focus_lost=None
         self.signal_segments=[];self.global_last_seq=None;self.global_last_t=None;self.global_generation=None
+        self.sensor_segments=[];self.last_sensor_seq=None;self.last_sensor_t=None;self.last_sensor_epoch=None
         self.capture.meta.update(kind='intent_collection_v1',wearing_session=wearing_session,target_hand=hand,
             dataset_role='training_only_weak_labels' if role=='train' else 'untouched_guided_count_check',
             collection_protocol='snap-open-grip-and-nonuse-v1',
@@ -123,7 +125,8 @@ class IntentCollection:
         host=self.clock() if host is None else host
         if not math.isfinite(host) or abs(self.clock()-host)>5 or not math.isfinite(uncertainty) or not 0<=uncertainty<=.5:
             raise ValueError('Refresh clock alignment before marking intent.')
-        row={'capture_t':host-self.capture.start,'guard_seconds':self.interaction_guard+uncertainty,'kind':kind}
+        row={'capture_t':host-self.capture.start,'guard_seconds':0 if self.defer_cleanup else self.interaction_guard+uncertainty,'kind':kind,
+             'clock_uncertainty_seconds':uncertainty,'applied_to_export':not self.defer_cleanup}
         if kind=='space_keydown':self.space_down=host
         if kind=='space_keyup' and self.space_down is not None:
             # Exclude the full key hold, not just its two edges.
@@ -139,7 +142,7 @@ class IntentCollection:
         self.capture.append('participant_interaction',host,interaction=row)
         write_json(self.capture.directory/'interaction-exclusions.json',self.interactions)
 
-    def mark_intent(self,label,host=None,uncertainty=0.):
+    def mark_intent(self,label,host=None,uncertainty=0.,alignment=None):
         if label not in ('intended','non_intended'):raise ValueError('Invalid intent label')
         if label=='intended' and self.capture.meta.get('recording_profile')=='micah_emg' and not self.selected_motion:
             raise ValueError('Select a motion and effort before holding Space.')
@@ -148,6 +151,7 @@ class IntentCollection:
         self.interaction(host,uncertainty,'intent_toggle')
         marker={'capture_t':host-self.capture.start,'label':label,'source':'participant_toggle',
                 'uncertainty_seconds':uncertainty,'exact_action_time_verified':False}
+        if alignment is not None:marker['browser_clock_alignment']=alignment
         if self.capture.meta.get('recording_profile')=='micah_emg':
             marker['source']='participant_spacebar_press' if label=='intended' else 'participant_spacebar_release'
             marker['selected_motion']=dict(self.selected_motion) if label=='intended' and self.selected_motion else None
@@ -157,8 +161,9 @@ class IntentCollection:
 
     def annotation_status(self):
         return {'label':self.intent_markers[-1]['label'],'markers':len(self.intent_markers),
-                'labeling_paused_seconds':max(0,max(event['capture_t']+event['guard_seconds'] for event in self.interactions)-(self.clock()-self.capture.start)),
-                'interaction_guard_seconds':self.interaction_guard,'policy':'Exclude time before and after every reported interaction; button boundaries are weak labels, not exact action onset.'}
+                'labeling_paused_seconds':0 if self.defer_cleanup else max(0,max(event['capture_t']+event['guard_seconds'] for event in self.interactions)-(self.clock()-self.capture.start)),
+                'cleanup_deferred':self.defer_cleanup,
+                'interaction_guard_seconds':self.interaction_guard,'policy':'Immediate reported intervals; no clipping; cleanup deferred.' if self.defer_cleanup else 'Exclude time before and after every reported interaction; button boundaries are weak labels, not exact action onset.'}
 
     def start_trial(self,connected):
         if not connected:raise ValueError('Wait for fresh EMG before starting a trial.')
@@ -186,6 +191,21 @@ class IntentCollection:
 
     def packet(self,packet):
         self.tick()
+        native=packet.get('source_t');timing=packet.get('timing') or {};epoch=timing.get('clock_epoch',packet.get('input_generation'))
+        if isinstance(native,(int,float)) and math.isfinite(native):
+            expected=len(packet['samples'])*1e6/2048
+            continuous=(self.last_sensor_seq is not None and packet['source_seq']==self.last_sensor_seq+1
+                and epoch==self.last_sensor_epoch and abs(native-self.last_sensor_t-expected)<=2.5e6/2048)
+            mapped=timing.get('mapped_band_host_uptime_estimate')
+            mapped_t=mapped-self.capture.start if isinstance(mapped,(int,float)) else None
+            if continuous and self.sensor_segments:
+                segment=self.sensor_segments[-1];segment.update(band_end_us=native,last_sequence=packet['source_seq'],mapped_end_capture_t_estimate=mapped_t)
+                segment['samples']+=len(packet['samples'])
+            else:
+                self.sensor_segments.append({'clock_epoch':epoch,'band_start_us':native,'band_end_us':native,
+                    'first_sequence':packet['source_seq'],'last_sequence':packet['source_seq'],'samples':len(packet['samples']),
+                    'mapped_start_capture_t_estimate':mapped_t,'mapped_end_capture_t_estimate':mapped_t})
+            self.last_sensor_seq,self.last_sensor_t,self.last_sensor_epoch=packet['source_seq'],native,epoch
         t=packet.get('source_uptime',self.clock())-self.capture.start
         seq=packet['source_seq'];generation=packet.get('input_generation')
         contiguous=(self.global_last_seq is not None and seq==self.global_last_seq+1 and generation==self.global_generation
@@ -315,34 +335,45 @@ class IntentCollection:
         for i,marker in enumerate(self.intent_markers):
             end=self.intent_markers[i+1]['capture_t'] if i+1<len(self.intent_markers) else duration
             spans=[(max(0,marker['capture_t']),min(duration,end))]
-            for event in self.interactions:
+            for event in ([] if self.defer_cleanup else self.interactions):
                 a,b=event['capture_t']-event['guard_seconds'],event['capture_t']+event['guard_seconds']
                 spans=[part for lo,hi in spans for part in ((lo,min(hi,a)),(max(lo,b),hi)) if part[1]>part[0]]
             for lo,hi in spans:
-                for signal in self.signal_segments:
+                for signal in ([{'start':0,'end':duration}] if self.defer_cleanup else self.signal_segments):
                     a,b=max(lo,signal['start']),min(hi,signal['end'])
-                    if b-a>=.5:intervals.append({'start':a,'end':b,'label':marker['label'],
+                    if (b>a if self.defer_cleanup else b-a>=.5):intervals.append({'start':a,'end':b,'label':marker['label'],
                         'wearing_session':self.wearing_session,'dataset_role':self.capture.meta['dataset_role'],
-                        'source':'participant_toggle_with_interaction_exclusion','supervision':'weak_interval_label',
+                        'source':'participant_spacebar_untrimmed' if self.defer_cleanup else 'participant_toggle_with_interaction_exclusion','supervision':'weak_interval_label',
                         'gesture_label':None,'selected_motion':marker.get('selected_motion'),'exact_action_times_verified':False})
         write_json(self.capture.directory/'intent-gate-intervals.json',{'intervals':intervals,'gesture_labels_required':False,
-            'interaction_guard_seconds':self.interaction_guard,'policy':'Guarded participant reports intersected with continuous EMG; not inferred mental intent.'})
+            'interaction_guard_seconds':self.interaction_guard,'postprocessing_required':self.defer_cleanup,
+            'policy':'Untrimmed participant windows; use raw EMG and baseline context for later cleanup. Missing samples are not imputed.' if self.defer_cleanup else 'Guarded participant reports intersected with continuous EMG; not inferred mental intent.'})
         names=('streams.jsonl','metadata.json','guided-trials.json','intent-gate-trials.json','intent-trials.json','failure-flags.json','collection-plan.json','intent-toggle-markers.json','interaction-exclusions.json','intent-gate-intervals.json','motion-selections.json')
         if self.capture.meta.get('recording_profile')=='micah_emg':
+            for i,interval in enumerate(intervals):
+                if interval['label']=='intended':
+                    interval['baseline_before']={k:intervals[i-1][k] for k in ('start','end')} if i>0 and intervals[i-1]['label']=='non_intended' else None
+                    interval['baseline_after']={k:intervals[i+1][k] for k in ('start','end')} if i+1<len(intervals) and intervals[i+1]['label']=='non_intended' else None
+            write_json(self.capture.directory/'signal-coverage.json',{'segments':self.sensor_segments,
+                'time_basis':'native_band_microseconds','host_receipt_segments':self.signal_segments,
+                'note':'Continuity uses native batch timestamps and sequence, not bursty host arrivals. Mapped host bounds are estimates. Reported label windows remain untrimmed; missing samples are not imputed.'})
             truth={'contributor':'Micah','input_modalities':['emg'],'camera_used':False,
                 'label_source':'participant_spacebar_reports','exact_action_onsets_verified':False,
+                'postprocessing_required':self.defer_cleanup,'cleanup_applied':not self.defer_cleanup,
                 'interaction_guard_seconds':self.interaction_guard,
                 'intervals':[{**v,'intended':v['label']=='intended'} for v in intervals],
-                'note':'Participant-provided truth values, with keyboard/mouse boundaries and signal gaps excluded. Short intervals can be fully excluded.'}
+                'note':'Untrimmed participant-reported intention windows. All raw data and adjacent non-intended baselines are retained. Review actual motion boundaries during postprocessing; consult signal-coverage.json for missing data.'}
             write_json(self.capture.directory/'truth-values.json',truth)
-            names+=('truth-values.json',)
+            names+=('truth-values.json','signal-coverage.json')
         hashes={name:hashlib.sha256((self.capture.directory/name).read_bytes()).hexdigest() for name in names}
         write_json(self.capture.directory/'guided-manifest.json',{'schema':1,'wearing_session':self.wearing_session,
-            'supervision':'weak_clip_labels','source_hashes':hashes,'open_hold_and_transitions_require_review':True})
+            'supervision':'untrimmed_participant_intervals_requires_postprocessing' if self.defer_cleanup else 'weak_clip_labels',
+            'postprocessing_required':self.defer_cleanup,'source_hashes':hashes,'open_hold_and_transitions_require_review':True})
         controls=[t for t in self.trials if t.get('confirmed') and t.get('reported_count')==0]
         negative_seconds=sum(t['end']-t['start'] for t in controls)
         false_candidates=sum(t['predicted_snaps'] for t in controls)
         report={'trials':len(self.trials),'usable_confirmed':sum(t.get('confirmed',False) for t in self.trials),
+            'postprocessing_required':self.defer_cleanup,'interval_policy':'untrimmed_participant_reports' if self.defer_cleanup else 'guarded_continuous_signal',
             'exported_training_clips':len(exported),'failure_flags':len(self.flags),'dataset_role':self.capture.meta['dataset_role'],
             'binary_intent_clips':len(gate_trials),
             'toggle_intervals':len(intervals),'toggle_labeled_seconds':sum(v['end']-v['start'] for v in intervals),

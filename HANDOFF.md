@@ -37,7 +37,7 @@ installations are not embedded in this repository.
 
 The launcher now opens **Micah data contribution** at `/`: an EMG-only page
 where the mouse starts a session, buttons select Snap/Shield/Sword effort, and
-holding/releasing Space marks intended/non-intended intervals. See
+holding/releasing Space immediately marks intended/non-intended intervals, without fixed clipping. Connect the full Kinesis feed for synchronized gyro/orientation context; cleanup is deferred to postprocessing. See
 [`docs/micah-contribution.md`](docs/micah-contribution.md). No camera is required
 or started. The optional **Intent lab** remains at `/collect`, with its workflow
 described in [`docs/intent-lab.md`](docs/intent-lab.md). Use **Original
