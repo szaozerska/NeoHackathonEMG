@@ -9,8 +9,8 @@ namespace SpellGame.Game
 {
     /// <summary>
     /// Debug view: draws each player's <see cref="BodyJoints"/> (local and remote) as unlit line segments, and gives
-    /// remote players a solid stand-in body (head, torso, limbs, hands) with a floating player-ID label so they are
-    /// easy to find in the room.
+    /// remote players a solid stand-in body (head, torso, limbs, hands) with a floating player-ID marker (P1 red, P2 blue)
+    /// so they are easy to find in the room.
     /// </summary>
     public sealed class DebugSkeletonsView : MonoBehaviour
     {
@@ -20,6 +20,12 @@ namespace SpellGame.Game
         private const float LimbWidth = 0.08f;
         private const float HandDiameter = 0.1f;
         private const float LabelHeightAboveHead = 0.3f;
+
+        private static readonly Dictionary<string, Color> MarkerColors = new()
+        {
+            ["P1"] = Color.red,
+            ["P2"] = new Color(0.2f, 0.45f, 1f),
+        };
 
         private static readonly (Func<BodyJoints, JointPose> From, Func<BodyJoints, JointPose> To)[] Bones =
         {
@@ -128,8 +134,10 @@ namespace SpellGame.Game
             label.GetComponent<MeshRenderer>().sharedMaterial = label.font.material;
             label.anchor = TextAnchor.MiddleCenter;
             label.alignment = TextAlignment.Center;
-            label.characterSize = 0.02f;
+            label.characterSize = 0.03f;
             label.fontSize = 64;
+            label.fontStyle = FontStyle.Bold;
+            label.color = MarkerColors.TryGetValue(text, out var color) ? color : Color.white;
             label.text = text;
             return label;
         }
