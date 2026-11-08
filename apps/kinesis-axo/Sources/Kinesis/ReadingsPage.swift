@@ -105,8 +105,8 @@ private struct EMGTraceView: View {
                             let t = Double(batch.timestampUs) + Double(sample) * EMGBatch.sampleIntervalUs
                             guard t >= start else { continue }
                             let value = Double(batch.values[sample * EMGBatch.channelCount + channel])
-                            let point = CGPoint(x: 30 + (t - start) / 1_000_000 * width,
-                                                y: top + 3 + (1 - (value - range.lowerBound) / (range.upperBound - range.lowerBound)) * (rowHeight - 6))
+                            let point = CGPoint(x: 30 + CGFloat((t - start) / 1_000_000) * width,
+                                                y: top + 3 + CGFloat(1 - (value - range.lowerBound) / (range.upperBound - range.lowerBound)) * (rowHeight - 6))
                             if (sample == 0 && !continuous) || trace.isEmpty { trace.move(to: point) }
                             else { trace.addLine(to: point) }
                         }
