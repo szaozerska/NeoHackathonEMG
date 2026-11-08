@@ -55,7 +55,7 @@ namespace SpellGame.Game
             _label ??= UiStyle.CreateText("Calibration Prompt", transform, "", Vector3.zero, 0.06f, UiStyle.Text,
                 display: true, look: UiStyle.Look.Title, width: 1f);
             if (status.Phase != _phase)
-                PlaceInFront();
+                UiStyle.PlaceAhead(_label.transform, distance, drop);
             _phase = status.Phase;
             _label.gameObject.SetActive(true);
             _hideAt = float.PositiveInfinity;
@@ -88,19 +88,6 @@ namespace SpellGame.Game
         {
             var filled = Mathf.Clamp(Mathf.RoundToInt(progress * ProgressDots), 0, ProgressDots);
             return new string('•', filled) + "<alpha=#40>" + new string('•', ProgressDots - filled);
-        }
-
-        private void PlaceInFront()
-        {
-            var head = Camera.main != null ? Camera.main.transform : null;
-            if (head == null)
-                return;
-            var forward = Vector3.ProjectOnPlane(head.forward, Vector3.up);
-            if (forward.sqrMagnitude < 1e-4f)
-                forward = Vector3.forward;
-            forward.Normalize();
-            _label.transform.SetPositionAndRotation(head.position + forward * distance + Vector3.down * drop,
-                Quaternion.LookRotation(forward, Vector3.up));
         }
     }
 }

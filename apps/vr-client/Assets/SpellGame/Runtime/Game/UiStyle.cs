@@ -342,6 +342,23 @@ namespace SpellGame.Game
             return label;
         }
 
+        /// <summary>
+        /// Stands <paramref name="target"/> upright <paramref name="distance"/> m ahead of the head (level, ignoring head
+        /// pitch) and <paramref name="drop"/> m below eye level, facing the player. Not head-locked: it stays put after.
+        /// </summary>
+        public static void PlaceAhead(Transform target, float distance, float drop)
+        {
+            var head = Camera.main != null ? Camera.main.transform : null;
+            if (head == null)
+                return;
+            var forward = Vector3.ProjectOnPlane(head.forward, Vector3.up);
+            if (forward.sqrMagnitude < 1e-4f)
+                forward = Vector3.forward;
+            forward.Normalize();
+            target.SetPositionAndRotation(head.position + forward * distance + Vector3.down * drop,
+                Quaternion.LookRotation(forward, Vector3.up));
+        }
+
         /// <summary>Gives a long-lived label the active theme's font and material (e.g. on <see cref="ThemeChanged"/>).</summary>
         public static void Restyle(TextMeshPro label, bool display, Look look = Look.Outlined)
         {

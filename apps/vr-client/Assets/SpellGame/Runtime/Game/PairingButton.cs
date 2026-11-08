@@ -3,9 +3,8 @@ using UnityEngine;
 namespace SpellGame.Game
 {
     /// <summary>
-    /// Starts the server's pairing mode (architecture.md §5) when X and Y on the left Touch controller are held together
-    /// for <see cref="holdSeconds"/>; once per hold. The server then prompts each headset without a band, in join order,
-    /// to pinch.
+    /// Starts the server's pairing mode (architecture.md §5) when X on the left Touch controller is held for
+    /// <see cref="holdSeconds"/>; once per hold. The server then prompts every headset, in join order, to pinch.
     /// </summary>
     public sealed class PairingButton : MonoBehaviour
     {
@@ -14,9 +13,7 @@ namespace SpellGame.Game
 
         private HoldTrigger _hold;
 
-        private static bool XAndYHeld =>
-            OVRInput.Get(OVRInput.Button.One, OVRInput.Controller.LTouch) &&
-            OVRInput.Get(OVRInput.Button.Two, OVRInput.Controller.LTouch);
+        private static bool XHeld => OVRInput.Get(OVRInput.Button.One, OVRInput.Controller.LTouch);
 
         private void Awake()
         {
@@ -25,7 +22,7 @@ namespace SpellGame.Game
 
         private void Update()
         {
-            if (_hold.Update(XAndYHeld, Time.unscaledDeltaTime))
+            if (_hold.Update(XHeld, Time.unscaledDeltaTime))
                 gameClient.StartPairing();
         }
     }

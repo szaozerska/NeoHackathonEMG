@@ -56,6 +56,8 @@ namespace SpellGame.Game
         public event Action<SpaceMessage> SpaceReceived;
         public event Action<DomainExpansionMessage> DomainExpansionReceived;
         public event Action<CalibrationStatusMessage> CalibrationReceived;
+        public event Action<PairPromptMessage> PairPromptReceived;
+        public event Action<PairedMessage> PairedReceived;
         public event Action<ConnectionState> ConnectionChanged;
 
         public string PlayerId => _playerId;
@@ -237,10 +239,12 @@ namespace SpellGame.Game
                     break;
                 case PairPromptMessage prompt:
                     SetStatus(prompt.PlayerId == _playerId ? "Pinch your fingers to pair your band" : $"Waiting for {prompt.PlayerId} to pinch…");
+                    PairPromptReceived?.Invoke(prompt);
                     break;
                 case PairedMessage paired:
                     _bandPaired |= paired.PlayerId == _playerId;
                     SetStatus(IdleStatus());
+                    PairedReceived?.Invoke(paired);
                     break;
                 case PoseMessage pose when pose.PlayerId != _playerId:
                     _remoteJoints[pose.PlayerId] = pose.Joints;
@@ -314,7 +318,7 @@ namespace SpellGame.Game
         /// "Waiting for … to pinch" behind; a following <c>pair_prompt</c> replaces it straight away.
         /// </summary>
         private string IdleStatus() =>
-            _bandPaired ? $"You are {_playerId} · band paired" : $"You are {_playerId} · hold X+Y to pair bands";
+            _bandPaired ? $"You are {_playerId} · band paired" : $"You are {_playerId} · hold X to pair bands";
 
         private void SetStatus(string text)
         {

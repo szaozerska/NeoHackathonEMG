@@ -49,6 +49,7 @@ namespace SpellGame.Editor
             var client = CreateGameClient(bodySkeleton, debugSkeletons);
             CreateControllerBand(client);
             CreatePairingButton(client);
+            CreatePairingPromptView(client);
             CreateDomainExpansionButton(client);
             CreateVoidChargeView(client);
             CreateMarkerTracking();
@@ -366,6 +367,14 @@ namespace SpellGame.Editor
             var serializedAudio = new SerializedObject(audio);
             serializedAudio.FindProperty("gameClient").objectReferenceValue = client;
             serializedAudio.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void CreatePairingPromptView(GameClient client)
+        {
+            var view = new GameObject("Pairing Prompt").AddComponent<PairingPromptView>();
+            var serializedView = new SerializedObject(view);
+            serializedView.FindProperty("gameClient").objectReferenceValue = client;
+            serializedView.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void CreateGripCalibrationView(GameClient client)
