@@ -17,6 +17,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--port', type=int, default=8795)
     parser.add_argument('--condition', choices=['static','dynamic'], default='static')
+    parser.add_argument('--steps', action='store_true', help='Map isolated components and manually reported sequence phases')
     parser.add_argument('--output-root', type=Path, default=ROOT/'Micah contributed data/animation')
     parser.add_argument('--source-state', type=Path, help='Reuse a local feed URL file without displaying it')
     parser.add_argument('--open-browser', action='store_true')
@@ -33,7 +34,7 @@ def main():
     signal.signal(signal.SIGTERM, lambda *_: tester.stop.set())
     try:
         port = tester.start(args.port)
-        url = f'http://127.0.0.1:{port}/animation?mode={args.condition}'
+        url = f'http://127.0.0.1:{port}/'+('animation-steps' if args.steps else 'animation')+f'?mode={args.condition}'
         print('Animation Gesture collection: '+url, flush=True)
         print('Capture folder: '+str(tester.animation_root), flush=True)
         if args.open_browser:

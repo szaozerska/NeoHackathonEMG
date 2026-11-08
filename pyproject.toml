@@ -20,7 +20,7 @@ spelltrain = "spelltrain.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-spelltrain = ["dashboard.html", "dashboard-check.html", "dashboard-advanced.html", "dashboard-supplemental.html", "dashboard-live.html", "dashboard-collect.html", "dashboard-contribute.html", "dashboard-animation.html", "contribution.js", "collection.js", "camera-live.js", "camera-worker.js"]
+spelltrain = ["dashboard.html", "dashboard-check.html", "dashboard-advanced.html", "dashboard-supplemental.html", "dashboard-live.html", "dashboard-collect.html", "dashboard-contribute.html", "dashboard-animation.html", "dashboard-animation-steps.html", "contribution.js", "collection.js", "camera-live.js", "camera-worker.js"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
