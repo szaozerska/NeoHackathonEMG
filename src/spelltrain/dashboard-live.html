@@ -1,0 +1,88 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Live spell test</title><style>
+:root{font:17px system-ui,sans-serif;color:#edf3fa;background:#101722;color-scheme:dark}*{box-sizing:border-box}body{max-width:760px;margin:48px auto;padding:0 24px}header{display:flex;align-items:center;justify-content:space-between;gap:20px}h1{font-size:26px;margin:0}header span{color:#9eb4cb;font-size:14px}.connection{color:#aebed1;font-size:14px;margin:24px 0}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#e6b96d;margin-right:8px}.dot.live{background:#80e0b6}main{text-align:center;min-height:330px;display:flex;flex-direction:column;justify-content:center;background:#192435;border:1px solid #2d3c50;border-radius:22px;padding:42px 20px}#gesture{font-size:clamp(48px,10vw,76px);line-height:1.1;letter-spacing:-2px;margin:12px 0;color:#c7d4e4}main[data-gesture=Shield] #gesture{color:#a5d2ff}main[data-gesture="Sword equipped"] #gesture,main[data-gesture=Sword] #gesture{color:#eed195}main[data-gesture="Fireball equipped"] #gesture,main[data-gesture=Fireball] #gesture{color:#ffa371}#effort{font-size:25px;margin:12px 0;color:#bedcff;min-height:32px}#hint{font-size:14px;color:#9eb4cb;margin:8px 0;min-height:22px}.count{display:flex;justify-content:center;align-items:center;gap:16px;margin:20px 0;color:#b8c7d9;font-size:14px}button{font:inherit;font-size:13px;cursor:pointer;border:1px solid #3b4f69;border-radius:8px;padding:8px 12px;background:#24354c;color:#d7e5f7}button:focus-visible{outline:3px solid #f5cb7b;outline-offset:3px}.instructions{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:28px 0}.instructions div{border-top:1px solid #2d3c50;padding-top:14px;font-size:14px;color:#aebed1;line-height:1.6}.instructions strong{display:block;color:#e4edf7}.note{color:#91a5bd;font-size:13px;line-height:1.6}details{margin-top:22px;background:#192435;border-radius:12px;padding:16px;color:#b8c7d9;font-size:14px}summary{cursor:pointer}code{display:block;overflow-wrap:anywhere;background:#101722;border-radius:8px;padding:12px;margin:14px 0;font-size:12px}#error{font-size:14px;color:#ffbc94;line-height:1.5}[hidden]{display:none!important}@media(max-width:540px){body{margin-top:28px}.instructions{gap:10px}main{min-height:280px}header{align-items:flex-start}}
+.recording{margin:20px 0;padding:18px;border:1px solid #2d3c50;border-radius:12px}.recording>button{font-size:17px;font-weight:650;padding:12px 24px;background:#a5d2ff;color:#102034}.recording>button.active{background:#f9ab9c}#recordStatus{color:#b8c7d9;font-size:14px;line-height:1.5}#correctionButtons{display:flex;flex-wrap:wrap;gap:8px}.recording h2{font-size:16px;margin:18px 0 10px}.recording small{display:block;color:#91a5bd;line-height:1.5;margin-top:10px}button:disabled{opacity:.45;cursor:default}</style></head><body>
+<header><h1>Live spell test</h1><span id="modelVersion">Equipment memory · v6</span></header>
+<div class="connection" role="status"><span id="dot" class="dot"></span><span id="connection">Connecting to tester…</span></div>
+<main id="card" data-gesture="Nothing"><p id="gesture" role="status" aria-live="polite">Nothing</p><p id="effort"></p><p id="hint">Relax your right hand to begin.</p></main>
+<p style="text-align:center"><button id="switchShield" hidden>Switch to Shield</button><span id="shieldSwitchNote" class="note" hidden> Explicit control for this band-only tester; Quest will confirm the shield pose.</span></p><div class="count"><span>Snap detections: <strong id="count">0</strong></span><button id="reset">Reset count</button></div>
+<section class="recording">
+<div style="margin-bottom:18px"><button id="enableCamera">Enable camera validation</button><p id="cameraStatus">Camera/audio validation is available; required only in equipment mode. Keep your right hand visible.</p>
+<video id="cameraVideo" autoplay muted playsinline style="width:100%;max-width:360px;border-radius:10px;transform:scaleX(-1)"></video>
+<p id="cameraAction">Camera: not enabled</p><p id="cameraComparison" class="note">The camera observer checks hand shape independently. Snap timing is reviewed using saved video/audio; estimates are not ground truth.</p></div><button id="record" disabled>● Record</button><p id="recordStatus">Records EMG, decisions, camera observations and synchronized video/audio locally.</p>
+<button id="saveEmgOnly" hidden>Save EMG with incomplete camera reference</button><div id="corrections" hidden><h2>Label the action</h2><label for="markTiming">Timing </label><select id="markTiming"><option value="before">I’m about to do it</option><option value="after_delayed">I already did it (last 8 seconds)</option></select><div id="correctionButtons"><button data-gesture="Nothing" id="markNothing">Nothing</button><button data-gesture="Sword" id="markSword">Sword</button><button data-gesture="Shield" id="markShield">Shield</button><button data-gesture="Fireball" id="markFireball">Fireball</button></div><div id="transitionButtons"><button id="markShieldRelease">Shield → Nothing</button><button id="markSwordRelease">Sword → Nothing</button><button id="markFireballSword">Fireball → Sword</button></div><small>For release tests, hold the first gesture before clicking, then change when “Go” appears. Choose a gesture before doing it, wait for “Go,” then perform it once. For a past action, choose “I already did it.” These are review labels, not exact event timestamps.</small><p id="markStatus"></p></div>
+<p><a id="reviewCamera" hidden target="_blank">Review saved camera/audio recording</a></p><small>Models stay frozen while recording. Your marks are saved separately from predictions for review and retraining.</small></section>
+<div class="instructions"><div><strong>Sword</strong>Close your right fist.<br>Open to release.</div><div><strong>Shield</strong>Open your shield hand.<br>Vary forearm tension.</div><div><strong>Fireball</strong>Snap your middle finger and thumb.<br>Behavior follows the active feedback mode above.</div></div>
+<p id="modeNote" class="note">Loading active baseline…</p>
+<p id="error" role="status"></p>
+<details id="setup" open><summary>Connect the band stream</summary><p>In the compatible Kinesis app: Readings → Live EMG → Record. Start a new recording at this path:</p><code id="path">Loading…</code><button id="copy">Copy recording path</button><p>Keep Kinesis recording while you test. Band inference uses only EMG. Camera/audio are separate local validation references.</p></details>
+<script>
+const token='__CSRF__';let sessionToken=token;window.liveSessionToken=()=>sessionToken;
+const $=id=>document.getElementById(id);
+let live=null,lastResponse=-Infinity,polling=false,countOffset=0,busy=false,revision=0,uiError='';
+function render(){
+ const serverFresh=performance.now()-lastResponse<800;
+ const connected=serverFresh&&!!live?.connected;
+ const gesture=connected?live.gesture:'Nothing';
+ const baseline=live?.display_policy==='v4_feedback';
+ $('modelVersion').textContent=(baseline?'Restored baseline · ':'Equipment memory · ')+(live?.model_version||'…');
+ $('gesture').textContent=gesture;$('card').dataset.gesture=gesture;
+ $('effort').textContent=gesture==='Shield'?(live.effort?live.effort.label[0].toUpperCase()+live.effort.label.slice(1)+' effort':'Reading effort…'):'';
+ $('hint').textContent=!serverFresh?'Tester unavailable · reconnect to continue.':!connected?'Waiting for live EMG.':gesture==='Fireball'?'Snap detected · brief classifier feedback':gesture==='Fireball equipped'?'Prepared · not thrown. Close your fist for Sword, or use Switch to Shield while holding your shield hand.':live.warming_up?'Reading the band…':gesture==='Nothing'?'Relaxed hand / no active gesture':(gesture==='Sword equipped'||gesture==='Sword')?(baseline?'Closed fist detected':'Closed fist · any prepared fireball is canceled'):'Open hand candidate · Quest will confirm shield pose';
+ $('switchShield').hidden=gesture!=='Fireball equipped';$('shieldSwitchNote').hidden=gesture!=='Fireball equipped';$('switchShield').disabled=busy||!connected;
+ $('dot').className='dot'+(connected?' live':'');
+ $('connection').textContent=!serverFresh?'Tester unavailable':connected?'Band connected · live predictions':'Waiting for the band stream';
+ $('count').textContent=live?Math.max(0,live.fireballs-countOffset):0;
+ $('setup').hidden=connected;
+ $('path').textContent=live?.band_file||'Connecting…';
+ $('error').textContent=uiError||(serverFresh?(live.errors||[]).join(' '):'');
+ const recording=live?.recording,active=!!recording?.active;
+ $('record').textContent=active?'■ Stop & save':'● Record';$('record').className=active?'active':'';
+ $('record').disabled=busy||!serverFresh||(!active&&(!connected||(live.camera_required_for_recording&&!window.CameraReference?.ready)));
+ $('recordStatus').textContent=active?'Recording · '+recording.duration.toFixed(1)+' seconds · '+recording.corrections+' marks':recording?'Saved '+recording.duration.toFixed(1)+' seconds · '+recording.corrections+' marks · '+recording.path:'Records EMG, decisions, camera observations and synchronized video/audio locally.';
+ $('reviewCamera').hidden=!recording?.camera_reference?.complete;
+ if(recording?.camera_reference?.complete)$('reviewCamera').href='/api/camera/reference?capture_id='+encodeURIComponent(recording.id);
+ $('modeNote').textContent=baseline?'Restored v4 classifier + decision smoothing. Fireball flashes for 1.25 seconds, then returns to the hand state. Persistent equipment rules are disabled. Camera validation is optional and independent.': 'Snapping equips Fireball immediately. Opening keeps it equipped; a fist or confirmed shield cancels it. Quest confirms throwing. Camera validation stays independent of band inference.';
+ $('corrections').hidden=!active;
+ for(const name of ['Nothing','Sword','Shield','Fireball'])$('mark'+name).disabled=busy||!active;
+ for(const id of ['markShieldRelease','markSwordRelease','markFireballSword'])$(id).disabled=busy||!active;
+ if(active)window.CameraReference?.recordDisplay({gesture,effort:$('effort').textContent,hint:$('hint').textContent,connected,fireball_phase:live.fireball_phase,model_version:live.model_version});
+ const marker=recording?.last_correction;
+ if(marker?.timing==='before'&&active){
+  const t=recording.duration;
+  $('markStatus').textContent=t<marker.review_window_start?'Get ready: '+marker.gesture+'…':t<=marker.review_window_end?'Go: '+marker.gesture+(marker.gesture==='Fireball'?' · snap ONCE, then keep your hand open':marker.gesture.endsWith('release')?' · release to a relaxed hand':marker.gesture==='Fireball to Sword'?' · close your fist':' · hold the gesture'):'Action window saved for review. Choose the next gesture.';
+ }else $('markStatus').textContent=marker?'Marked '+marker.gesture+' for review.':'';
+}
+async function refresh(){
+ if(polling||busy)return;polling=true;const version=revision;const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),1500);
+ try{const response=await fetch('/api/status',{cache:'no-store',signal:controller.signal});if(!response.ok)throw Error('Unavailable');const result=await response.json();if(version!==revision)return;live=result;lastResponse=performance.now();render()}
+ catch(e){lastResponse=-Infinity;render()}finally{clearTimeout(timeout);polling=false}
+}
+async function mutate(action,value={}){
+ if(busy)return;busy=true;revision++;uiError='';render();
+ try{
+  const send=()=>fetch('/api/record/'+action,{method:'POST',headers:{'Content-Type':'application/json','X-Session-Token':sessionToken},body:JSON.stringify(value)});
+  if(action==='start'&&live?.camera_required_for_recording&&!window.CameraReference?.ready)throw Error('Enable camera validation first.');
+  if(action==='stop')await window.CameraReference?.stop();
+  let response=await send();
+  if(response.status===403){const page=await fetch('/',{cache:'no-store'});const match=(await page.text()).match(/const token='([^']+)'/);if(!match)throw Error('Refresh to reconnect to the current tester.');sessionToken=match[1];response=await send()}
+  const result=await response.json();if(!response.ok)throw Error(result.error||'Recording action failed');
+  if(action==='mark'){if(live?.recording){live.recording.last_correction=result;live.recording.corrections++}}
+  else {live.recording=result;if(action==='start'&&window.CameraReference?.ready)await window.CameraReference.start(result)}
+  $('saveEmgOnly').hidden=true;
+ }catch(e){uiError=e.message;if(live?.recording?.active)$('saveEmgOnly').hidden=false}finally{busy=false;await refresh();render()}
+}
+$('switchShield').onclick=async()=>{
+ if(busy)return;busy=true;uiError='';render();
+ try{const response=await fetch('/api/equipment/shield',{method:'POST',headers:{'Content-Type':'application/json','X-Session-Token':sessionToken},body:'{}'});const value=await response.json();if(!response.ok)throw Error(value.error)}
+ catch(error){uiError=error.message}finally{busy=false;await refresh();render()}
+};
+$('record').onclick=()=>mutate(live?.recording?.active?'stop':'start');
+for(const name of ['Nothing','Sword','Shield','Fireball'])$('mark'+name).onclick=()=>mutate('mark',{gesture:name,timing:$('markTiming').value||'before'});
+for(const [id,gesture] of [['markShieldRelease','Shield release'],['markSwordRelease','Sword release'],['markFireballSword','Fireball to Sword']])$(id).onclick=()=>mutate('mark',{gesture,timing:'before'});
+window.addEventListener('camera-ready',render);
+$('saveEmgOnly').onclick=async()=>{try{await window.CameraReference.abandon();await mutate('stop')}catch(e){uiError=e.message;render()}};
+window.addEventListener('beforeunload',event=>{if(live?.recording?.active){event.preventDefault();event.returnValue=''}});
+$('reset').onclick=()=>{countOffset=live?.fireballs||0;render()};
+$('copy').onclick=async()=>{try{await navigator.clipboard.writeText(live.band_file);$('copy').textContent='Copied'}catch(e){$('error').textContent='Select and copy the recording path above.'}};
+setInterval(refresh,100);setInterval(render,100);refresh();
+</script><script src="/camera-live.js"></script></body></html>

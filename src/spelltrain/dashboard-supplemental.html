@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Extra gesture training</title><style>
+:root{font:17px system-ui,sans-serif;color:#edf3fa;background:#101722;color-scheme:dark}*{box-sizing:border-box}body{max-width:680px;margin:64px auto;padding:0 24px}header{display:flex;justify-content:space-between;align-items:center;gap:20px}a{color:#aac8e8;font-size:14px}h1{font-size:28px;margin:0}h2{font-size:34px;line-height:1.2;margin:20px 0}p{color:#b8c7d9;line-height:1.6}main{background:#192435;border:1px solid #2d3c50;border-radius:20px;padding:32px;margin-top:26px}.eyebrow{color:#9fbbd9;font-size:14px}#connection{font-size:14px;margin-top:20px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#e6b96d;margin-right:8px}.dot.live{background:#80e0b6}.buttons{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}button{font:inherit;font-weight:600;cursor:pointer;background:#a5d2ff;color:#102034;border:0;border-radius:10px;padding:14px 22px}button.secondary{background:#2e4058;color:#e3edfa}button:disabled{opacity:.4;cursor:default}button:focus-visible,a:focus-visible{outline:3px solid #f5cb7b;outline-offset:4px}[hidden]{display:none!important}#result{font-size:24px;font-weight:650;margin:22px 0 0}#result.good{color:#83dfb7}#result.bad{color:#ffbc94}.footnote{font-size:13px;line-height:1.5;color:#91a5bd;margin-top:24px}details{font-size:14px;color:#afc3db;margin-top:16px}code{display:block;overflow-wrap:anywhere;background:#101722;padding:12px;border-radius:8px;font-size:12px}summary{cursor:pointer}#timer{font-variant-numeric:tabular-nums;color:#c9ddf3;min-height:25px}@media(max-width:540px){body{margin-top:28px}main{padding:24px}header{align-items:flex-start}h1{font-size:23px}h2{font-size:28px}}
+
+nav{display:flex;gap:16px;flex-wrap:wrap}.badge{display:inline-block;background:#243b50;color:#bfe1ff;border-radius:20px;padding:5px 12px;font-size:13px;margin-top:14px}progress{width:100%;height:6px;accent-color:#a5d2ff;margin-top:14px}#rest{color:#e6c68e}summary{line-height:1.6}
+
+video{width:240px;max-width:100%;border-radius:10px;background:#101722;transform:scaleX(-1)}#cue{font-size:25px;font-weight:700;color:#a5d2ff;min-height:38px}.reference{margin-top:18px}#referenceStatus{font-size:14px}#referenceRetry{margin-top:12px}
+</style></head><body>
+<header><h1>Extra gesture training</h1><a href="/advanced" id="advanced">Advanced tools</a></header>
+<p>40 focused trials. Your previous recordings and models are preserved.</p>
+<div id="connection" role="status"><span class="dot"></span><span id="connectionText">Connecting…</span></div>
+<div class="reference"><button id="enableReference">Enable camera &amp; microphone</button><p id="referenceStatus">Keep your right hand in view. Short recordings let us review actual snap and fist-release times.</p><video id="preview" autoplay muted playsinline hidden></video></div>
+<main><div id="step" class="eyebrow">Loading…</div><progress id="progress" value="0" max="40"></progress>
+<h2 id="motion">Getting ready…</h2><p id="instruction"></p><div id="cue" role="status" aria-live="polite"></div>
+<p id="timer"></p><p id="rest"></p>
+<div class="buttons"><button id="start" disabled>Start Record</button><button id="stop" class="secondary" hidden>Stop</button><button id="confirm" hidden>I did it · Save &amp; Next</button><button id="retry" class="secondary" hidden>Retry this trial</button><button id="download" class="secondary" hidden>Download trial labels</button></div>
+<button id="referenceRetry" class="secondary" hidden>Retry saving camera recording</button>
+<p id="result" role="status" aria-live="polite"></p><p id="detail"></p><details id="reviewReference" hidden><summary>Review this recording</summary><video id="referenceReview" controls playsinline style="transform:none"></video></details>
+<details id="setup" hidden><summary>Connect the EMG stream</summary><p>Open the compatible Kinesis app. In Readings → Live EMG → Record, start a new raw recording at:</p><code id="path"></code></details>
+</main>
+<p class="footnote">Two rounds of 20 trials: closed fists, relaxation, fist transitions, shield tension, single snaps and non-snap comparisons. Hold poses before Record; for transitions/snaps, follow the on-screen cue after Record. No Quest is needed yet. Camera recordings are saved locally with this session. Cue times are targets, not verified action times.</p>
+<script>
+const token='__CSRF__';let sessionToken=token;
+const $=id=>document.getElementById(id);
+let state=null,status=null,connected=false,busy=false,polling=false,revision=0,anchor=0,uiError='';
+let stream=null,capture=null,referenceBuffer=null;
+function referenceReady(){return !!stream&&stream.getAudioTracks().some(t=>t.readyState==='live')&&stream.getVideoTracks().some(t=>t.readyState==='live')}
+async function api(path,value){
+ const send=()=>fetch('/api/'+path,value===undefined?{cache:'no-store'}:{method:'POST',headers:{'Content-Type':'application/json','X-Session-Token':sessionToken},body:JSON.stringify(value)});
+ let response=await send();
+ if(response.status===403&&value!==undefined){const page=await fetch('/',{cache:'no-store'});const match=(await page.text()).match(/const token='([^']+)'/);if(!match)throw Error('Refresh to reconnect.');sessionToken=match[1];response=await send()}
+ const data=await response.json();if(!response.ok)throw Error(data.error||'Request failed');return data;
+}
+function clock(){return status?status.now+(performance.now()-anchor)/1000:0}
+function render(){
+ if(!state||!status)return;
+ const trial=state.current,active=state.active,received=state.pending,last=state.results.at(-1),done=state.completed===state.total;
+ const failed=!active&&!received&&last&&!last.received&&last.motion===trial?.id?last:null;
+ const cooldown=last&&!active&&!received?Math.max(0,last.end+5-clock()):0;
+ const hasReference=!!received?.reference;
+ $('step').textContent=done?'Collection complete':state.completed+' / '+state.total+' saved · Round '+trial.repetition+' of '+state.rounds;
+ $('progress').value=state.completed;$('progress').max=state.total;
+ $('motion').textContent=done?'Extra examples collected.':trial.title;
+ $('instruction').textContent=done?'Your EMG, confirmed prompts and local camera/microphone recordings are saved. These references will be reviewed before retraining.':trial.instruction;
+ $('start').hidden=!!active||!!received||done;$('start').textContent=failed||last?.confirmed===false?'Try again · Start Record':'Start Record';
+ $('start').disabled=busy||!connected||!status.emg_fresh||status.stopped||!referenceReady()||cooldown>0;
+ $('stop').hidden=!active;$('stop').disabled=busy||!connected;
+ $('confirm').hidden=$('retry').hidden=!received;$('confirm').disabled=busy||!hasReference;$('retry').disabled=busy;
+ $('download').hidden=!done;$('advanced').hidden=!!active;
+ $('referenceRetry').hidden=!(received&&!hasReference&&referenceBuffer);$('referenceRetry').disabled=busy;
+ $('reviewReference').hidden=!hasReference;if(hasReference&&$('referenceReview').dataset.id!==received.id){$('referenceReview').dataset.id=received.id;$('referenceReview').src='/api/reference?id='+encodeURIComponent(received.id)}
+ $('timer').textContent=active?Math.max(0,clock()-active.start).toFixed(1)+' seconds · Stop after 6 seconds':'';
+ $('rest').textContent=cooldown>0?'Relax · rest '+Math.ceil(cooldown)+' seconds before the next trial.':'';
+ $('result').textContent=busy?'Saving…':active?'Recording EMG + camera/microphone…':received?(hasReference?'Received.':'EMG received · camera recording still needed'):failed?failed.message:done?'Saved.':'';
+ $('result').className=received&&hasReference||done?'good':failed?'bad':'';
+ $('detail').textContent=uiError||(received?(hasReference?'Did you perform the entire prompt, with your hand visible? For a snap trial, save only if you made exactly one snap.':'Save the camera recording before continuing. If it was lost, Retry this trial.'):!referenceReady()?'Enable camera and microphone above before recording.':'');
+ $('setup').hidden=!!status.emg_fresh;$('path').textContent=status.session.band_file||'';
+ $('connectionText').textContent=!connected?'Recorder unavailable':status.stopped?'Session ended':status.emg_fresh?'Band connected · EMG is flowing':'Waiting for EMG from Kinesis';
+ $('connection').querySelector('.dot').className='dot'+(connected&&status.emg_fresh&&!status.stopped?' live':'');
+ $('enableReference').hidden=referenceReady();
+ $('referenceStatus').textContent=referenceReady()?'Camera/microphone ready · keep your right hand visible. Recording starts only when you press Start Record.':'Enable camera and microphone, then keep your right hand visible.';
+ let text='';
+ if(active){
+  const elapsed=clock()-active.start;
+  const cues=trial.cues||[];
+  for(const c of cues){if(elapsed>=c.at){text=c.text;if(capture&&!capture.cues.some(x=>x.at===c.at))capture.cues.push({at:c.at,text:c.text,client_ms:performance.now()})}}
+  if(!cues.length)text=elapsed>=6?'Finished · press Stop':'Hold the requested pose';
+ }
+ $('cue').textContent=text;
+}
+async function refresh(){if(busy||polling)return;polling=true;const version=revision;try{const [s,t]=await Promise.all([api('status'),api('shield')]);if(version!==revision)return;status=s;state=t;anchor=performance.now();connected=true;render()}catch(e){connected=false;uiError=e.message;render()}finally{polling=false}}
+async function run(action){if(busy)return;busy=true;revision++;uiError='';render();try{await action()}catch(e){uiError=e.message}finally{busy=false;await refresh();render()}}
+$('enableReference').onclick=()=>run(async()=>{
+ if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined')throw Error('This browser cannot record a reference. Use a current Chrome or Safari browser on this Mac.');
+ if(stream)stream.getTracks().forEach(t=>t.stop());
+ stream=await navigator.mediaDevices.getUserMedia({audio:true,video:{width:{ideal:640},height:{ideal:360},frameRate:{ideal:30}}});
+ $('preview').srcObject=stream;$('preview').hidden=false;await $('preview').play();
+});
+async function beginReference(){
+ if(!referenceReady())throw Error('Enable camera and microphone first.');
+ referenceBuffer=null;
+ const mime=['video/webm;codecs=vp8,opus','video/mp4','video/webm'].find(m=>MediaRecorder.isTypeSupported(m));
+ const recorder=new MediaRecorder(stream,{...(mime?{mimeType:mime}:{}),videoBitsPerSecond:350000,audioBitsPerSecond:64000});
+ const c=capture={recorder,chunks:[],cues:[],mime:recorder.mimeType};
+ recorder.ondataavailable=e=>{if(e.data.size)c.chunks.push(e.data)};
+ c.stopped=new Promise((resolve,reject)=>{c.reject=reject;recorder.onstop=()=>resolve(new Blob(c.chunks,{type:c.mime}));recorder.onerror=()=>reject(Error('Camera recording failed. Retry this trial.'))});
+ // The event callback estimates recording start; hardware capture latency is not calibrated.
+ await new Promise((resolve,reject)=>{recorder.onstart=()=>{c.startMs=performance.now();resolve()};recorder.onerror=()=>{const e=Error('Camera recording failed.');reject(e);c.reject(e)};recorder.start(250)});
+ return c;
+}
+async function endReference(){
+ const c=capture;capture=null;
+ if(!c)return null;
+ c.stopMs=performance.now();if(c.recorder.state!=='inactive')c.recorder.stop();
+ const blob=await c.stopped;
+ return {blob,mime:c.mime,alignment:{recorder_start_ms:c.startMs,stop_requested_ms:c.stopMs,
+  start_request_ms:c.requestMs,start_ack_ms:c.ackMs,server_trial_start:c.serverStart,
+  cues_fired:c.cues,audio_track:true,video_track:true}};
+}
+async function uploadReference(){
+ if(!referenceBuffer||!state.pending)throw Error('Reference recording lost. Retry this trial.');
+ if(referenceBuffer.blob.size>8*1024*1024)throw Error('Recording is too large. Retry this trial for about 6 seconds.');
+ const buffer=referenceBuffer,id=state.pending.id;
+ const send=()=>fetch('/api/reference-binary',{method:'POST',headers:{'X-Session-Token':sessionToken,
+  'Content-Type':buffer.mime,'X-Result-Id':id,'X-Reference-Alignment':encodeURIComponent(JSON.stringify(buffer.alignment))},body:buffer.blob});
+ let response=await send();
+ if(response.status===403){const page=await fetch('/',{cache:'no-store'});const match=(await page.text()).match(/const token='([^']+)'/);if(!match)throw Error('Reconnect to the current session.');sessionToken=match[1];response=await send()}
+ const result=await response.json();if(!response.ok)throw Error(result.error||'Camera upload failed. Retry saving it.');
+ state.pending=result;referenceBuffer=null;
+}
+$('start').onclick=()=>run(async()=>{
+ const c=await beginReference();
+ try{c.requestMs=performance.now();state.active=await api('shield/start',{trial_id:state.current.id});c.ackMs=performance.now();c.serverStart=state.active.start}
+ catch(e){await endReference();throw e}
+});
+$('stop').onclick=()=>run(async()=>{
+ const healthy=referenceReady();
+ const result=await api('shield/stop',{});state.active=null;state.pending=result.received?result:null;
+ referenceBuffer=await endReference();
+ if(result.received){if(!healthy||!referenceBuffer){referenceBuffer=null;throw Error('Camera/microphone recording was interrupted. Retry this trial.');}await uploadReference()}else referenceBuffer=null;
+});
+$('referenceRetry').onclick=()=>run(uploadReference);
+$('confirm').onclick=()=>run(async()=>{await api('shield/confirm',{id:state.pending.id,accepted:true});state.pending=null});
+$('retry').onclick=()=>run(async()=>{await api('shield/confirm',{id:state.pending.id,accepted:false});state.pending=null;referenceBuffer=null});
+$('download').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=state.session_id+'-supplemental-labels-v4.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+window.addEventListener('beforeunload',event=>{if(state?.active||referenceBuffer||busy){event.preventDefault();event.returnValue=''}});
+setInterval(refresh,500);setInterval(()=>{if(!busy)render()},100);refresh();
+</script></body></html>

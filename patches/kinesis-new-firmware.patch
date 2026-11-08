@@ -1,0 +1,534 @@
+diff --git a/Sources/Kinesis/BandConnection.swift b/Sources/Kinesis/BandConnection.swift
+index 51eca14..f52dc2b 100644
+--- a/Sources/Kinesis/BandConnection.swift
++++ b/Sources/Kinesis/BandConnection.swift
+@@ -461,12 +461,19 @@ final class NativeBandConnection: NSObject, BandConnection,
+             log.error("Input channel read failed: \(native.domain, privacy: .public) \(native.code, privacy: .public)")
+             fail(Self.explainingPairing(error)); return
+         }
+-        guard characteristic.uuid == psmID, let bytes = characteristic.value, bytes == Data([255, 0]) else {
+-            fail(KinesisError(message: "Unsupported band input channel")); return
++        guard characteristic.uuid == psmID else { return }
++        guard let bytes = characteristic.value else {
++            fail(KinesisError(message: "Band returned no input channel; reconnect and retry")); return
+         }
+-        log.info("Opening native L2CAP channel")
++        let channel: UInt16
++        do {
++            let diagnostic = bytes.map { String(format: "%02x", $0) }.joined(separator: " ")
++            log.notice("Advertised input channel bytes: \(diagnostic, privacy: .public)")
++            channel = try BandInputChannel.decode(bytes)
++        } catch { fail(error); return }
++        log.notice("Opening advertised native L2CAP channel \(channel, privacy: .public)")
+         stage = "opening input channel"
+-        peripheral.openL2CAPChannel(255)
++        peripheral.openL2CAPChannel(channel)
+     }
+ 
+     func peripheral(_ peripheral: CBPeripheral, didOpen channel: CBL2CAPChannel?, error: Error?) {
+diff --git a/Sources/Kinesis/BandModel.swift b/Sources/Kinesis/BandModel.swift
+index 5429a07..4cbfa45 100644
+--- a/Sources/Kinesis/BandModel.swift
++++ b/Sources/Kinesis/BandModel.swift
+@@ -625,6 +625,8 @@ final class BandModel: ObservableObject {
+         connectionLog.notice("Switching Meta accounts; asking for a fresh sign-in")
+     }
+ 
++    @Published private(set) var discoveryOnly = false
++
+     // MARK: pairing
+ 
+     /// The pairing surface reads only this value.
+@@ -637,6 +639,38 @@ final class BandModel: ObservableObject {
+             hasSavedSession: hasSavedMetaSession, canPair: canPair))
+     }
+ 
++    /// Re-discover a reset band, keeping Meta credentials and stored identities untouched.
++    /// Discovery deliberately pauses before enrollment until Pair Band is pressed.
++    func restartBandDiscovery() {
++        guard !quitting, !sleeping else { return }
++        pairRoute = .none
++        enrollmentStage = .idle
++        enrollSession = nil
++        pendingRelogin = false
++        pairFailure = nil
++        pairFailedStep = nil
++        claimedThisRun = false
++        justPaired = false
++        pairAttempts = 0
++        emptyScans = 0
++        discoveryOnly = true
++        disconnect()
++        selectedAddress = ""
++        devices.removeAll()
++        discoveredAddresses.removeAll()
++        battery = nil
++        charging = nil
++        error = nil
++        connectionLog.notice("Fresh band discovery requested; saved Meta sign-in retained")
++        if busy {
++            scanPending = true
++            phase = "Disconnecting before scan…"
++        } else {
++            pairRoute = .scanning
++            run(.scan)
++        }
++    }
++
+     /// Stops a pair run at any stage. A run that never reached the band just ends.
+     func cancelPairing() {
+         guard pairRoute != .none || enrollmentStage != .idle else { return }
+@@ -653,6 +687,7 @@ final class BandModel: ObservableObject {
+     /// session (the sign-in sheet appears only without one) and reconnects.
+     func pairBand() {
+         guard !busy, !quitting, !sleeping, enrollmentStage == .idle else { return }
++        discoveryOnly = false
+         disconnect()
+         error = nil
+         pairFailure = nil
+@@ -1059,6 +1094,7 @@ final class BandModel: ObservableObject {
+         if routing {
+             advancePairRoute(failure, operation: operation)
+         } else if shouldScan {
++            if discoveryOnly { pairRoute = .scanning }
+             run(.scan)
+         } else if wantsConnection && !quitting && !sleeping {
+             scheduleReconnect()
+@@ -1084,6 +1120,11 @@ final class BandModel: ObservableObject {
+                 return
+             }
+             emptyScans = 0
++            if discoveryOnly {
++                phase = "Band found — press Pair Band to continue"
++                connectionLog.notice("Fresh band discovered; waiting for explicit Pair Band before claim")
++                return
++            }
+             routeForSelectedBand()
+         case .connecting:
+             guard let failure else {
+diff --git a/Sources/Kinesis/KinesisApp.swift b/Sources/Kinesis/KinesisApp.swift
+index fa14e68..555affd 100644
+--- a/Sources/Kinesis/KinesisApp.swift
++++ b/Sources/Kinesis/KinesisApp.swift
+@@ -26,7 +26,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
+         if let monitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown, .flagsChanged], handler: { [weak self] event in
+             self?.handleCursorKey(event)
+         }) { cursorKeyMonitors.append(monitor) }
+-        model.startAutomatically()
++        if CommandLine.arguments.contains("--find-band") {
++            model.restartBandDiscovery()
++        } else {
++            model.startAutomatically()
++        }
+     }
+     private func handleCursorKey(_ event: NSEvent) {
+         // A mapped thumb swipe can send Escape without disabling the cursor.
+diff --git a/Sources/Kinesis/PairBandControl.swift b/Sources/Kinesis/PairBandControl.swift
+index 6c651c3..d494483 100644
+--- a/Sources/Kinesis/PairBandControl.swift
++++ b/Sources/Kinesis/PairBandControl.swift
+@@ -9,6 +9,7 @@ struct PairBandControl: View {
+     var layout = PairingFlowView.Layout.leading
+     var idleHeadline: String?
+     var body: some View {
++        VStack(spacing: 14) {
+         PairingFlowView(state: model.pairing, layout: layout, showsButton: layout == .centered,
+                         idleHeadline: idleHeadline,
+                         pair: { model.pairBand() }, cancel: { model.cancelPairing() },
+@@ -17,6 +18,18 @@ struct PairBandControl: View {
+                             model.switchMetaAccount()
+                             model.pairBand()
+                         })
++        if model.discoveryOnly && !model.busy && !model.selectedAddress.isEmpty {
++            Text("band found. press pair band when you’re ready to continue.")
++                .font(KinesisType.caption).foregroundStyle(KinesisStyle.secondary)
++        }
++        if !model.live {
++            Button(model.selectedAddress.isEmpty ? "find nearby bands" : "find band again") {
++                model.restartBandDiscovery()
++            }
++            .buttonStyle(KinesisButtonStyle())
++            .help("Starts a fresh Bluetooth scan without clearing your Meta sign-in. Stops before claim.")
++        }
++        }
+     }
+ }
+ 
+diff --git a/Sources/KinesisCore/AirShield.swift b/Sources/KinesisCore/AirShield.swift
+index 5830c7a..979ecab 100644
+--- a/Sources/KinesisCore/AirShield.swift
++++ b/Sources/KinesisCore/AirShield.swift
+@@ -11,21 +11,32 @@ public struct BandProtocolError: LocalizedError {
+ struct AirShieldKeys {
+     let encryption: SymmetricKey
+     let mac: SymmetricKey
++    let macPrefix: Data
++    let padAligned: Bool
+ 
+-    // Only the parameter-3 exchange has been verified on this band.
+-    init(secret: Data, challenge: Data, seed: Data) throws {
++    // Scheme 26 compatibility follows air-gestures hardware-day findings (6cad0d4).
++    init(secret: Data, challenge: Data, seed: Data, scheme: UInt64 = 3) throws {
+         guard secret.count == 32, challenge.count == 16, seed.count == 32 else {
+             throw BandProtocolError("Invalid AirShield key material")
+         }
++        guard scheme == 3 || scheme == 26 else {
++            throw BandProtocolError("Unsupported AirShield scheme (\(scheme))")
++        }
+         let hashed = Data(SHA256.hash(data: secret))
+-        encryption = HKDF<SHA256>.deriveKey(inputKeyMaterial: SymmetricKey(data: hashed),
+-            salt: Data(SHA256.hash(data: hashed + challenge + seed)), info: Data("AirShield".utf8), outputByteCount: 32)
++        let input = scheme == 3 ? hashed : secret
++        let saltInput = scheme == 3 ? hashed + challenge + seed : challenge + seed
++        encryption = HKDF<SHA256>.deriveKey(inputKeyMaterial: SymmetricKey(data: input),
++            salt: Data(SHA256.hash(data: saltInput)), info: Data("AirShield".utf8), outputByteCount: 32)
+         mac = encryption
++        macPrefix = scheme == 26 ? Data([2, 2, 0, 0]) : Data()
++        padAligned = scheme == 26
+     }
+ 
+     init(encryption: Data, mac: Data) {
+         self.encryption = SymmetricKey(data: encryption)
+         self.mac = SymmetricKey(data: mac)
++        self.macPrefix = Data()
++        self.padAligned = false
+     }
+ }
+ 
+@@ -57,19 +68,25 @@ struct AirShieldCipher {
+     private(set) var counter: UInt32
+ 
+     mutating func encrypt(_ frame: Data) throws -> Data {
+-        let count = (16 - frame.count % 16) % 16
++        guard !frame.isEmpty else { throw BandProtocolError("Empty AirShield frame") }
++        let remainder = 16 - frame.count % 16
++        let count = remainder == 16 && !keys.padAligned ? 0 : remainder
+         let padded = frame + Data(repeating: UInt8(0xc0 + count), count: count)
+         guard !padded.isEmpty, padded.count <= 4096 else { throw BandProtocolError("AirShield frame too large") }
+         let ciphertext = try crypt(padded, key: keys.encryption, iv: iv, operation: CCOperation(kCCEncrypt))
+         let body = Data([UInt8(ciphertext.count / 16 - 1)]) + ciphertext
+-        let tag = HMAC<SHA256>.authenticationCode(for: counter.littleEndianData + body, using: keys.mac)
++        let tag = HMAC<SHA256>.authenticationCode(for: keys.macPrefix + counter.littleEndianData + body, using: keys.mac)
+         iv = Data(ciphertext.suffix(16))
+         counter &+= 1
+         return Data([0x40]) + Data(tag.prefix(8)) + body
+     }
+ 
+     mutating func decrypt(_ packet: Data) throws -> Data {
+-        let expected = HMAC<SHA256>.authenticationCode(for: counter.littleEndianData + packet.dropFirst(9), using: keys.mac)
++        guard packet.count >= 26, (packet.count - 10) % 16 == 0,
++              Int(packet[9]) + 1 == (packet.count - 10) / 16 else {
++            throw BandProtocolError("Invalid AirShield packet length")
++        }
++        let expected = HMAC<SHA256>.authenticationCode(for: keys.macPrefix + counter.littleEndianData + packet.dropFirst(9), using: keys.mac)
+         // Compare every byte before decrypting. No unauthenticated plaintext leaves this type.
+         let difference = zip(expected.prefix(8), packet.dropFirst().prefix(8)).reduce(UInt8(0)) { $0 | ($1.0 ^ $1.1) }
+         guard difference == 0 else { throw BandProtocolError("Band packet authentication failed") }
+diff --git a/Sources/KinesisCore/BandSession.swift b/Sources/KinesisCore/BandSession.swift
+index 0134ed3..9ea76d0 100644
+--- a/Sources/KinesisCore/BandSession.swift
++++ b/Sources/KinesisCore/BandSession.swift
+@@ -17,6 +17,7 @@ public final class BandSession {
+     private var transmitter: AirShieldCipher?
+     private var receiver: AirShieldReceiver?
+     private var datax = DataXReceiver()
++    private var encryptionScheme: UInt64 = 3
+     private var channelTypes: [UInt16: UInt32] = [:]
+     private var dial = PinchDial()
+     private var emittedEngagement = false
+@@ -158,17 +159,28 @@ public final class BandSession {
+             let peer = try P256.KeyAgreement.PublicKey(x963Representation: Data([4]) + point)
+             switch kind {
+             case 0x02000001:
+-                guard peerKey == nil, try fields.integer(3) == 0, try fields.integer(4) == 3 else {
+-                    throw BandProtocolError("Unsupported band encryption parameters")
++                let curve = try fields.integer(3)
++                let offered = try fields.integer(4)
++                guard peerKey == nil, curve == 0, offered == 3 || offered & 26 == 26 else {
++                    throw BandProtocolError("Unsupported band encryption parameters (curve \(curve), offer \(offered))")
+                 }
++                encryptionScheme = offered & 26 == 26 ? 26 : 3
++                log.notice("Negotiating AirShield scheme \(self.encryptionScheme, privacy: .public), offered \(offered, privacy: .public)")
+                 peerKey = point
+                 peerChallenge = try fields.bytes(2, count: 16)
+                 outgoing.append(try BandWire.frame(channel: 1, words: [0x02000002], payload:
+                     BandWire.field(1, publicKey) + BandWire.field(2, seed) + BandWire.field(3, iv)
+-                    + BandWire.field(4, UInt64(base)) + BandWire.field(5, 3)))
++                    + BandWire.field(4, UInt64(base)) + BandWire.field(5, encryptionScheme)))
+             case 0x02000002:
+-                guard point == peerKey, let peerChallenge, try fields.integer(5) == 3 else {
+-                    throw BandProtocolError("Unexpected band encryption response")
++                let selected = try fields.integer(5)
++                let matchesPeer = point == peerKey
++                log.notice("AirShield response scheme \(selected, privacy: .public), expected \(self.encryptionScheme, privacy: .public), peer key matches \(matchesPeer, privacy: .public)")
++                // Some firmware echoes its 27 capability mask in EnableEncryption.
++                // The documented 26 keying is tried only for this exact response;
++                // AES/HMAC authentication must still succeed before any frame is used.
++                let compatibleResponse = selected == encryptionScheme || (encryptionScheme == 26 && selected == 27)
++                guard matchesPeer, let peerChallenge, compatibleResponse else {
++                    throw BandProtocolError("Unexpected band encryption response (scheme \(selected), expected \(encryptionScheme), peer key matches \(matchesPeer))")
+                 }
+                 let secret = try privateKey.sharedSecretFromKeyAgreement(with: peer).withUnsafeBytes { Data($0) }
+                 let peerSeed = try fields.bytes(2, count: 32)
+@@ -176,8 +188,9 @@ public final class BandSession {
+                 let peerIV = try fields.bytes(3, count: 16)
+                 let peerBase = try fields.integer(4)
+                 guard let peerCounter = UInt32(exactly: peerBase) else { throw BandProtocolError("Invalid band packet counter") }
+-                transmitter = AirShieldCipher(keys: try AirShieldKeys(secret: secret, challenge: peerChallenge, seed: seed), iv: iv, counter: base)
+-                receiver = AirShieldReceiver(cipher: AirShieldCipher(keys: try AirShieldKeys(secret: secret, challenge: challenge, seed: peerSeed), iv: peerIV, counter: peerCounter))
++                transmitter = AirShieldCipher(keys: try AirShieldKeys(secret: secret, challenge: peerChallenge, seed: seed, scheme: encryptionScheme), iv: iv, counter: base)
++                receiver = AirShieldReceiver(cipher: AirShieldCipher(keys: try AirShieldKeys(secret: secret, challenge: challenge, seed: peerSeed, scheme: encryptionScheme), iv: peerIV, counter: peerCounter))
++                datax = DataXReceiver(alwaysPadded: encryptionScheme == 26)
+                 if let ceremony {
+                     // Enrollment startup runs the ownership ceremony instead of
+                     // the identity queries; it rejoins the enrolled flow at trust.
+@@ -472,7 +485,7 @@ public final class BandSession {
+     /// other, then rejoin the shared EndLinkSetup flow.
+     private func receiveIdentity(_ frame: DataXFrame, outgoing: inout Data) throws -> [BandEvent] {
+         guard let kind = frame.words.last else { return [] }
+-        if kind & 0xff000000 == 0x03000000, frame.channel == 2 {
++        if kind & 0xff000000 == 0x03000000, frame.routedChannel == 2 {
+             guard kind == 0x03001000 else {
+                 if kind == 0x03001043 {
+                     throw BandIdentityMismatchError(
+@@ -482,7 +495,7 @@ public final class BandSession {
+                     "the band rejected the stored identity (\(String(kind, radix: 16))). try reconnecting.")
+             }
+             appTrusted = true
+-        } else if kind == 0x02001001, frame.channel & 0x8000 != 0 {
++        } else if kind == 0x02001001, frame.routedChannel & 0x8000 != 0 {
+             guard !bandTrusted else { throw BandProtocolError("The band sent a duplicate identity proof") }
+             let fields = try ProtoFields(frame.payload)
+             guard let peerKey, let peerSeed else { throw BandProtocolError("Band encryption is not ready") }
+@@ -496,7 +509,7 @@ public final class BandSession {
+             }
+             bandTrusted = true
+             outgoing.append(try encrypt(BandWire.frame(channel: frame.channel & 0x7fff, words: [0x03001000])))
+-        } else if kind == 0x02001000, frame.channel == 0x8001, endLinkSent {
++        } else if kind == 0x02001000, frame.routedChannel == 0x8001, endLinkSent {
+             let fields = try ProtoFields(frame.payload)
+             guard try fields.requiredInteger(1) == 1, try fields.bytes(2).count == 16 else {
+                 throw BandProtocolError("Unexpected band link setup response")
+@@ -545,14 +558,14 @@ public final class BandSession {
+             channelTypes[frame.channel] = kind
+         }
+         guard let kind = channelTypes[frame.channel] else { return [] }
+-        if kind == 0x02000315, modelCapture.receive(channel: frame.channel, payload: frame.payload, at: time) {
++        if kind == 0x02000315, modelCapture.receive(channel: frame.routedChannel, payload: frame.payload, at: time) {
+             return modelCapture.drainEvents()
+         }
+         if kind == 0x0200020c, setupStage == .input, !stopping, modelCapture.status.active {
+             // A malformed frame is skipped: failing the connection here would leave the band
+             // in the recording's model until the next reconnect.
+             guard let sample = try? BandInferenceSample(payload: frame.payload) else {
+-                log.error("Skipped a malformed band model frame on channel \(frame.channel, privacy: .public)")
++                log.error("Skipped a malformed band model frame on channel \(frame.routedChannel, privacy: .public)")
+                 return modelCapture.drainEvents()
+             }
+             modelCapture.receive(sample, at: time)
+@@ -560,7 +573,7 @@ public final class BandSession {
+         }
+         if !streaming, startupFrames < 16 {
+             startupFrames += 1
+-            log.info("Band startup response: channel \(frame.channel, privacy: .public), type \(String(kind, radix: 16), privacy: .public), payload bytes \(frame.payload.count, privacy: .public)")
++            log.info("Band startup response: channel \(frame.routedChannel, privacy: .public), type \(String(kind, radix: 16), privacy: .public), payload bytes \(frame.payload.count, privacy: .public)")
+         }
+         if ceremony != nil, setupStage == .ceremony, !stopping {
+             return try receiveCeremony(frame, at: time, outgoing: &outgoing)
+@@ -568,7 +581,7 @@ public final class BandSession {
+         if enrollment != nil, setupStage == .identity, !stopping {
+             return try receiveIdentity(frame, outgoing: &outgoing)
+         }
+-        if kind == 0x02001000, frame.channel == 0x8001, setupStage == .link, !stopping {
++        if kind == 0x02001000, frame.routedChannel == 0x8001, setupStage == .link, !stopping {
+             let fields = try ProtoFields(frame.payload)
+             guard try fields.requiredInteger(1) == 1 else {
+                 throw BandProtocolError("The band couldn't finish setting up the connection. Try reconnecting.")
+@@ -578,7 +591,7 @@ public final class BandSession {
+                 BandWire.field(1, 1) + BandWire.field(3, Data()))))
+             return []
+         }
+-        if frame.channel & 0x7fff == batteryChannel & 0x7fff, !stopping {
++        if frame.routedChannel & 0x7fff == batteryChannel & 0x7fff, !stopping {
+             if kind == 0x0300c001 {
+                 batteryRequest = nil
+                 batteryUnavailable = true
+@@ -594,17 +607,17 @@ public final class BandSession {
+             return []
+         }
+         if kind == 0x0300c001, !stopping {
+-            if frame.channel == 3, setupStage == .deviceInfo {
++            if frame.routedChannel == 3, setupStage == .deviceInfo {
+                 throw BandProtocolError("The band rejected gesture setup. Try reconnecting.")
+             }
+-            if let rawRequest, frame.channel == 7 || (frame.channel == 5 && rawRequest.stage != .config) {
++            if let rawRequest, frame.routedChannel == 7 || (frame.routedChannel == 5 && rawRequest.stage != .config) {
+                 self.rawRequest = nil
+                 return [BandEvent(.rawEMGFailure("The band rejected the EMG request."), at: time)]
+             }
+-            if frame.channel == 5, setupStage == .input {
++            if frame.routedChannel == 5, setupStage == .input {
+                 throw BandProtocolError("The band rejected the input subscription. Try reconnecting.")
+             }
+-            if frame.channel == 6, handRequest != nil {
++            if frame.routedChannel == 6, handRequest != nil {
+                 handRequest = nil
+                 hand = nil
+                 return [BandEvent(.handednessFailure("The band couldn't report its hand setting. Reconnect and try again."), at: time)]
+@@ -613,7 +626,7 @@ public final class BandSession {
+         }
+         // Ignore unrelated services without trying to interpret their protobuf schema.
+         guard [0x02000315, 0x0200020a, 0x0200020d, 0x0200020f, 0x02000212].contains(kind) else { return [] }
+-        if kind == 0x02000315, frame.channel == 3, setupStage == .deviceInfo, !stopping {
++        if kind == 0x02000315, frame.routedChannel == 3, setupStage == .deviceInfo, !stopping {
+             let fields = try ProtoFields(frame.payload)
+             guard try fields.requiredInteger(1) == 1 else { return [] }
+             guard try fields.requiredInteger(2) == 1 else {
+@@ -626,14 +639,14 @@ public final class BandSession {
+             return []
+         }
+         guard setupStage == .input else { return [] }
+-        if kind == 0x02000315, frame.channel & 0x7fff == configurationChannel & 0x7fff {
++        if kind == 0x02000315, frame.routedChannel & 0x7fff == configurationChannel & 0x7fff {
+             guard !stopping else { return [] }
+             return try receiveHand(ProtoFields(frame.payload), at: time, outgoing: &outgoing)
+         }
+         if kind == 0x02000315, let pending = rawRequest, !stopping {
+             let fields = try ProtoFields(frame.payload)
+             let expectedChannel = pending.stage == .config ? configServiceChannel : streamChannel
+-            if frame.channel & 0x7fff == expectedChannel & 0x7fff, try fields.integer(1) == pending.id {
++            if frame.routedChannel & 0x7fff == expectedChannel & 0x7fff, try fields.integer(1) == pending.id {
+                 guard try fields.integer(2) == 1 else {
+                     rawRequest = nil
+                     return [BandEvent(.rawEMGFailure("The band rejected the EMG change. Gestures remain requested."), at: time)]
+@@ -670,7 +683,7 @@ public final class BandSession {
+                 return []
+             }
+         }
+-        if kind == 0x02000315, frame.channel != (streamChannel & 0x7fff) { return [] }
++        if kind == 0x02000315, frame.routedChannel != (streamChannel & 0x7fff) { return [] }
+         if kind == 0x02000315 {
+             let fields = try ProtoFields(frame.payload)
+             let request = try fields.integer(1)
+diff --git a/Sources/KinesisCore/BandWire.swift b/Sources/KinesisCore/BandWire.swift
+index 2d879ac..cc3adfe 100644
+--- a/Sources/KinesisCore/BandWire.swift
++++ b/Sources/KinesisCore/BandWire.swift
+@@ -87,6 +87,7 @@ enum BandWire {
+ 
+ public struct DataXFrame {
+     public let channel: UInt16
++    public var routedChannel: UInt16 { channel & 0x80ff }
+     public let words: [UInt32]
+     public let payload: Data
+ 
+@@ -99,6 +100,9 @@ public struct DataXFrame {
+ 
+ struct DataXReceiver {
+     private var pending = Data()
++    private var alwaysPadded: Bool
++
++    init(alwaysPadded: Bool = false) { self.alwaysPadded = alwaysPadded }
+ 
+     mutating func feed(_ plaintext: Data) throws -> [DataXFrame] {
+         guard !plaintext.isEmpty, plaintext.count % 16 == 0 else {
+@@ -106,8 +110,10 @@ struct DataXReceiver {
+         }
+         var bytes = plaintext
+         let padding = Int(bytes.last!) - 0xc0
+-        // Only the repeated suffix observed on the tested firmware is stripped.
+-        if (1...15).contains(padding), bytes.suffix(padding).allSatisfy({ Int($0) == 0xc0 + padding }) {
++        // Scheme 26 pads every record, including aligned frames and split fragments.
++        // Legacy aligned payload bytes must not be mistaken for padding.
++        if alwaysPadded, (1...16).contains(padding), padding <= bytes.count,
++           bytes.suffix(padding).allSatisfy({ Int($0) == 0xc0 + padding }) {
+             bytes.removeLast(padding)
+         }
+         pending.append(bytes)
+@@ -129,6 +135,13 @@ struct DataXReceiver {
+             frames.append(DataXFrame(channel: channel, words: words, payload: Data(pending[offset..<size])))
+             pending = Data(pending.dropFirst(size))
+         }
++        if !alwaysPadded, let last = pending.last {
++            let residualPadding = Int(last) - 0xc0
++            if (1...15).contains(residualPadding), residualPadding <= pending.count,
++               pending.suffix(residualPadding).allSatisfy({ $0 == last }) {
++                pending.removeLast(residualPadding)
++            }
++        }
+         return frames
+     }
+ }
+diff --git a/Tests/KinesisTests/BandModelTests.swift b/Tests/KinesisTests/BandModelTests.swift
+index be2b526..dc0e381 100644
+--- a/Tests/KinesisTests/BandModelTests.swift
++++ b/Tests/KinesisTests/BandModelTests.swift
+@@ -2117,3 +2117,25 @@ private struct FakePairClient: BandPairClient {
+     #expect(rig.controls.clicks.count == 2)
+     #expect(rig.controls.buttonEvents.filter(\.down).count == rig.controls.buttonEvents.filter { !$0.down }.count)
+ }
++
++
++@Test @MainActor func rediscoveryKeepsMetaSignInAndWaitsBeforeClaim() async throws {
++    let defaults = MemoryDefaults()
++    let connection = RecordedConnection()
++    let store = SavedSessionStore()
++    store.saved = MetaSession(accessToken: "synthetic-saved", userID: "test")
++    let model = BandModel(defaults: defaults, connection: connection, controls: RecordingControls(), sessionStore: store, clock: { 100 })
++    model.selectedAddress = "old-band"
++    model.restartBandDiscovery()
++    #expect(model.selectedAddress.isEmpty)
++    #expect(model.pairRoute == .scanning && model.discoveryOnly)
++    #expect(connection.requests == ["scan"])
++    #expect(store.deletions == 0 && store.saved?.accessToken == "synthetic-saved")
++    connection.send(.devices([BandDevice(address: "new-band", name: "Meta Band New", rssi: -40)]))
++    connection.finish()
++    #expect(model.selectedAddress == "new-band")
++    #expect(model.pairRoute == .none && !model.busy)
++    #expect(connection.requests == ["scan"])
++    #expect(store.deletions == 0 && store.saved?.accessToken == "synthetic-saved")
++    await model.shutdown()
++}
+diff --git a/Sources/KinesisCore/InputChannel.swift b/Sources/KinesisCore/InputChannel.swift
+new file mode 100644
+index 0000000..0634bde
+--- /dev/null
++++ b/Sources/KinesisCore/InputChannel.swift
+@@ -0,0 +1,16 @@
++import Foundation
++
++/// PSM is supplied by the peer, little-endian, rather than fixed by app version.
++public enum BandInputChannel {
++    public static func decode(_ bytes: Data) throws -> UInt16 {
++        guard bytes.count == 2 else {
++            throw BandProtocolError("Band input channel has an unexpected length (\(bytes.count) bytes)")
++        }
++        let value = UInt16(bytes[bytes.startIndex]) | UInt16(bytes[bytes.startIndex + 1]) << 8
++        // LE credit-based SPSM values are nonzero and fit in one octet.
++        guard value > 0 && value <= 255 else {
++            throw BandProtocolError("Band advertised an invalid LE input channel (\(value)); reconnect and retry")
++        }
++        return value
++    }
++}
+diff --git a/Tests/KinesisCoreTests/InputChannelTests.swift b/Tests/KinesisCoreTests/InputChannelTests.swift
+new file mode 100644
+index 0000000..e1d19a3
+--- /dev/null
++++ b/Tests/KinesisCoreTests/InputChannelTests.swift
+@@ -0,0 +1,15 @@
++import Foundation
++import Testing
++@testable import KinesisCore
++
++@Test func inputChannelUsesAdvertisedLittleEndianPSM() throws {
++    #expect(try BandInputChannel.decode(Data([255, 0])) == 255)
++    #expect(try BandInputChannel.decode(Data([129, 0])) == 129)
++    #expect(try BandInputChannel.decode(Data([1, 0])) == 1)
++}
++
++@Test func inputChannelRejectsInvalidPayloads() {
++    for bytes: [UInt8] in [[], [255], [255, 0, 1], [0, 0], [0, 1]] {
++        #expect(throws: BandProtocolError.self) { try BandInputChannel.decode(Data(bytes)) }
++    }
++}

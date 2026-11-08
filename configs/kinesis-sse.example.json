@@ -1,0 +1,8 @@
+{
+  "type_path": "type",
+  "emg_type": "emg",
+  "samples_path": "samples",
+  "layout": "sample_major",
+  "sequence_path": "sequence",
+  "timestamp_path": "timestamp"
+}

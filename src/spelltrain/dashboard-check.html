@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Band movement check</title>
+<style>
+:root{font:17px system-ui,sans-serif;color:#edf3fa;background:#101722;color-scheme:dark}*{box-sizing:border-box}body{max-width:680px;margin:64px auto;padding:0 24px}header{display:flex;justify-content:space-between;align-items:center;gap:20px}a{color:#aac8e8;font-size:14px}h1{font-size:28px;margin:0}h2{font-size:34px;line-height:1.2;margin:20px 0}p{color:#b8c7d9;line-height:1.6}main{background:#192435;border:1px solid #2d3c50;border-radius:20px;padding:32px;margin-top:26px}.eyebrow{color:#9fbbd9;font-size:14px}#connection{font-size:14px;margin-top:20px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#e6b96d;margin-right:8px}.dot.live{background:#80e0b6}.buttons{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}button{font:inherit;font-weight:600;cursor:pointer;background:#a5d2ff;color:#102034;border:0;border-radius:10px;padding:14px 22px}button.secondary{background:#2e4058;color:#e3edfa}button:disabled{opacity:.4;cursor:default}button:focus-visible,a:focus-visible{outline:3px solid #f5cb7b;outline-offset:4px}[hidden]{display:none!important}#result{font-size:24px;font-weight:650;margin:22px 0 0}#result.good{color:#83dfb7}#result.bad{color:#ffbc94}.footnote{font-size:13px;line-height:1.5;color:#91a5bd;margin-top:24px}details{font-size:14px;color:#afc3db;margin-top:16px}code{display:block;overflow-wrap:anywhere;background:#101722;padding:12px;border-radius:8px;font-size:12px}summary{cursor:pointer}#timer{font-variant-numeric:tabular-nums;color:#c9ddf3;min-height:25px}@media(max-width:540px){body{margin-top:28px}main{padding:24px}header{align-items:flex-start}h1{font-size:23px}h2{font-size:28px}}
+</style>
+</head>
+<body>
+<header><h1>Band movement check</h1><a id="advanced" href="/advanced">Advanced tools</a></header>
+<p>One motion at a time. Use your right hand.</p>
+<div id="connection" role="status"><span class="dot"></span><span id="connectionText">Connecting to your training session…</span></div>
+<main>
+<div class="eyebrow" id="step">Initial test run</div>
+<h2 id="motion">Getting ready…</h2>
+<p id="instruction">Checking the band connection.</p>
+<p id="timer" aria-live="off"></p>
+<div class="buttons">
+<button id="start" disabled>Start Record</button>
+<button id="stop" class="secondary" hidden>Stop</button>
+<button id="next" hidden>Next motion →</button>
+<button id="again" class="secondary" hidden>Run test again</button>
+</div>
+<p id="result" role="status" aria-live="polite"></p>
+<p id="detail"></p>
+<details id="setup" hidden><summary>Connect the EMG stream</summary><p>In Kinesis, enable Developer mode, then open Readings → Live EMG → Record. Save the raw recording at:</p><code id="path"></code><p>Pairing alone does not start the raw EMG stream. Leave its recording running while you do this check.</p></details>
+</main>
+<p class="footnote">“Received” means EMG was captured during your motion. This first check does not recognize the gesture yet. Test recordings are saved separately from verified training labels.</p>
+<script>
+const token='__CSRF__';
+let sessionToken=token;
+const $=id=>document.getElementById(id);
+let motions=[],index=0,active=null,result=null,status=null,pending=false,connected=false,finished=false,polling=false,revision=0,lastActiveId=null,uiError='';
+async function api(path,value){
+ const send=()=>fetch('/api/'+path,value===undefined?{cache:'no-store'}:{method:'POST',headers:{'Content-Type':'application/json','X-Session-Token':sessionToken},body:JSON.stringify(value)});
+ let response=await send();
+ // A rejected token means the mutation did not run. Fetch the current page token and retry once.
+ if(response.status===403&&value!==undefined){
+  const page=await fetch('/',{cache:'no-store'});
+  if(!page.ok)throw Error('Refresh this page to reconnect to the current session.');
+  const match=(await page.text()).match(/const token='([^']+)'/);
+  if(!match)throw Error('Refresh this page to reconnect to the current session.');
+  sessionToken=match[1];response=await send();
+ }
+ const data=await response.json();if(!response.ok)throw Error(data.error||'Request failed');return data;
+}
+function render(){
+ if(!motions.length)return;
+ $('step').textContent=finished?'Test complete':'Motion '+(index+1)+' of '+motions.length;
+ $('motion').textContent=finished?'All motions received.':motions[index].title;
+ $('instruction').textContent=finished?'Your band is sending EMG during each exercise. You can now collect repeated, labeled training examples using Advanced tools.':motions[index].instruction+' Press Stop when you finish.';
+ $('start').hidden=!!active||!!result?.received||finished;
+ $('start').textContent=result&&!result.received?'Try again · Start Record':'Start Record';
+ $('start').disabled=pending||!connected||!status||status.review||status.stopped||!status.emg_fresh;
+ $('stop').hidden=!active;$('stop').disabled=pending||!connected;
+ $('next').hidden=!result?.received||finished;$('next').disabled=pending;
+ $('next').textContent=index===motions.length-1?'Finish test':'Next motion →';
+ $('again').hidden=!finished;
+ $('advanced').hidden=!!active;
+ $('result').textContent=finished?'':active?'Recording…':result?result.message:'';
+ $('result').className=result?.received?'good':result?'bad':'';
+ $('detail').textContent=uiError|| (result?.received&&!finished?'EMG captured and saved. Continue when you’re ready.':active?'Keep going for about 3 seconds, then press Stop.':'');
+ $('setup').hidden=finished||!!status?.emg_fresh;
+ $('path').textContent=status?.session.band_file||'Use your configured Kinesis raw recording file.';
+ if(!active)$('timer').textContent='';
+}
+function fail(error){connected=false;$('connectionText').textContent='Recorder unavailable. Reconnect before continuing.';$('connection').querySelector('.dot').className='dot';render();$('detail').textContent=error.message;}
+async function refresh(){if(polling||pending)return;polling=true;const version=revision;try{
+ const [s,check]=await Promise.all([api('status'),api('check')]);
+ if(version!==revision)return;
+ status=s;connected=true;motions=check.motions;active=check.active;
+ if(active)lastActiveId=active.id;
+ const last=check.results.at(-1);
+ if(!active&&!result&&last&&last.id===lastActiveId){result=last;lastActiveId=null;}
+ // Recover the current session's progress after a refresh, including an unfinished capture.
+ if(!window.checkInitialized){
+  const passed=new Set(check.results.filter(r=>r.received).map(r=>r.motion));
+  index=active?Math.max(0,motions.findIndex(m=>m.id===active.motion)):motions.findIndex(m=>!passed.has(m.id));
+  if(index<0){index=motions.length-1;finished=true}
+  window.checkInitialized=true;
+ }
+ const ready=s.emg_fresh&&!s.stopped;
+ $('connectionText').textContent=s.stopped?'Recording session ended. Start a new session.':ready?'Band connected · EMG is flowing':'Waiting for EMG from Kinesis';
+ $('connection').querySelector('.dot').className='dot'+(ready?' live':'');render();
+ if(active)$('timer').textContent=Math.max(0,s.now-active.start).toFixed(1)+' seconds recorded';
+ }catch(error){fail(error)}finally{polling=false}}
+async function run(action){if(pending)return;pending=true;revision++;uiError='';render();try{await action()}catch(error){uiError=error.message}finally{pending=false;await refresh();render()}}
+$('start').onclick=()=>run(async()=>{active=await api('check/start',{motion:motions[index].id});lastActiveId=active.id;result=null});
+$('stop').onclick=()=>run(async()=>{result=await api('check/stop',{});active=null});
+$('next').onclick=()=>{if(!result?.received)return;if(index===motions.length-1)finished=true;else index++;result=null;render()};
+$('again').onclick=()=>{index=0;finished=false;result=null;render()};
+setInterval(refresh,500);refresh();
+window.addEventListener('beforeunload',event=>{if(active){event.preventDefault();event.returnValue=''}});
+</script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Spell training</title><style>
+:root{font:17px system-ui,sans-serif;color:#edf3fa;background:#101722;color-scheme:dark}*{box-sizing:border-box}body{max-width:680px;margin:64px auto;padding:0 24px}header{display:flex;justify-content:space-between;align-items:center;gap:20px}a{color:#aac8e8;font-size:14px}h1{font-size:28px;margin:0}h2{font-size:34px;line-height:1.2;margin:20px 0}p{color:#b8c7d9;line-height:1.6}main{background:#192435;border:1px solid #2d3c50;border-radius:20px;padding:32px;margin-top:26px}.eyebrow{color:#9fbbd9;font-size:14px}#connection{font-size:14px;margin-top:20px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#e6b96d;margin-right:8px}.dot.live{background:#80e0b6}.buttons{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}button{font:inherit;font-weight:600;cursor:pointer;background:#a5d2ff;color:#102034;border:0;border-radius:10px;padding:14px 22px}button.secondary{background:#2e4058;color:#e3edfa}button:disabled{opacity:.4;cursor:default}button:focus-visible,a:focus-visible{outline:3px solid #f5cb7b;outline-offset:4px}[hidden]{display:none!important}#result{font-size:24px;font-weight:650;margin:22px 0 0}#result.good{color:#83dfb7}#result.bad{color:#ffbc94}.footnote{font-size:13px;line-height:1.5;color:#91a5bd;margin-top:24px}details{font-size:14px;color:#afc3db;margin-top:16px}code{display:block;overflow-wrap:anywhere;background:#101722;padding:12px;border-radius:8px;font-size:12px}summary{cursor:pointer}#timer{font-variant-numeric:tabular-nums;color:#c9ddf3;min-height:25px}@media(max-width:540px){body{margin-top:28px}main{padding:24px}header{align-items:flex-start}h1{font-size:23px}h2{font-size:28px}}
+
+nav{display:flex;gap:16px;flex-wrap:wrap}.badge{display:inline-block;background:#243b50;color:#bfe1ff;border-radius:20px;padding:5px 12px;font-size:13px;margin-top:14px}progress{width:100%;height:6px;accent-color:#a5d2ff;margin-top:14px}#rest{color:#e6c68e}summary{line-height:1.6}
+</style></head><body>
+<header><h1>Spell training</h1><nav><a id="checkLink" href="/check">Signal check</a><a id="advanced" href="/advanced">Advanced tools</a></nav></header>
+<p>Open palm for shield. Fist for sword. Snap for fireball. One trial at a time.</p>
+<div id="connection" role="status"><span class="dot"></span><span id="connectionText">Connecting…</span></div>
+<div id="mode" class="badge">Band first · Quest later</div>
+<main>
+<div id="step" class="eyebrow">Guided collection</div><progress id="progress" value="0" max="48" aria-label="Confirmed trials"></progress>
+<h2 id="motion">Getting ready…</h2>
+<p id="instruction">Loading your training sequence.</p>
+<p id="timer"></p><p id="rest"></p>
+<div class="buttons">
+<button id="start" disabled>Start Record</button>
+<button id="stop" class="secondary" hidden>Stop</button>
+<button id="confirm" hidden>I did it · Save & Next</button>
+<button id="retry" class="secondary" hidden>Retry this trial</button>
+<button id="download" class="secondary" hidden>Download trial labels</button>
+</div>
+<p id="result" role="status" aria-live="polite"></p><p id="detail"></p>
+<details id="setup" hidden><summary>Connect the EMG stream</summary><p>In Kinesis: Developer mode → Readings → Live EMG → Record. Keep the raw recording running at:</p><code id="path"></code></details>
+</main>
+<p class="footnote">Three rounds of 16 conditions: shield tension at three positions, sword fists at three angles, relaxed hand, snaps, and non-snap comparisons. Establish steady poses before pressing Start Record. For snaps and comparisons, record first, then perform the motion. “Received” confirms signal capture; “I did it” confirms your intended action.</p>
+<details><summary>What this trains</summary><p>Shield: open hand, fingers up, palm toward the opponent. Keep the pose to hold it; forearm effort controls strength continuously. No thrust or jerk. Quest will track position, orientation and pose validity as you move your arm. Sword: a closed fist at any angle summons it; opening dismisses it. Fireball: a middle-finger/thumb snap creates a held fireball; a later throw releases it in the Quest/Unity flow.</p><p>Band-only collection trains muscle signals, not spatial pose. Light / medium / firm are your reported effort levels, not measured force. Exact snap times require later review; no snap point events are invented from recording buttons. Models are not trained automatically.</p><p>Raw signals remain in streams.jsonl. Confirmed prompts are saved in gesture-trials-v3.json. Keep downloaded labels with the raw session. Old fist-shield labels and models are incompatible.</p></details>
+<script>
+const token='__CSRF__';
+let sessionToken=token;
+const $=id=>document.getElementById(id);
+let state=null,status=null,connected=false,pending=false,polling=false,revision=0,uiError='',anchor=0;
+async function api(path,value){
+ const send=()=>fetch('/api/'+path,value===undefined?{cache:'no-store'}:{method:'POST',headers:{'Content-Type':'application/json','X-Session-Token':sessionToken},body:JSON.stringify(value)});
+ let response=await send();
+ // A rejected token means the mutation did not run. Fetch the current page token and retry once.
+ if(response.status===403&&value!==undefined){
+  const page=await fetch('/',{cache:'no-store'});
+  if(!page.ok)throw Error('Refresh this page to reconnect to the current session.');
+  const match=(await page.text()).match(/const token='([^']+)'/);
+  if(!match)throw Error('Refresh this page to reconnect to the current session.');
+  sessionToken=match[1];response=await send();
+ }
+ const data=await response.json();if(!response.ok)throw Error(data.error||'Request failed');return data;
+}
+function clock(){return status?status.now+(performance.now()-anchor)/1000:0}
+function render(){
+ if(!state||!status)return;
+ const trial=state.current,active=state.active,received=state.pending;
+ const last=state.results.at(-1),failed=!active&&!received&&last&&!last.received&&last.motion===trial?.id?last:null;
+ const cooldown=last&&!active&&!received?Math.max(0,last.end+5-clock()):0;
+ const done=state.completed===state.total;
+ $('step').textContent=done?'Collection complete':state.completed+' / '+state.total+' saved · Round '+trial.repetition+' of 3';
+ $('progress').max=state.total;$('progress').value=state.completed;
+ $('motion').textContent=done?'Spell examples collected.':trial.title;
+ $('instruction').textContent=done?'Your confirmed examples are saved. Snap times need review, and models still need training and evaluation. Add paired Quest recordings later.':trial.instruction;
+ $('start').hidden=!!active||!!received||done;
+ $('start').textContent=failed||last?.confirmed===false?'Try again · Start Record':'Start Record';
+ $('start').disabled=pending||!connected||!status.emg_fresh||status.stopped||cooldown>0;
+ $('stop').hidden=!active;$('stop').disabled=pending||!connected;
+ $('confirm').hidden=!received;$('retry').hidden=!received;
+ $('confirm').disabled=$('retry').disabled=pending||!connected;
+ $('download').hidden=!done;
+ $('advanced').hidden=$('checkLink').hidden=!!active;
+ $('timer').textContent=active?Math.max(0,clock()-active.start).toFixed(1)+' seconds · aim for 5 seconds':'';
+ $('rest').textContent=cooldown>0?'Relax your hand · rest '+Math.ceil(cooldown)+' seconds before the next trial.':'';
+ $('result').textContent=active?'Recording…':received?'Received.':failed?failed.message:done?'Saved.':'';
+ $('result').className=received||done?'good':failed?'bad':'';
+ $('detail').textContent=uiError||(received?'Did you perform the prompt, including the requested tension and hand shape? Save it if yes, or retry. '+(received.needs_paired_quest?'Band example only; paired Quest recording still needed.':'Paired signals captured; motion labels still come from your confirmation.'):active?'Perform the prompt, then press Stop.':done?'Your reports are saved as training labels. No shield-strength prediction is active yet.':'');
+ $('setup').hidden=!!status.emg_fresh;$('path').textContent=status.session.band_file||'See the configured band recording path.';
+ $('connectionText').textContent=!connected?'Recorder unavailable. Reconnect before continuing.':status.stopped?'Session ended. Start a new recording session.':status.emg_fresh?'Band connected · EMG is flowing':'Waiting for EMG from Kinesis';
+ $('connection').querySelector('.dot').className='dot'+(connected&&status.emg_fresh&&!status.stopped?' live':'');
+ $('mode').textContent=status.session.mode==='emg_only'?'Band collection · paired Quest training later':status.quest_fresh?'Band + Quest connected · pairing quality checked per trial':'Quest not receiving · collecting band examples only';
+}
+async function refresh(){
+ if(pending||polling)return;polling=true;const version=revision;
+ try{const [s,t]=await Promise.all([api('status'),api('shield')]);if(version!==revision)return;status=s;anchor=performance.now();state=t;connected=true;render()}
+ catch(error){connected=false;uiError='Recorder unavailable: '+error.message;render();$('detail').textContent=uiError;$('connectionText').textContent='Recorder unavailable. Reconnect before continuing.'}
+ finally{polling=false}
+}
+async function run(action){if(pending)return;pending=true;revision++;uiError='';render();try{await action()}catch(error){uiError=error.message}finally{pending=false;await refresh();render()}}
+$('start').onclick=()=>run(async()=>{const trial=state.current;state.active=await api('shield/start',{trial_id:trial.id})});
+$('stop').onclick=()=>run(async()=>{await api('shield/stop',{});state.active=null});
+$('confirm').onclick=()=>run(async()=>{await api('shield/confirm',{id:state.pending.id,accepted:true})});
+$('retry').onclick=()=>run(async()=>{await api('shield/confirm',{id:state.pending.id,accepted:false})});
+$('download').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=state.session_id+'-gesture-labels-v3.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+window.addEventListener('beforeunload',event=>{if(state?.active){event.preventDefault();event.returnValue=''}});
+setInterval(refresh,500);refresh();
+</script></body></html>
