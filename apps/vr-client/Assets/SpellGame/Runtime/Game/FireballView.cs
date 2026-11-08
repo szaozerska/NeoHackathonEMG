@@ -193,6 +193,7 @@ namespace SpellGame.Game
                     continue;
                 hand.HeldOrb.Root.gameObject.SetActive(false);
                 hand.Ember.gameObject.SetActive(false);
+                hand.WasHolding = false;
             }
         }
 
