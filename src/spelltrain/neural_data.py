@@ -164,7 +164,7 @@ def add_reviewed_examples(dataset, path, config):
     validate_dataset(dataset)
 
 
-def add_guided_capture(dataset, directory, hold_negatives=False, audio_onsets=False):
+def add_guided_capture(dataset, directory, hold_negatives=False, audio_onsets=False, signal=None):
     """Count-confirmed positives become MIL bags, never guessed snap windows.
 
     All new guided clips fit only; fresh evaluation must remain separate. A
@@ -177,10 +177,10 @@ def add_guided_capture(dataset, directory, hold_negatives=False, audio_onsets=Fa
         raise ValueError('Duplicate guided capture')
     manifest = read_json(directory/'guided-manifest.json')
     verify_files(directory, manifest['source_hashes'])
-    capture = capture_features(directory, include_waveforms=True)
+    capture = capture_features(directory, include_waveforms=True, signal=signal)
     if capture['metadata'].get('dataset_role') == 'untouched_guided_count_check':
         raise ValueError('Reserved evaluation capture cannot enter fitting')
-    if capture['metadata']['model']['signal'] != dataset['signal']:
+    if {**capture['metadata']['model']['signal'], **(signal or {})} != dataset['signal']:
         raise ValueError('Guided capture signal settings differ')
     from .common import json_lines
     raw = [r for r in json_lines(directory/'streams.jsonl') if r['kind'] == 'emg']
@@ -236,7 +236,7 @@ def add_guided_capture(dataset, directory, hold_negatives=False, audio_onsets=Fa
 INTERVAL_STATES = {'shield_hold': 'open', 'sword_hold': 'fist'}
 
 
-def interval_capture_features(directory):
+def interval_capture_features(directory, signal=None):
     """Gap-reset windows for a Space-interval contribution (gzip stream, sensor clock mapped to host)."""
     import gzip, json
     meta = read_json(directory/'metadata.json')
@@ -244,7 +244,7 @@ def interval_capture_features(directory):
     opener = open if stream.exists() else gzip.open
     stream = stream if stream.exists() else directory/'streams.jsonl.gz'
     fs = meta['model']['signal']['sample_rate']
-    windows = SignalWindows(meta['model']['signal'], include_waveforms=True)
+    windows = SignalWindows({**meta['model']['signal'], **(signal or {})}, include_waveforms=True)
     features = []; last = epoch = None
     with opener(stream, 'rt') as f:
         for line in f:
@@ -262,7 +262,7 @@ def interval_capture_features(directory):
     return features, meta
 
 
-def add_interval_capture(dataset, directory, validation_after=.7):
+def add_interval_capture(dataset, directory, validation_after=.7, signal=None):
     """Micah-style Space-held intervals: holds -> open/fist, non-intended -> none/negative, snaps -> bags.
 
     Within each class (non-intended, snap, shield, sword) the intervals after the first
@@ -273,7 +273,7 @@ def add_interval_capture(dataset, directory, validation_after=.7):
     directory = Path(directory)
     original = directory/'original' if (directory/'original').is_dir() else directory
     require_usable_capture(directory); require_usable_capture(original)
-    features, meta = interval_capture_features(original)
+    features, meta = interval_capture_features(original, signal)
     if not meta.get('recording_complete'):
         raise ValueError('Interval capture incomplete')
     if meta['model']['signal'] != dataset['signal']:
@@ -349,25 +349,26 @@ def require_training_directory(directory):
         raise ValueError(f'{directory} is marked DO NOT USE')
 
 
-def guided_only_dataset(directories, interval_directories=()):
+def guided_only_dataset(directories, interval_directories=(), signal=None):
     """Train from guided captures alone, without the historical reference review.
 
     Whole captures are the split unit: for every held kind with two or more
     captures the newest one validates (a single capture: each clip's last 20%).
     The latest quarter of audio-refined snap trials validates snap recall;
-    unrefined count bags stay training-only.
+    unrefined count bags stay training-only. signal overrides window sizes etc.
     """
     directories = sorted(Path(d) for d in directories)
     for d in [*directories, *interval_directories]:
         require_training_directory(d)
     if not directories:
         raise ValueError('No guided captures given')
-    signal = read_json(directories[0]/'metadata.json')['model']['signal']
+    overrides = signal or {}
+    signal = {**read_json(directories[0]/'metadata.json')['model']['signal'], **overrides}
     dataset = {'schema': 1, 'signal': signal, 'tasks': {'state': [], 'snap': []}, 'sources': [],
                'evaluation_role': 'guided_capture_holdout_same_wearing_sessions'}
     kinds = {}
     for directory in directories:
-        add_guided_capture(dataset, directory, hold_negatives=True, audio_onsets=True)
+        add_guided_capture(dataset, directory, hold_negatives=True, audio_onsets=True, signal=overrides)
         trial_kinds = {t['kind'] for t in read_json(directory/'guided-trials.json') if t['confirmed']}
         if len(trial_kinds) == 1 and not trial_kinds & {'snap', 'negative'}:
             kinds.setdefault(trial_kinds.pop(), []).append(directory.name)
@@ -394,7 +395,7 @@ def guided_only_dataset(directories, interval_directories=()):
             kept.append(row)
         dataset['tasks'][name] = kept
     for directory in interval_directories:
-        add_interval_capture(dataset, directory)
+        add_interval_capture(dataset, directory, signal=overrides)
     dataset['validation_captures'] = sorted(held_out)
     dataset['validation_tail_captures'] = sorted(single)
     dataset['validation_snap_trials'] = sorted(snap_validation)

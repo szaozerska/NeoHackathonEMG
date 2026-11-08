@@ -35,15 +35,15 @@ BASELINES = ['fnn', 'cnn', 'tcn']
 
 
 @app.function(image=image, volumes={'/vol': volume}, cpu=4, memory=32768, timeout=3600)
-def build_dataset(captures, name, interval=()):
+def build_dataset(captures, name, interval=(), signal=None):
     import joblib
     from spelltrain.neural_data import guided_only_dataset
     volume.reload()
-    data = guided_only_dataset([f'/vol/captures/{c}' for c in captures], [f'/vol/interval/{c}' for c in interval])
+    data = guided_only_dataset([f'/vol/captures/{c}' for c in captures], [f'/vol/interval/{c}' for c in interval], signal)
     Path('/vol/datasets').mkdir(exist_ok=True)
     joblib.dump(data, f'/vol/datasets/{name}.joblib', compress=3)
     volume.commit()
-    return {'validation_captures': data['validation_captures'],
+    return {'signal': data['signal'], 'validation_captures': data['validation_captures'],
             'windows': {task: {part: sum(r['part'] == part for r in rows) for part in ('train', 'validation')}
                         for task, rows in data['tasks'].items()},
             'snap_bags': len(data.get('weak_bags', {}).get('snap', []))}
@@ -135,7 +135,9 @@ def sweep_runs(config, sweep_name, dataset, kind, epochs):
 
 @app.local_entrypoint()
 def main(output: str, captures: str = 'data/partner/neural-guided', config: str = 'configs/neural-emg.json',
-         sweep: str = 'quick', epochs: int = 0, interval_captures: str = 'Micah contributed data'):
+         sweep: str = 'quick', epochs: int = 0, interval_captures: str = 'Micah contributed data',
+         windows: str = '', architectures: str = ''):
+    """windows: 'state:snap' sample lengths, comma separated (e.g. 410:256,820:512); each gets its own dataset."""
     check_workspace()
     output = Path(output)
     if output.exists():
@@ -145,9 +147,18 @@ def main(output: str, captures: str = 'data/partner/neural-guided', config: str 
     print('Building dataset from', len(names), 'captures', flush=True)
     interval = upload_interval_captures(ROOT/interval_captures) if interval_captures else []
     print('Interval captures:', interval, flush=True)
-    summary = build_dataset.remote(names, sweep_name, interval)
+    variants = {'': None} if not windows else {
+        f'-w{s}-{n}': {'state_window': int(s), 'snap_window': int(n)}
+        for s, n in (w.split(':') for w in windows.split(','))}
+    datasets = [sweep_name+v for v in variants]
+    summaries = list(build_dataset.starmap([(names, d, interval, sig) for d, sig in zip(datasets, variants.values())]))
+    summary = dict(zip(datasets, summaries)) if windows else summaries[0]
     print(json.dumps(summary), flush=True)
-    runs = sweep_runs(json.loads((ROOT/config).read_text()), sweep_name, sweep_name, sweep, epochs)
+    runs = []
+    for d, v in zip(datasets, variants):
+        runs += [{**r, 'name': r['name']+v} for r in sweep_runs(json.loads((ROOT/config).read_text()), sweep_name, d, sweep, epochs)]
+    if architectures:
+        runs = [r for r in runs if r['name'].split('-')[0].rstrip('0123456789x') in architectures.split(',')]
     print(f'Training {len(runs)} runs in parallel', flush=True)
     results = list(train.map(runs))
     for r in results:
