@@ -51,6 +51,9 @@ namespace SpellGame.Game
         [Tooltip("A lock is rejected if the marker's direction wobbles more than this (degrees).")]
         [SerializeField] private float maxMarkerWobbleDegrees = 6f;
 
+        [Tooltip("Seconds the marker may drop out of view mid-reading without losing the progress so far.")]
+        [SerializeField] private float markerGapSeconds = 1f;
+
         [Tooltip("Metres from the controller anchor forward to the tip that touches the other player's.")]
         [SerializeField] private float tipOffset = 0.06f;
 
@@ -80,6 +83,8 @@ namespace SpellGame.Game
         private Vector3 _markerForwardSum;
         private int _markerSamples;
         private readonly List<Vector3> _markerPositions = new();
+        private readonly List<Vector3> _markerForwards = new();
+        private float _markerLostAt = -1f;
         private bool? _markerWasAvailable;
         private string _status = "";
         private float _calibratedAt = float.NegativeInfinity;
@@ -335,16 +340,30 @@ namespace SpellGame.Game
         /// </summary>
         private void UpdateMarker()
         {
-            if (IsAligned(_space) || _calibrating || _opponentTouched || _marker == null || !_marker.IsTracked)
+            if (IsAligned(_space) || _calibrating || _opponentTouched)
             {
-                if (_markerSamples > 0 && !IsAligned(_space) && !_calibrating)
+                if (_markerSamples > 0)
+                    ResetMarkerSamples();
+                return;
+            }
+
+            if (_marker == null || !_marker.IsTracked)
+            {
+                if (_markerSamples == 0)
+                    return;
+                if (_markerLostAt < 0f)
+                    _markerLostAt = Time.time;
+                if (Time.time - _markerLostAt <= markerGapSeconds)
                 {
-                    SetStatus("Lost the marker: keep looking straight down at it");
-                    HideRing();
+                    SetStatus($"Marker out of view: look back at it\n<size=70%>{Dots(MarkerProgress)}  progress kept</size>");
+                    return;
                 }
+                SetStatus("Lost the marker: look straight down at it again");
+                HideRing();
                 ResetMarkerSamples();
                 return;
             }
+            _markerLostAt = -1f;
 
             // MRUK poses trackables in world space (it reads the tracking space's pose itself), alignment included.
             var rotation = _marker.transform.rotation;
@@ -353,6 +372,7 @@ namespace SpellGame.Game
             if (Mathf.Max(Mathf.Abs(normal.y), Mathf.Abs(top.y)) < 0.8f)
             {
                 SetStatus("Lay the marker flat on the floor");
+                HideRing();
                 ResetMarkerSamples();
                 return;
             }
@@ -361,34 +381,72 @@ namespace SpellGame.Game
             var position = _marker.transform.position;
             var forward = new Vector3(along.x, 0f, along.z).normalized;
             _markerPositions.Add(position);
-            _markerPositionSum += position;
-            _markerForwardSum += forward;
+            _markerForwards.Add(forward);
             _markerSamples++;
             _markerSeenFor += Time.deltaTime;
-            var progress = Mathf.Clamp01(_markerSeenFor / markerLockSeconds);
-            SetStatus($"Marker found: hold still\n<size=70%>{Dots(progress)}</size>");
+            var progress = MarkerProgress;
+            var left = Mathf.Max(0f, markerLockSeconds - _markerSeenFor);
+            SetStatus($"Marker found: hold still {left:0.0} s\n<size=70%>{Dots(progress)}</size>");
             PlaceRing(position, Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg + markerYawOffset, 0.006f + 0.01f * progress);
             if (_markerSeenFor < markerLockSeconds)
                 return;
 
-            var center = _markerPositionSum / _markerSamples;
-            var spread = _markerPositions.Max(p => Vector3.Distance(p, center));
-            var steadiness = _markerForwardSum.magnitude / _markerSamples;
-            if (spread > maxMarkerSpread || steadiness < Mathf.Cos(maxMarkerWobbleDegrees * Mathf.Deg2Rad))
+            if (!TryMarkerPose(out var center, out var yaw))
             {
-                Debug.Log($"[SpellGame] Marker lock rejected: spread {spread:F3} m, steadiness {steadiness:F4}");
+                Debug.Log($"[SpellGame] Marker lock rejected: readings disagree ({_markerSamples} samples)");
                 ResetMarkerSamples();
                 HideRing();
                 SetStatus("Shaky reading: hold still and keep looking at the marker");
                 return;
             }
 
-            var yaw = Mathf.Atan2(_markerForwardSum.x, _markerForwardSum.z) * Mathf.Rad2Deg + markerYawOffset;
-            AlignTo(new Pose(center, Quaternion.Euler(0f, yaw, 0f)));
+            AlignTo(new Pose(center, Quaternion.Euler(0f, yaw + markerYawOffset, 0f)));
             _alignedTo = MarkerKey(_space);
             gameClient.Send(new AlignedMessage { Method = AlignMethod.Marker });
             SetStatus("Room calibrated! The ring should sit on the marker.\n<size=70%>If it doesn't, click the right stick to redo it</size>");
             ShowOriginRing();
+        }
+
+        private float MarkerProgress => Mathf.Clamp01(_markerSeenFor / markerLockSeconds);
+
+        /// <summary>
+        /// Robust average of the marker readings: drops any further than <see cref="maxMarkerSpread"/> from the median
+        /// position or more than <see cref="maxMarkerWobbleDegrees"/> off the mean direction; fails if under 60% remain.
+        /// </summary>
+        private bool TryMarkerPose(out Vector3 center, out float yaw)
+        {
+            center = Vector3.zero;
+            yaw = 0f;
+            if (_markerPositions.Count == 0)
+                return false;
+            var median = new Vector3(Median(_markerPositions.Select(p => p.x)), Median(_markerPositions.Select(p => p.y)),
+                Median(_markerPositions.Select(p => p.z)));
+            var direction = Vector3.zero;
+            foreach (var forward in _markerForwards)
+                direction += forward;
+            direction.Normalize();
+            var minDot = Mathf.Cos(maxMarkerWobbleDegrees * Mathf.Deg2Rad);
+            var keptForward = Vector3.zero;
+            var kept = 0;
+            for (var i = 0; i < _markerPositions.Count; i++)
+            {
+                if (Vector3.Distance(_markerPositions[i], median) > maxMarkerSpread || Vector3.Dot(_markerForwards[i], direction) < minDot)
+                    continue;
+                center += _markerPositions[i];
+                keptForward += _markerForwards[i];
+                kept++;
+            }
+            if (kept == 0 || kept < 0.6f * _markerPositions.Count)
+                return false;
+            center /= kept;
+            yaw = Mathf.Atan2(keptForward.x, keptForward.z) * Mathf.Rad2Deg;
+            return true;
+        }
+
+        private static float Median(IEnumerable<float> values)
+        {
+            var sorted = values.OrderBy(v => v).ToList();
+            return sorted[sorted.Count / 2];
         }
 
         private void ResetMarkerSamples()
@@ -396,6 +454,8 @@ namespace SpellGame.Game
             _markerSeenFor = 0f;
             _markerSamples = 0;
             _markerPositions.Clear();
+            _markerForwards.Clear();
+            _markerLostAt = -1f;
             _markerPositionSum = _markerForwardSum = Vector3.zero;
         }
 

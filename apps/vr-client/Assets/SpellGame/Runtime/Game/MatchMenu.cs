@@ -483,7 +483,7 @@ namespace SpellGame.Game
                     lines.Add("\n<b>CALIBRATE THE ROOM</b>\n" +
                               "1. Walk to the QR marker on the floor in the middle\n" +
                               "2. Stand next to it and look straight down at it\n" +
-                              "3. Hold still until a cyan ring appears on it\n" +
+                              "3. Hold still ~1.5 s while the ring fills (it counts down)\n" +
                               "Not found in ~12 s? This switches to the controllers.");
                 else
                     lines.Add($"\n{spaceAligner?.TouchReason}" +

@@ -96,6 +96,7 @@ namespace SpellGame.Game
         private Vector3 _eye, _forward;
 
         private Material _countdownMaterial, _fightMaterial, _koMaterial;
+        private TextMeshPro _controllersPrompt;
         private AudioSource _audio;
         private AudioClip _drum, _whoosh, _impact, _bass;
 
@@ -183,6 +184,7 @@ namespace SpellGame.Game
                         CaptureView();
                         _lastCount = -1;
                         _suddenDeathShown = false;
+                        ShowControllersPrompt(true);
                         break;
                     case MatchPhase.Playing when from == MatchPhase.Countdown:
                         Fight();
@@ -197,6 +199,8 @@ namespace SpellGame.Game
                 }
                 if (to != MatchPhase.Ended)
                     EndSlowMotion();
+                if (to != MatchPhase.Countdown)
+                    ShowControllersPrompt(false);
             }
 
             if (to == MatchPhase.Countdown)
@@ -213,6 +217,26 @@ namespace SpellGame.Game
                 _suddenDeathShown = true;
                 SuddenDeath();
             }
+        }
+
+        /// <summary>
+        /// "Put your controllers down!" during the countdown, 1.5 m ahead and well below eye level, so it sits under
+        /// where the 3-2-1 lands (eye level, <see cref="landDistance"/>) without overlapping it.
+        /// </summary>
+        private void ShowControllersPrompt(bool show)
+        {
+            if (!show)
+            {
+                if (_controllersPrompt != null)
+                    _controllersPrompt.gameObject.SetActive(false);
+                return;
+            }
+
+            _controllersPrompt ??= UiStyle.CreateText("Controllers Prompt", transform, "PUT YOUR CONTROLLERS DOWN!", Vector3.zero,
+                0.07f, UiStyle.Text, display: true, look: UiStyle.Look.Title, width: 1.6f);
+            var prompt = _controllersPrompt.transform;
+            prompt.SetPositionAndRotation(_eye + _forward * 1.5f + Vector3.down * 0.55f, Quaternion.LookRotation(_forward));
+            _controllersPrompt.gameObject.SetActive(true);
         }
 
         private void CountdownNumber(int count)
