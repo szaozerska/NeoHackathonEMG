@@ -141,15 +141,90 @@ namespace SpellGame.Editor
             serializedAligner.ApplyModifiedPropertiesWithoutUndo();
         }
 
+        private const string FireballFolder = "Assets/SpellGame/Fireball";
+
+        /// <summary>Fireball view plus its materials, (re)generated from the shaders and textures in <see cref="FireballFolder"/>.</summary>
         private static void CreateFireballView(GameClient client)
         {
             var view = new GameObject("Fireball View").AddComponent<FireballView>();
             var serializedView = new SerializedObject(view);
             serializedView.FindProperty("gameClient").objectReferenceValue = client;
-            serializedView.FindProperty("fireMaterial").objectReferenceValue = UnlitMaterial("Fire", new Color(1f, 0.38f, 0.05f));
-            serializedView.FindProperty("sparkMaterial").objectReferenceValue = UnlitMaterial("Spark", new Color(1f, 0.85f, 0.3f));
-            serializedView.FindProperty("smokeMaterial").objectReferenceValue = UnlitMaterial("Smoke", new Color(0.45f, 0.45f, 0.45f));
+            serializedView.FindProperty("materials.core").objectReferenceValue = FireballMaterial("FireballCore", "FireballCore");
+            serializedView.FindProperty("materials.glow").objectReferenceValue = FireballParticleMaterial("FireballGlow", "glow_soft", additive: true, coverage: 0.5f, intensity: 1f);
+            serializedView.FindProperty("materials.flame").objectReferenceValue = FireballParticleMaterial("FireballFlame", "fire_01", additive: true, coverage: 0.7f, intensity: 1.3f);
+            serializedView.FindProperty("materials.tongue").objectReferenceValue = FireballParticleMaterial("FireballTongue", "flame_05", additive: true, coverage: 0.7f, intensity: 1.3f);
+            serializedView.FindProperty("materials.smoke").objectReferenceValue = FireballParticleMaterial("FireballSmoke", "smoke_04", additive: false, coverage: 1f, intensity: 1f);
+            serializedView.FindProperty("materials.shockwave").objectReferenceValue = FireballParticleMaterial("FireballShockwave", "light_03", additive: true, coverage: 0.5f, intensity: 1f);
             serializedView.ApplyModifiedPropertiesWithoutUndo();
+            AssetDatabase.SaveAssets();
+        }
+
+        /// <summary>
+        /// Particle material on SpellGame/Fireball/Particle. Additive fire adds colour but still writes <paramref name="coverage"/>
+        /// into alpha ("over"), so passthrough doesn't show through it; smoke is plain premultiplied alpha.
+        /// </summary>
+        private static Material FireballParticleMaterial(string name, string texture, bool additive, float coverage, float intensity)
+        {
+            var material = FireballMaterial(name, "FireballParticle");
+            material.SetTexture("_MainTex", FireballTexture(texture));
+            material.SetFloat("_AlphaWrite", coverage);
+            material.SetFloat("_Intensity", intensity);
+            material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.One);
+            material.SetFloat("_DstBlend", (float)(additive ? UnityEngine.Rendering.BlendMode.One : UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha));
+            material.SetFloat("_SrcBlendAlpha", (float)UnityEngine.Rendering.BlendMode.One);
+            material.SetFloat("_DstBlendAlpha", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        /// <summary>Load or create <c>Fireball/Materials/{name}.mat</c> on <c>Fireball/Shaders/{shaderFile}.shader</c>.</summary>
+        private static Material FireballMaterial(string name, string shaderFile)
+        {
+            var shaderPath = $"{FireballFolder}/Shaders/{shaderFile}.shader";
+            var shader = AssetDatabase.LoadAssetAtPath<Shader>(shaderPath);
+            if (shader == null)
+                throw new FileNotFoundException($"[SpellGame] Missing fireball shader {shaderPath}.");
+
+            var path = $"{FireballFolder}/Materials/{name}.mat";
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                if (!AssetDatabase.IsValidFolder($"{FireballFolder}/Materials"))
+                    AssetDatabase.CreateFolder(FireballFolder, "Materials");
+                material = new Material(shader) { name = name };
+                AssetDatabase.CreateAsset(material, path);
+            }
+            else if (material.shader != shader)
+            {
+                material.shader = shader;
+                EditorUtility.SetDirty(material);
+            }
+            return material;
+        }
+
+        /// <summary>Particle masks are white RGB + alpha shape: clamp, mipmapped, 256 px is plenty on Quest.</summary>
+        private static Texture2D FireballTexture(string name)
+        {
+            var path = $"{FireballFolder}/Textures/{name}.png";
+            if (AssetImporter.GetAtPath(path) is TextureImporter importer
+                && (importer.wrapMode != TextureWrapMode.Clamp
+                    || !importer.mipmapEnabled
+                    || importer.maxTextureSize > 256
+                    || importer.alphaSource != TextureImporterAlphaSource.FromInput))
+            {
+                importer.textureType = TextureImporterType.Default;
+                importer.alphaSource = TextureImporterAlphaSource.FromInput;
+                importer.alphaIsTransparency = true;
+                importer.wrapMode = TextureWrapMode.Clamp;
+                importer.mipmapEnabled = true;
+                importer.maxTextureSize = 256;
+                importer.SaveAndReimport();
+            }
+
+            var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            if (texture == null)
+                throw new FileNotFoundException($"[SpellGame] Missing fireball texture {path}.");
+            return texture;
         }
 
         private static void CreateSwordView(GameClient client)
