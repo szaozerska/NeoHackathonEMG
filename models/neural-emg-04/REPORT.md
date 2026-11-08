@@ -16,5 +16,5 @@ reserved validation set, and only two wearers:
 Per-class hand-state recall / precision: none 0.88 / 0.97, open 0.85 / 0.89, fist 0.89 / 0.92,
 infinite_void 0.98 / 0.69 (relaxed and open windows are sometimes read as void).
 
-Not activated automatically: the hand client uses it only with `--neural-model models/neural-emg-04`.
+Superseded as the hand-client default by neural-emg-05; still selectable with `--neural-model models/neural-emg-04`.
 No unseen-wearer generalization is claimed; overlapping windows are not independent trials.
