@@ -127,7 +127,7 @@ There is one Quest, one Neural Band, and one classification Mac per player, plus
   - The **only** exception is the discovery beacon, which is UDP broadcast.
   - Set `TCP_NODELAY` on every socket.
 - **Framing (default):** newline-delimited JSON, one message per line.
-- **Ports (default):** UDP `47777` for discovery, TCP `9000` for game traffic.
+- **Ports (default):** UDP `47777` for discovery, TCP `9100` for game traffic (not 9000: Quest OS blocks outgoing connections to that port).
 - **Network:** use a dedicated travel router or a laptop hotspot. Venue Wi-Fi often blocks device-to-device traffic (client isolation), which would kill both the TCP connections and the broadcast.
 
 ### 4.1 Server discovery

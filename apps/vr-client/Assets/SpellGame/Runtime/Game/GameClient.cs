@@ -22,7 +22,7 @@ namespace SpellGame.Game
         [Header("Server")]
         [Tooltip("Leave empty to find the server through the UDP discovery beacon.")]
         [SerializeField] private string manualServerHost = "";
-        [SerializeField] private int manualServerPort = 9000;
+        [SerializeField] private int manualServerPort = 9100;
         [SerializeField] private int discoveryPort = 47777;
 
         [Header("Pose stream")]
