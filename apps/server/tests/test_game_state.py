@@ -116,16 +116,36 @@ def test_throw_launches_fireball_forward_and_hits_opponent():
     assert not match.game.projectiles
 
 
-def thrown_fireball_damage(throw_speed_scale: float) -> float:
-    match = Match(Tuning(aim_assist_strength=0.0, throw_speed_scale=throw_speed_scale))
+def push_hand(match, speed, duration_s):
+    """Snap, then move P1's hand straight forward at `speed` m/s (headset-reported) for `duration_s` and stop."""
     match.step(snap=True)
-    events = match.throw() + match.run(1.0)
-    [damage] = of_type(events, p.Damage)
-    return damage.amount
+    events = []
+    elapsed = 0.0
+    while elapsed < duration_s + 1.0:
+        match.t += DT
+        pose = standing_pose("P1", match.t)
+        pose.joints["r_hand"].vel = [0.0, 0.0, speed if elapsed < duration_s else 0.0]
+        match.inputs["P1"].pose = pose
+        match.inputs["P2"].pose = standing_pose("P2", match.t, match.p2_position, 180.0)
+        events += match.game.step(match.inputs, DT)
+        elapsed += DT
+    return events
 
 
 def test_fireball_damage_is_proportional_to_its_speed():
-    assert thrown_fireball_damage(4.0) == pytest.approx(2 * thrown_fireball_damage(2.0), abs=0.1)
+    [slow] = of_type(push_hand(Match(), 4.0, 0.3), p.Damage)
+    [fast] = of_type(push_hand(Match(), 8.0, 0.3), p.Damage)
+    assert fast.amount == pytest.approx(2 * slow.amount, abs=0.1)
+
+
+def test_heavy_fireball_ignores_a_wrist_flick_but_follows_a_full_swing():
+    flick = Match()
+    push_hand(flick, 8.0, 0.05)
+    assert flick.p1.item == Item.FIREBALL
+
+    swing = Match()
+    push_hand(swing, 8.0, 0.3)
+    assert swing.p1.item == Item.NONE
 
 
 def test_backswing_alone_does_not_throw():
@@ -205,7 +225,8 @@ def test_headset_velocity_is_preferred_over_position_history():
     pose.joints["r_hand"].vel = [0.0, 0.0, 6.0]
     match.inputs["P1"].pose = pose
     match.game.step(match.inputs, DT)
-    assert match.p1.throw_peak == pytest.approx([0.0, 0.0, 6.0])
+    follow = 1.0 - np.exp(-DT / match.game.tuning.fireball_inertia_s)
+    assert match.p1.held_fireball_velocity == pytest.approx([0.0, 0.0, 6.0 * follow])
 
 
 def test_knocked_out_player_cannot_cast_or_be_hit():
@@ -390,11 +411,12 @@ def test_shield_fades_after_its_full_block_window():
     tuning = Tuning()
     assert not fireball_through_shield_held_for(tuning.shield_full_block_s - 0.1)
 
+    full_damage = 6.0 * tuning.fireball_damage_per_speed
     [mid_fade] = fireball_through_shield_held_for(tuning.shield_full_block_s + tuning.shield_fade_s / 2)
-    assert mid_fade.amount == pytest.approx(3.0, abs=0.3)
+    assert mid_fade.amount == pytest.approx(full_damage / 2, rel=0.1)
 
     [faded] = fireball_through_shield_held_for(tuning.shield_full_block_s + tuning.shield_fade_s + 0.1)
-    assert (faded.target_id, faded.source_id, faded.amount, faded.zone) == ("P1", "P2", 6.0, p.Zone.ARM)
+    assert (faded.target_id, faded.source_id, faded.amount, faded.zone) == ("P1", "P2", full_damage, p.Zone.ARM)
 
 
 def test_snapshot_reports_shield_strength_fading_while_raised():

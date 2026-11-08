@@ -240,7 +240,7 @@ Timestamps (`t`) are sender-local and used only for ordering within one stream. 
 
 | Gesture | Band | Quest | Server behaviour |
 |---|---|---|---|
-| **Fireball** (implemented) | `snap` | Throw: hand speed ≥ 2.5 m/s, mostly along the body's facing | Snap conjures a held fireball. The throw releases it at the hand with the peak hand velocity's direction (light aim assist), as a projectile hit-tested against the target's hitboxes (§9.1). Held fireballs fizzle after 8 s |
+| **Fireball** (implemented) | `snap` | Throw: the held fireball moving ≥ 2.5 m/s, mostly along the body's facing | Snap conjures a held fireball. It is heavy: its velocity follows the hand with a 0.15 s lag, so a wrist flick barely moves it and a full arm swing is needed for a fast throw. It leaves the hand once the hand slows below it, with its own velocity (light aim assist), as a projectile hit-tested against the target's hitboxes (§9.1). Held fireballs fizzle after 8 s |
 | **Sword** | `fist` held | Fist starts near the left hip, then pulls up diagonally | Drawn while the fist is held, gone on release. Blade capsule along the hand; damage scales with tip speed |
 | **Shield** | `open_palm` held | Palm facing away from the player; push impulse = peak push speed | Raised shield blocks all damage for 0.5 s, then the blocked share fades along a logistic curve to zero over 3.5 s (the rest hits the shield arm); a forceful push gives a short power boost, and a sword contact during the boost is a parry |
 
@@ -250,7 +250,7 @@ Tuning values live in `apps/server/spellgame/game_state.py` (`Tuning`).
 
 Players are hit-tested per body part, built each tick from their latest pose (`spellgame/hitboxes.py`), the way ragdoll/physics-asset hitboxes work in Source, Unreal and Unity. A sphere for the head, about 8 cm above the `head` joint; a capsule from `chest` to `hips` and one across the shoulders (zone `torso`); capsules for upper arms, forearms and a sphere per hand (`arm`); capsules for thighs and shins (`leg`, estimated by the Quest but still hittable). Radii live in `Tuning.hitboxes`. A fireball (collision radius 0.1 m) or blade hits the part it overlaps most deeply, and `damage.zone` names it. All zones currently take equal damage. Hits are judged against the victim's freshest pose with no rewind: spells are slow and simulated on the server, so rewinding would favour the attacker over a dodge.
 
-**Starting balance (default):** 150 HP; a fireball flies at twice the thrower's peak hand speed (at least 5 m/s, no cap) and deals 1 damage per m/s, so harder throws hit harder but are harder to dodge or block. The old fixed 8 damage at 6–10 m/s took roughly 19 hits. At 100 HP the AI knocked out a player standing still in about 48 s, before a 1-minute match could time out; at 150 HP that takes about 72 s, so a match usually goes to the timer unless someone stops dodging and blocking.
+**Starting balance (default):** 150 HP; a fireball flies at the held fireball's speed at release (at least 2.5 m/s, no cap) and deals 2 damage per m/s, so harder throws hit harder but are harder to dodge or block. The old fixed 8 damage at 6–10 m/s took roughly 19 hits. At 100 HP the AI knocked out a player standing still in about 48 s, before a 1-minute match could time out; at 150 HP that takes about 72 s, so a match usually goes to the timer unless someone stops dodging and blocking.
 
 **Later versions:**
 - Spells take time to charge up (e.g. holding a conjured fireball longer makes it stronger), driving `spell.charge`.

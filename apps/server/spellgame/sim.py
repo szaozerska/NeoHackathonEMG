@@ -29,11 +29,11 @@ _STANDING = {
 }
 
 HAND_IDLE = np.array(_STANDING["r_hand"])
-_WINDUP = np.array([0.3, 1.6, -0.15])
-_FOLLOW_THROUGH = np.array([0.2, 1.5, 0.6])
+_WINDUP = np.array([0.3, 1.6, -0.4])
+_FOLLOW_THROUGH = np.array([0.2, 1.4, 0.8])
 
 THROW_DURATION_S = 0.8
-"""Backswing 0-0.4, throw 0.4-0.52, return 0.52-0.8 (fractions of the duration)."""
+"""Backswing 0-0.35, full-arm throw 0.35-0.65, return 0.65-1 (fractions of the duration)."""
 
 
 def yaw_rotation(facing_deg: float) -> list[float]:
@@ -76,15 +76,15 @@ def _smoothstep(x: float) -> float:
 
 
 def throw_hand_offset(elapsed_s: float) -> np.ndarray:
-    """Local right-hand offset `elapsed_s` into an overhand throw (backswing, fast forward throw, return)."""
+    """Local right-hand offset `elapsed_s` into an overhand throw (backswing, full forward swing, return)."""
     phase = elapsed_s / THROW_DURATION_S
     if phase <= 0.0 or phase >= 1.0:
         return HAND_IDLE.copy()
-    if phase < 0.4:
-        return HAND_IDLE + (_WINDUP - HAND_IDLE) * _smoothstep(phase / 0.4)
-    if phase < 0.52:
-        return _WINDUP + (_FOLLOW_THROUGH - _WINDUP) * _smoothstep((phase - 0.4) / 0.12)
-    return _FOLLOW_THROUGH + (HAND_IDLE - _FOLLOW_THROUGH) * _smoothstep((phase - 0.52) / 0.48)
+    if phase < 0.35:
+        return HAND_IDLE + (_WINDUP - HAND_IDLE) * _smoothstep(phase / 0.35)
+    if phase < 0.65:
+        return _WINDUP + (_FOLLOW_THROUGH - _WINDUP) * _smoothstep((phase - 0.35) / 0.3)
+    return _FOLLOW_THROUGH + (HAND_IDLE - _FOLLOW_THROUGH) * _smoothstep((phase - 0.65) / 0.35)
 
 
 SWORD_POCKET_HAND = np.array([-0.12, 0.98, 0.1])

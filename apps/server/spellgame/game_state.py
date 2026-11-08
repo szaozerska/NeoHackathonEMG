@@ -32,22 +32,20 @@ class Tuning:
     velocity_window_s: float = 0.04
     hand_history_s: float = 0.3
 
-    fireball_damage_per_speed: float = 1.0
-    """Damage per m/s of fireball speed, so the slowest throw (5 m/s) deals 5 and a 7 m/s hand (14 m/s) deals 14."""
+    fireball_damage_per_speed: float = 2.0
+    """Damage per m/s of fireball speed, so the slowest throw (2.5 m/s) deals 5 and a 6 m/s throw deals 12."""
     fireball_radius: float = 0.1
     """Collision radius; the drawn orb may be larger."""
     fireball_lifetime_s: float = 4.0
     fireball_hold_timeout_s: float = 8.0
     fireball_cooldown_s: float = 0.75
-    throw_min_hand_speed: float = 2.5
-    """m/s. Slower hand movement never releases a held fireball."""
+    fireball_inertia_s: float = 0.15
+    """Time constant of the held fireball following the hand: it picks up 63% of a steady hand velocity in this long,
+    so a quick wrist flick barely moves it and only a full arm swing builds a fast throw."""
+    throw_min_speed: float = 2.5
+    """m/s of the held fireball's velocity. Slower, it never leaves the hand."""
     throw_min_forward: float = 0.3
-    """Minimum cosine between the hand velocity and the thrower's facing, so the backswing doesn't throw."""
-    throw_release_ratio: float = 0.85
-    """Release once hand speed falls below this fraction of its peak (the peak velocity is the throw)."""
-    throw_release_timeout_s: float = 0.15
-    throw_speed_scale: float = 2.0
-    """Fireball speed per m/s of peak hand speed; `throw_min_hand_speed` makes the slowest throw 5 m/s."""
+    """Minimum cosine between the held fireball's velocity and the thrower's facing, so the backswing doesn't throw."""
     aim_assist_cone_deg: float = 20.0
     aim_assist_strength: float = 0.5
     """0 disables aim assist; 1 snaps throws within the cone straight at the opponent's chest."""
@@ -161,8 +159,8 @@ class PlayerState:
     item: str = Item.NONE
     item_since: float = 0.0
     cooldown_until: float = 0.0
-    throw_peak: np.ndarray | None = None
-    throw_peak_time: float = 0.0
+    held_fireball_velocity: np.ndarray = field(default_factory=lambda: np.zeros(3))
+    """The held fireball lags the hand by `Tuning.fireball_inertia_s`; this is its velocity, and the throw's."""
     draw_start: tuple[float, np.ndarray] | None = None
     """Time and hand position of the last fist sample in the pocket, while a draw is possible."""
     sword_tip: np.ndarray | None = None
@@ -224,7 +222,7 @@ class GameState:
         for player_id, player_input in inputs.items():
             events.extend(self._apply_input(self.add_player(player_id), player_input))
         for player in self.players.values():
-            events.extend(self._step_fireball(player))
+            events.extend(self._step_fireball(player, dt))
             events.extend(self._step_sword(player, dt))
             events.extend(self._step_shield(player, dt))
         events.extend(self._step_projectiles(dt))
@@ -285,10 +283,10 @@ class GameState:
             return []
         player.item = Item.FIREBALL
         player.item_since = self.time
-        player.throw_peak = None
+        player.held_fireball_velocity = np.zeros(3)
         return [self._spell_event(player, p.SpellState.CHARGING, None)]
 
-    def _step_fireball(self, player: PlayerState) -> list[p.Message]:
+    def _step_fireball(self, player: PlayerState, dt: float) -> list[p.Message]:
         events: list[p.Message] = []
         if player.item != Item.FIREBALL:
             return events
@@ -301,37 +299,28 @@ class GameState:
             events.append(self._spell_event(player, p.SpellState.CANCELLED, None))
             return events
 
-        throw_velocity = self._detect_throw(player)
-        if throw_velocity is not None:
-            events.append(self._throw_fireball(player, throw_velocity))
+        if self._released_throw(player, dt):
+            events.append(self._throw_fireball(player, player.held_fireball_velocity))
         return events
 
-    def _detect_throw(self, player: PlayerState) -> np.ndarray | None:
+    def _released_throw(self, player: PlayerState, dt: float) -> bool:
+        """Drag the held fireball after the hand; it leaves once moving fast and forward and the hand slows below it."""
         tuning = self.tuning
-        velocity = player.band_hand_tracker.velocity()
-        if velocity is None or player.pose is None:
-            return None
+        hand_velocity = player.band_hand_tracker.velocity()
+        if hand_velocity is None or player.pose is None:
+            return False
+        follow = 1.0 - float(np.exp(-dt / tuning.fireball_inertia_s))
+        held = player.held_fireball_velocity + (hand_velocity - player.held_fireball_velocity) * follow
+        player.held_fireball_velocity = held
+        held_speed = float(np.linalg.norm(held))
+        forwardness = float(normalize(held) @ body_forward(player.pose.joints))
+        fast_and_forward = held_speed >= tuning.throw_min_speed and forwardness >= tuning.throw_min_forward
+        return fast_and_forward and float(np.linalg.norm(hand_velocity)) < held_speed
+
+    def _throw_fireball(self, player: PlayerState, velocity: np.ndarray) -> p.Spell:
+        tuning = self.tuning
+        direction = self._aim_assist(player, normalize(velocity))
         speed = float(np.linalg.norm(velocity))
-        forwardness = float(normalize(velocity) @ body_forward(player.pose.joints))
-        fast_and_forward = speed >= tuning.throw_min_hand_speed and forwardness >= tuning.throw_min_forward
-
-        peak = player.throw_peak
-        if fast_and_forward and (peak is None or speed > float(np.linalg.norm(peak))):
-            player.throw_peak, player.throw_peak_time = velocity, self.time
-            return None
-        if peak is None:
-            return None
-        released = (
-            not fast_and_forward
-            or speed < tuning.throw_release_ratio * float(np.linalg.norm(peak))
-            or self.time - player.throw_peak_time >= tuning.throw_release_timeout_s
-        )
-        return peak if released else None
-
-    def _throw_fireball(self, player: PlayerState, hand_velocity: np.ndarray) -> p.Spell:
-        tuning = self.tuning
-        direction = self._aim_assist(player, normalize(hand_velocity))
-        speed = float(np.linalg.norm(hand_velocity)) * tuning.throw_speed_scale
         origin = player.band_hand_tracker.position
         assert origin is not None
         self.projectiles.append(
@@ -346,7 +335,6 @@ class GameState:
         )
         self._next_projectile_id += 1
         player.item = Item.NONE
-        player.throw_peak = None
         player.cooldown_until = self.time + tuning.fireball_cooldown_s
         return self._spell_event(player, p.SpellState.CAST, direction)
 
