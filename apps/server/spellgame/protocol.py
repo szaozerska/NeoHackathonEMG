@@ -340,6 +340,16 @@ class DomainExpansion(Message):
     stun_s: float
 
 
+class Grade:
+    """How well an attack or block was performed (Pokémon Go-style callouts), independent of raw damage."""
+
+    GOOD = "good"
+    GREAT = "great"
+    EXCELLENT = "excellent"
+    PERFECT = "perfect"
+    """A headshot or a parry."""
+
+
 class Zone:
     """The body part a hit landed on (`spellgame.hitboxes`)."""
 
@@ -362,6 +372,8 @@ class Damage(Message):
     """Where the hit landed, e.g. for damage numbers."""
     zone: str | None = None
     """The `Zone` that was hit."""
+    grade: str | None = None
+    """A `Grade`: how good the hit was (fireball: speed and how centred; sword: blade speed; head = perfect)."""
 
 
 @dataclass
@@ -379,6 +391,8 @@ class Impact(Message):
     pos: list[float]
     reason: str
     target_id: str | None = None
+    grade: str | None = None
+    """A `Grade` for `blocked` (how soon after raising the shield) and `parried` (always perfect)."""
 
 
 @dataclass

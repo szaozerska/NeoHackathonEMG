@@ -363,7 +363,9 @@ class GameState:
         held_speed = float(np.linalg.norm(held))
         forwardness = float(normalize(held) @ body_forward(player.pose.joints))
         fast_and_forward = held_speed >= tuning.throw_min_speed and forwardness >= tuning.throw_min_forward
-        if fast_and_forward and (player.throw_velocity is None or held_speed > float(np.linalg.norm(player.throw_velocity))):
+        if fast_and_forward and (
+            player.throw_velocity is None or held_speed > float(np.linalg.norm(player.throw_velocity))
+        ):
             player.throw_velocity = held
         if player.throw_velocity is None:
             return None
@@ -429,11 +431,15 @@ class GameState:
                 shielder, contact = blocked
                 damage = self._fireball_damage(projectile)
                 events.extend(self._shield_leak(shielder, projectile.owner_id, damage, Item.FIREBALL, contact))
-                events.append(self._impact(projectile, contact, "blocked", shielder.player_id))
+                impact = self._impact(projectile, contact, "blocked", shielder.player_id)
+                impact.grade = self._block_grade(shielder)
+                events.append(impact)
             elif hit is not None:
                 target, body = hit
                 damage = self._fireball_damage(projectile)
-                events.append(self._damage(target, projectile.owner_id, damage, Item.FIREBALL, body.pos, body.zone))
+                hit_event = self._damage(target, projectile.owner_id, damage, Item.FIREBALL, body.pos, body.zone)
+                hit_event.grade = self._fireball_grade(projectile, target, body)
+                events.append(hit_event)
                 events.append(self._impact(projectile, body.pos, "hit", target.player_id))
             elif out_of_range:
                 events.append(self._impact(projectile, end, "expired", None))
@@ -534,14 +540,18 @@ class GameState:
             if shield_contact is not None:
                 if target.shield_boost >= tuning.shield_parry_min_boost:
                     player.sword_locked_until = self.time + tuning.shield_parry_lock_s
-                    events.append(self._sword_impact(player, shield_contact, "parried", target.player_id))
+                    parry = self._sword_impact(player, shield_contact, "parried", target.player_id)
+                    parry.grade = p.Grade.PERFECT
+                    events.append(parry)
                     events.append(self._sheathe(player))
                     return events
                 if fast and rehit_ready:
                     player.sword_hits[target.player_id] = self.time
                     damage = self._sword_damage(tip_speed)
                     events.extend(self._shield_leak(target, player.player_id, damage, Item.SWORD, shield_contact))
-                    events.append(self._sword_impact(player, shield_contact, "blocked", target.player_id))
+                    block = self._sword_impact(player, shield_contact, "blocked", target.player_id)
+                    block.grade = self._block_grade(target)
+                    events.append(block)
                 continue
             if not fast or not rehit_ready:
                 continue
@@ -550,8 +560,40 @@ class GameState:
                 continue
             player.sword_hits[target.player_id] = self.time
             damage = self._sword_damage(tip_speed)
-            events.append(self._damage(target, player.player_id, damage, Item.SWORD, body.pos, body.zone))
+            hit_event = self._damage(target, player.player_id, damage, Item.SWORD, body.pos, body.zone)
+            hit_event.grade = self._sword_grade(tip_speed, body.zone)
+            events.append(hit_event)
         return events
+
+    @staticmethod
+    def _grade(score: float) -> str:
+        if score >= 0.75:
+            return p.Grade.EXCELLENT
+        if score >= 0.4:
+            return p.Grade.GREAT
+        return p.Grade.GOOD
+
+    def _fireball_grade(self, projectile: Projectile, target: PlayerState, body: Contact) -> str:
+        """Half throw speed, half how close to the target's centre line it landed; a headshot is perfect."""
+        if body.zone == p.Zone.HEAD:
+            return p.Grade.PERFECT
+        speed = min(1.0, float(np.linalg.norm(projectile.vel)) / self.tuning.throw_max_speed)
+        chest = target.chest_position()
+        offset = 0.5 if chest is None else float(np.linalg.norm((body.pos - chest)[[0, 2]]))
+        centred = float(np.clip(1.0 - offset / 0.35, 0.0, 1.0))
+        return self._grade(0.5 * speed + 0.5 * centred)
+
+    def _sword_grade(self, tip_speed: float, zone: str) -> str:
+        if zone == p.Zone.HEAD:
+            return p.Grade.PERFECT
+        tuning = self.tuning
+        speed_range = tuning.sword_full_damage_tip_speed - tuning.sword_min_tip_speed
+        return self._grade(float(np.clip((tip_speed - tuning.sword_min_tip_speed) / speed_range, 0.0, 1.0)))
+
+    def _block_grade(self, shielder: PlayerState) -> str:
+        """Late, last-moment blocks score higher than a shield held up all along."""
+        held = self.time - shielder.item_since
+        return self._grade(float(np.clip(1.0 - (held - 0.15) / 1.5, 0.0, 1.0)))
 
     def _sword_damage(self, tip_speed: float) -> float:
         tuning = self.tuning

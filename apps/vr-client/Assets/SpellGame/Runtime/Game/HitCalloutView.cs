@@ -5,9 +5,10 @@ using UnityEngine;
 namespace SpellGame.Game
 {
     /// <summary>
-    /// A word pops up where a hit lands instead of a damage number, so players read how good the hit was rather than
-    /// doing arithmetic: LIGHT (grey, small), SOLID (orange), HEAVY! (red, big), plus HEADSHOT for head hits, BLOCKED
-    /// (blue) and PARRY! (cyan). Not shown for hits on you (the edge flash covers those); it floats up and fades.
+    /// A Pokémon Go-style grade pops up where a hit lands instead of a damage number: GOOD / GREAT! / EXCELLENT! /
+    /// PERFECT! from the server's <see cref="HitGrade"/> (HEADSHOT on head hits), GREAT / EXCELLENT BLOCK and PERFECT
+    /// PARRY! on defence; older servers without grades fall back to LIGHT / SOLID / HEAVY! by damage. Drawn in the theme's
+    /// display font (crystal or wizard). Not shown for hits on you (the edge flash covers those); it floats up and fades.
     /// </summary>
     public sealed class HitCalloutView : MonoBehaviour
     {
@@ -26,10 +27,11 @@ namespace SpellGame.Game
         private static readonly Color HeavyColor = new(1f, 0.2f, 0.15f);
         private static readonly Color BlockColor = new(0.4f, 0.6f, 1f);
         private static readonly Color ParryColor = new(0.35f, 1f, 1f);
+        private static readonly Color PerfectColor = new(1f, 0.85f, 0.25f);
 
         private sealed class Callout
         {
-            public TextMesh Text;
+            public TMPro.TextMeshPro Text;
             public Vector3 Start;
             public float Born;
             public float Size;
@@ -37,7 +39,7 @@ namespace SpellGame.Game
         }
 
         private readonly List<Callout> _live = new();
-        private readonly Stack<TextMesh> _pool = new();
+        private readonly Stack<TMPro.TextMeshPro> _pool = new();
 
         private void OnEnable()
         {
@@ -55,12 +57,16 @@ namespace SpellGame.Game
         {
             if (damage.TargetId == gameClient.PlayerId || damage.Pos is not { Length: 3 })
                 return;
-            var (word, color, size) = damage.Amount >= heavyFrom ? ("HEAVY!", HeavyColor, 1.5f)
+            if (damage.Grade != null)
+            {
+                var (word, color, size) = Graded(damage.Grade);
+                Spawn(damage.Zone == HitZone.Head ? $"HEADSHOT\n{word}" : word, color, size, damage.Pos);
+                return;
+            }
+            var (tier, tierColor, tierSize) = damage.Amount >= heavyFrom ? ("HEAVY!", HeavyColor, 1.5f)
                 : damage.Amount >= solidFrom ? ("SOLID", SolidColor, 1.15f)
                 : ("LIGHT", LightColor, 0.85f);
-            if (damage.Zone == HitZone.Head)
-                word = $"HEADSHOT\n{word}";
-            Spawn(word, color, size, damage.Pos);
+            Spawn(tier, tierColor, tierSize, damage.Pos);
         }
 
         private void OnImpact(ImpactMessage impact)
@@ -68,10 +74,20 @@ namespace SpellGame.Game
             if (impact.Pos is not { Length: 3 })
                 return;
             if (impact.Reason == "parried")
-                Spawn("PARRY!", ParryColor, 1.4f, impact.Pos);
+                Spawn("PERFECT PARRY!", ParryColor, 1.5f, impact.Pos);
             else if (impact.Reason == "blocked")
-                Spawn("BLOCKED", BlockColor, 1f, impact.Pos);
+                Spawn(impact.Grade is HitGrade.Excellent or HitGrade.Perfect ? "EXCELLENT BLOCK!"
+                    : impact.Grade == HitGrade.Great ? "GREAT BLOCK" : "BLOCKED", BlockColor, impact.Grade == HitGrade.Excellent ? 1.3f : 1f, impact.Pos);
         }
+
+        /// <summary>Pokémon Go-style grades: brighter, bigger and warmer as they go up.</summary>
+        private static (string Word, Color Color, float Size) Graded(string grade) => grade switch
+        {
+            HitGrade.Perfect => ("PERFECT!", PerfectColor, 1.6f),
+            HitGrade.Excellent => ("EXCELLENT!", HeavyColor, 1.4f),
+            HitGrade.Great => ("GREAT!", SolidColor, 1.15f),
+            _ => ("GOOD", LightColor, 0.9f),
+        };
 
         private void Spawn(string word, Color color, float size, float[] pos)
         {
@@ -117,18 +133,8 @@ namespace SpellGame.Game
             }
         }
 
-        private TextMesh CreateText()
-        {
-            var label = new GameObject("Callout").AddComponent<TextMesh>();
-            label.transform.SetParent(transform, false);
-            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            label.GetComponent<MeshRenderer>().sharedMaterial = label.font.material;
-            label.anchor = TextAnchor.MiddleCenter;
-            label.alignment = TextAlignment.Center;
-            label.characterSize = 0.012f;
-            label.fontSize = 64;
-            label.fontStyle = FontStyle.Bold;
-            return label;
-        }
+        /// <summary>The theme's display font (crystal or wizard) with its outline, like the rest of the in-room text.</summary>
+        private TMPro.TextMeshPro CreateText() =>
+            UiStyle.CreateText("Callout", transform, "", Vector3.zero, 0.07f, Color.white, display: true, look: UiStyle.Look.Title);
     }
 }
