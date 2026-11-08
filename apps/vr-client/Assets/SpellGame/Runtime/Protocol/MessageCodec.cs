@@ -33,6 +33,7 @@ namespace SpellGame.Protocol
             [ImpactMessage.TypeName] = typeof(ImpactMessage),
             [StateMessage.TypeName] = typeof(StateMessage),
             [DomainExpansionMessage.TypeName] = typeof(DomainExpansionMessage),
+            [CalibrationStatusMessage.TypeName] = typeof(CalibrationStatusMessage),
         };
 
         public static string Encode(Message message) => JsonConvert.SerializeObject(message, Settings);

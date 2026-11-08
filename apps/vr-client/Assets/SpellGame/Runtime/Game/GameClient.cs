@@ -54,6 +54,7 @@ namespace SpellGame.Game
         public event Action<StateMessage> StateReceived;
         public event Action<SpaceMessage> SpaceReceived;
         public event Action<DomainExpansionMessage> DomainExpansionReceived;
+        public event Action<CalibrationStatusMessage> CalibrationReceived;
         public event Action<ConnectionState> ConnectionChanged;
 
         public string PlayerId => _playerId;
@@ -256,6 +257,9 @@ namespace SpellGame.Game
                     break;
                 case ImpactMessage impact:
                     ImpactReceived?.Invoke(impact);
+                    break;
+                case CalibrationStatusMessage calibration:
+                    CalibrationReceived?.Invoke(calibration);
                     break;
                 case StateMessage state:
                     UpdateHpStatus(state);

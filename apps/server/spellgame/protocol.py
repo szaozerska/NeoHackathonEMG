@@ -276,6 +276,50 @@ class SignMessage(Message):
 
 
 @dataclass
+class Tension(Message):
+    """How hard the band hand is squeezing (classifier → server), about 20 times a second.
+
+    PLACEHOLDER until the band's real tension signal is known: `value` is the hand-client's guess from raw EMG,
+    already scaled to this player's own calibrated range (0 = relaxed, 1 = their comfortable maximum squeeze).
+    """
+
+    TYPE: ClassVar[str] = "tension"
+    player_id: str | None
+    t: float
+    hand: str
+    value: float
+    calibrated: bool = False
+    """False until the player has done the relax/squeeze calibration; the server ignores uncalibrated values."""
+
+
+class CalibrationPhase:
+    REST = "rest"
+    SQUEEZE = "squeeze"
+    DONE = "done"
+    FAILED = "failed"
+
+
+@dataclass
+class Calibrate(Message):
+    """Restart the grip calibration (headset → server → that player's classifier)."""
+
+    TYPE: ClassVar[str] = "calibrate"
+    player_id: str | None = None
+
+
+@dataclass
+class CalibrationStatus(Message):
+    """Grip calibration progress (classifier → server → every headset) so the headset can prompt the player."""
+
+    TYPE: ClassVar[str] = "calibration"
+    player_id: str | None
+    phase: str
+    """A `CalibrationPhase`."""
+    progress: float = 0.0
+    """0–1 through the current phase."""
+
+
+@dataclass
 class Gesture(Message):
     """A band's built-in decoded gesture (classifier → server → every VR client), e.g. for game UI interaction."""
 
