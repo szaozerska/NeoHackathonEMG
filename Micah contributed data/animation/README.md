@@ -16,3 +16,11 @@ metadata. Original metadata/report backups and raw labels are preserved locally.
 
 Future Animation Gesture sessions are separate recordings; this rejection
 applies to the exact session above.
+
+## Published valid static recording
+
+[`20261108-021414-fe4063d4`](static/20261108-021414-fe4063d4/README.md)
+contains the original EMG stream and unchanged Spacebar classifications:
+98.03 intended seconds and 108.46 non-intended seconds. The contributor reports
+possible gesture contamination in red; signal-review candidates are separate
+from original labels and are not confirmed corrections or certified negatives.

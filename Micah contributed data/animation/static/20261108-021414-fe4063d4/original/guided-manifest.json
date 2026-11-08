@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "wearing_session": "micah-wearing-01",
+  "supervision": "untrimmed_participant_intervals_requires_postprocessing",
+  "postprocessing_required": true,
+  "source_hashes": {
+    "streams.jsonl": "4100e98d291c9b6e7c7f75df605061d5357e2aab4491ae09469cfd1cfb2240d4",
+    "metadata.json": "04d13833aec1b35fb741c6ec839f0766ca76375064e787577ea27006ca1d84de",
+    "guided-trials.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "intent-gate-trials.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "intent-trials.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "failure-flags.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "collection-plan.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "intent-toggle-markers.json": "bdf599c1f788c5b20f1943f3df573e03d3c24ea10579822c8a8d92d3e3aa2e0c",
+    "interaction-exclusions.json": "924456a48dd4f7a4b8831566d2139d7ccdad6c1a955f65f8b030d3dad930c072",
+    "intent-gate-intervals.json": "b1e8fb2a514267b8e01b77234a946975fef4dee35a1b8e13c64e69859d3e54b2",
+    "motion-selections.json": "b89d47137b56212eb494b117a2f24dc863936a377fa0988956597a17acd7351d",
+    "truth-values.json": "a2510c2174f9b539d1355e66a006932497f7e47b603a2f27cb9bf84f78ef1dee",
+    "signal-coverage.json": "652e9df1572e23661cbc22b852cf97be02689c734879fefd1f0993dfd5889c26"
+  },
+  "open_hold_and_transitions_require_review": true
+}

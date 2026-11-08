@@ -5,14 +5,15 @@ import pytest
 from test_live_test import setup, pump
 
 
-def test_animation_space_hold_preserves_full_thirty_seconds_and_baseline(tmp_path):
+@pytest.mark.parametrize('condition', ['static', 'dynamic'])
+def test_animation_space_hold_preserves_full_thirty_seconds_and_baseline(tmp_path, condition):
     tester, predictor, clock = setup(tmp_path)
     pump(tester, predictor, clock, 'none')
     tester.animation_root = tmp_path/'animation'
     tester.collection_action('start', {'profile':'micah_emg', 'test_condition':'animation',
         'wearing_session':'micah-01', 'focus':'live_intent',
-        'initial_intent':'non_intended', 'capture_mode':'emg_only'})
-    assert tester.capture.directory.parent == tester.animation_root
+        'initial_intent':'non_intended', 'capture_mode':'emg_only', 'animation_condition':condition})
+    assert tester.capture.directory.parent == (tester.animation_root/'dynamic' if condition=='dynamic' else tester.animation_root)
     assert tester.capture.meta['gesture_label'] == 'Animation Gesture'
     assert tester.collection.selected_motion['motion'] == 'animation_gesture'
     with pytest.raises(ValueError, match='Animation Gesture only'):
@@ -30,7 +31,11 @@ def test_animation_space_hold_preserves_full_thirty_seconds_and_baseline(tmp_pat
     assert intended[0]['end']-intended[0]['start'] == pytest.approx(30)
     assert intended[0]['selected_motion']['motion'] == 'animation_gesture'
     assert intended[0]['selected_motion']['effort'] is None
-    assert truth['test_condition'] == 'static'
+    assert truth['test_condition'] == condition
+    assert tester.last_capture is not None
+    metadata = json.loads((directory/'metadata.json').read_text())
+    assert metadata['requested_sequence'] == ['cross_two_fingers','thumb_to_pinky_tap','maintain_gesture']
+    assert metadata['sequence_timestamps_verified'] is False
     assert truth['interaction_guard_seconds'] == 0
     assert len([v for v in truth['intervals'] if not v['intended']]) == 2
 

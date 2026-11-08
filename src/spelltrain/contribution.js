@@ -2,6 +2,8 @@
 (()=>{
  const $=id=>document.getElementById(id),animationMode=document.body.dataset.testCondition==='animation',staticMode=animationMode||document.body.dataset.testCondition==='static';
  let live=null,busy=false,polling=false,alignment=null,spaceHeld=false,pending=0,queue=Promise.resolve(),holdStarted=null,lastHoldSeconds=0;
+ if(animationMode&&new URLSearchParams(location.search).get('mode')==='dynamic')$('animationCondition').value='dynamic';
+ const dynamicAnimation=()=>animationMode&&$('animationCondition').value==='dynamic';
  async function api(action,value={}){
   const response=await fetch('/api/'+action,{method:'POST',headers:{'Content-Type':'application/json','X-Session-Token':window.contributionToken},body:JSON.stringify(value)});
   const result=await response.json();if(!response.ok)throw Error(result.error||'Request failed');return result;
@@ -15,12 +17,14 @@
  function render(){
   if(!live)return;
   const active=ownSession(),motionReady=live.band_context?.gyro?.age_seconds<1.5&&live.band_context?.orientation?.age_seconds<1.5&&!!live.sensor_timing?.forearm&&!!live.sensor_timing?.delivered_sensor_hz?.gyro&&!!live.sensor_timing?.delivered_sensor_hz?.orientation,intended=pending>0?spaceHeld:live.collection?.annotation?.label==='intended',motion=live.collection?.selected_motion;
+  if(animationMode&&active&&live.collection_test_condition)$('animationCondition').value=live.collection_test_condition;
   $('signal').dataset.live=String(!!live.connected);$('signal').textContent=live.connected?'EMG connected · 8 channels · 2,048 Hz nominal':'Waiting for fresh EMG from Kinesis';
   $('setup').hidden=active;$('recording').hidden=!active;
   $('start').disabled=busy||!live.connected||!!live.recording?.active;$('start').textContent=motionReady?'Start full sensor session':'Start EMG-only session';$('connect').disabled=busy||!!live.recording?.active;
   $('stop').disabled=busy||pending>0||spaceHeld;
   $('intent').className=intended?'intended':'';$('intentTitle').textContent=intended?'Intended · GREEN':'Non-intended · RED';
-  $('intentInstruction').textContent=animationMode?(intended?'Maintain Animation Gesture. Release Space when finished.':'Rest normally. Hold Space when ready for Animation Gesture.'):(intended?(staticMode?'Keep your arm still and maintain the selected hold. Release when finished.':'Perform the selected motion while holding Space. Release when finished.'):(staticMode?'Rest with your arm still. Select Shield or Sword effort before holding Space.':'Rest or move naturally. Hold Space when ready for the selected action.'));
+  $('intentInstruction').textContent=animationMode?(intended?(dynamicAnimation()?'Cross your fingers, then tap thumb to pinky. Maintain the gesture while moving and rotating your arm naturally.':'Maintain Animation Gesture. Release Space when finished.'):(dynamicAnimation()?'Move and rotate your arm without the gesture. Hold Space at your first finger interaction.':'Rest normally. Hold Space when ready for Animation Gesture.')):(intended?(staticMode?'Keep your arm still and maintain the selected hold. Release when finished.':'Perform the selected motion while holding Space. Release when finished.'):(staticMode?'Rest with your arm still. Select Shield or Sword effort before holding Space.':'Rest or move naturally. Hold Space when ready for the selected action.'));
+  if($('animationModeHint'))$('animationModeHint').textContent=dynamicAnimation()?'Dynamic: press Space at the first finger movement, cross the fingers, then tap thumb to pinky. Keep the entire sequence green. Move your arm and rotate through varied angles; release after undoing the gesture. In red, repeat arm/rotation movements without forming the gesture.':'Static: hold your arm comfortably steady. Press Space at the first finger interaction and keep the complete sequence green.';
   if($('holdElapsed')){const seconds=holdStarted===null?lastHoldSeconds:performance.now()/1000-holdStarted;$('holdElapsed').textContent=seconds.toFixed(1)+' / 30 seconds'+(seconds>=30?' · target reached; release when ready':'');}
   for(const button of document.querySelectorAll('[data-motion]')){
    const chosen=motion?.motion===button.dataset.motion&&(motion?.effort||'')===(button.dataset.effort||'');
@@ -42,7 +46,7 @@
   finally{polling=false}
  }
  async function work(action){if(busy||pending)return;busy=true;$('error').textContent='';render();try{await action()}catch(error){$('error').textContent=error.message}finally{busy=false;await refresh();render()}}
- $('start').onclick=()=>work(async()=>{await sync();await api('collection/start',{profile:'micah_emg',test_condition:animationMode?'animation':staticMode?'static':'dynamic',wearing_session:$('wearing').value.trim(),role:$('role').value,focus:'live_intent',initial_intent:'non_intended',interaction_guard:0,capture_mode:live.band_context?.gyro?.age_seconds<1.5&&live.band_context?.orientation?.age_seconds<1.5&&live.sensor_timing?.forearm&&live.sensor_timing?.delivered_sensor_hz?.gyro&&live.sensor_timing?.delivered_sensor_hz?.orientation?'full_context':'emg_only',clock_alignment:alignment});$('saved').textContent='';lastHoldSeconds=0;holdStarted=null;$('start').blur();});
+ $('start').onclick=()=>work(async()=>{if(dynamicAnimation()&&!('collection_test_condition' in live))throw Error('Open the updated dynamic collector at http://127.0.0.1:8805/animation?mode=dynamic');await sync();await api('collection/start',{profile:'micah_emg',test_condition:animationMode?'animation':staticMode?'static':'dynamic',animation_condition:animationMode?$('animationCondition').value:undefined,wearing_session:$('wearing').value.trim(),role:$('role').value,focus:'live_intent',initial_intent:'non_intended',interaction_guard:0,capture_mode:live.band_context?.gyro?.age_seconds<1.5&&live.band_context?.orientation?.age_seconds<1.5&&live.sensor_timing?.forearm&&live.sensor_timing?.delivered_sensor_hz?.gyro&&live.sensor_timing?.delivered_sensor_hz?.orientation?'full_context':'emg_only',clock_alignment:alignment});$('saved').textContent='';lastHoldSeconds=0;holdStarted=null;$('start').blur();});
  for(const button of document.querySelectorAll('[data-motion]'))button.onclick=()=>work(async()=>{await api('collection/select-motion',{motion:button.dataset.motion,effort:button.dataset.effort||null});button.blur();});
  function mark(label,client_t){
   if(!ownSession()||!alignment)return;

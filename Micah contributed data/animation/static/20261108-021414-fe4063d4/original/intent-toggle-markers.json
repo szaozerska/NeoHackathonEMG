@@ -1,0 +1,125 @@
+[
+  {
+    "capture_t": 0.0,
+    "label": "non_intended",
+    "source": "participant_toggle_at_record_start",
+    "uncertainty_seconds": 0.0
+  },
+  {
+    "capture_t": 10.788822708069347,
+    "label": "intended",
+    "source": "participant_spacebar_press",
+    "uncertainty_seconds": 0.0004499999880778205,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 592097.1977692911,
+      "uncertainty_seconds": 0.0004499999880778205,
+      "client_sync_t": 224.53574999994038,
+      "round_trip_seconds": 0.000899999976155641,
+      "client_event_t": 235.34269999992847,
+      "mapped_host_event_uptime": 592332.540469291,
+      "server_received_host_uptime": 592332.543660041
+    },
+    "selected_motion": {
+      "motion": "animation_gesture",
+      "effort": null,
+      "source": "participant_selection",
+      "performed_verified": false
+    }
+  },
+  {
+    "capture_t": 74.32693500001915,
+    "label": "non_intended",
+    "source": "participant_spacebar_release",
+    "uncertainty_seconds": 0.0008000000119352535,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 592097.1977815831,
+      "uncertainty_seconds": 0.0008000000119352535,
+      "client_sync_t": 270.0850999999642,
+      "round_trip_seconds": 0.001600000023870507,
+      "client_event_t": 298.88079999995233,
+      "mapped_host_event_uptime": 592396.078581583,
+      "server_received_host_uptime": 592396.081698458
+    },
+    "selected_motion": null
+  },
+  {
+    "capture_t": 110.21979141701013,
+    "label": "intended",
+    "source": "participant_spacebar_press",
+    "uncertainty_seconds": 0.00044999998806360963,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 592097.1977380001,
+      "uncertainty_seconds": 0.00044999998806360963,
+      "client_sync_t": 330.07584999996425,
+      "round_trip_seconds": 0.0008999999761272193,
+      "client_event_t": 334.77369999992845,
+      "mapped_host_event_uptime": 592431.971438,
+      "server_received_host_uptime": 592431.97391
+    },
+    "selected_motion": {
+      "motion": "animation_gesture",
+      "effort": null,
+      "source": "participant_selection",
+      "performed_verified": false
+    }
+  },
+  {
+    "capture_t": 113.89569141715765,
+    "label": "non_intended",
+    "source": "participant_spacebar_release",
+    "uncertainty_seconds": 0.00044999998806360963,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 592097.1977380001,
+      "uncertainty_seconds": 0.00044999998806360963,
+      "client_sync_t": 330.07584999996425,
+      "round_trip_seconds": 0.0008999999761272193,
+      "client_event_t": 338.44960000002385,
+      "mapped_host_event_uptime": 592435.6473380001,
+      "server_received_host_uptime": 592435.654273125
+    },
+    "selected_motion": null
+  },
+  {
+    "capture_t": 118.04939141706564,
+    "label": "intended",
+    "source": "participant_spacebar_press",
+    "uncertainty_seconds": 0.00044999998806360963,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 592097.1977380001,
+      "uncertainty_seconds": 0.00044999998806360963,
+      "client_sync_t": 330.07584999996425,
+      "round_trip_seconds": 0.0008999999761272193,
+      "client_event_t": 342.6032999999523,
+      "mapped_host_event_uptime": 592439.801038,
+      "server_received_host_uptime": 592439.804580875
+    },
+    "selected_motion": {
+      "motion": "animation_gesture",
+      "effort": null,
+      "source": "participant_selection",
+      "performed_verified": false
+    }
+  },
+  {
+    "capture_t": 148.86317279213108,
+    "label": "non_intended",
+    "source": "participant_spacebar_release",
+    "uncertainty_seconds": 0.0008000000119352535,
+    "exact_action_time_verified": false,
+    "browser_clock_alignment": {
+      "host_offset_seconds": 592097.1978193751,
+      "uncertainty_seconds": 0.0008000000119352535,
+      "client_sync_t": 360.0789999999404,
+      "round_trip_seconds": 0.001600000023870507,
+      "client_event_t": 373.417,
+      "mapped_host_event_uptime": 592470.6148193751,
+      "server_received_host_uptime": 592470.617090166
+    },
+    "selected_motion": null
+  }
+]

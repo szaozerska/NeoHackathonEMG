@@ -100,13 +100,16 @@ class LiveTester:
                     raise ValueError('Micah EMG sessions start in non-intended mode.')
                 condition=value.get('test_condition','dynamic')
                 if condition not in ('dynamic','static','animation'):raise ValueError('Invalid test condition')
+                animation_condition=value.get('animation_condition','static')
+                if condition=='animation' and animation_condition not in ('static','dynamic'):raise ValueError('Choose static or dynamic Animation Gesture testing.')
                 roots={'dynamic':self.contribution_root,'static':self.static_root,'animation':self.animation_root}
+                if condition=='animation' and animation_condition=='dynamic':roots['animation']=self.animation_root/'dynamic'
                 self.start_capture(root=roots[condition] if contribution else None,emg_only=contribution);self.target_hand=value.get('hand','Right')
                 self.collection=IntentCollection(self.capture,self.clock,wearing,value.get('role','train'),self.target_hand,value.get('focus','full'),value.get('initial_intent','non_intended'),guard,defer_cleanup=contribution)
                 if contribution:
                     self.capture.meta.update(kind='micah_emg_intent_contribution',contributor='Micah',
                         requested_capture_mode=capture_mode,
-                        test_condition='static' if condition=='animation' else condition,
+                        test_condition=animation_condition if condition=='animation' else condition,
                         collection_variant=condition,
                         collection_protocol='spacebar-held-motion-intent-v1',camera_policy='disabled',
                         input_modalities=['emg'],recorded_context=['available_gyro','available_orientation','available_band_events'],classification_policy='participant_motion_selection_only_no_model_predictions',
@@ -120,7 +123,11 @@ class LiveTester:
                     self.capture.meta.pop('equipment_rule',None)
                     self.collection._save()
                     if condition=='animation':
-                        self.capture.meta.update(gesture_label='Animation Gesture',suggested_hold_seconds=30)
+                        self.capture.meta.update(gesture_label='Animation Gesture',suggested_hold_seconds=30,
+                            requested_sequence=['cross_two_fingers','thumb_to_pinky_tap','maintain_gesture'],
+                            sequence_timestamps_verified=False,
+                            sequence_label_policy='Space down reports first interaction; internal stages have no independently verified timestamps. Preserve complete onset and transition waveforms.',
+                            movement_protocol='Natural arm movements and continuous rotations with gesture; matching arm/rotation movements without gesture in red.' if animation_condition=='dynamic' else 'Comfortably steady arm; preserve natural finger transitions.')
                         self.collection.select_motion('animation_gesture')
                         self.collection._save()
                 return {'collection':self.collection.status(),'recording':self.capture.status()}
@@ -327,6 +334,7 @@ class LiveTester:
                     'decision_memory':True,'state_updates':self.state_updates,
                     'snap_arbitration':False,'checking_snap':False,'snap_policy':self.snap_policy,'display_policy':self.display_policy,
                     'recording':self.capture.status() if self.capture else self.last_capture,
+                    'collection_test_condition':self.capture.meta.get('test_condition') if self.capture else None,
                     'camera_observer':self.camera_status,'camera_required_for_recording':self.camera_required,
                     'online_learning':False,
                     'collection':self.collection.status() if self.collection else None,

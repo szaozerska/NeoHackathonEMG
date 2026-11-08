@@ -1,0 +1,70 @@
+[
+  {
+    "capture_t": 0.0,
+    "guard_seconds": 0.0,
+    "kind": "record_start"
+  },
+  {
+    "capture_t": 0.012047208030708134,
+    "guard_seconds": 0,
+    "kind": "motion_selection",
+    "clock_uncertainty_seconds": 0.0,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 10.788822708069347,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.0004499999880778205,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 74.32693500001915,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.0008000000119352535,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 110.21979141701013,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.00044999998806360963,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 113.89569141715765,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.00044999998806360963,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 118.04939141706564,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.00044999998806360963,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 148.86317279213108,
+    "guard_seconds": 0,
+    "kind": "intent_toggle",
+    "clock_uncertainty_seconds": 0.0008000000119352535,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 206.33628849999513,
+    "guard_seconds": 0,
+    "kind": "mouse",
+    "clock_uncertainty_seconds": 0.0008500000238598204,
+    "applied_to_export": false
+  },
+  {
+    "capture_t": 206.48676770797465,
+    "guard_seconds": 0,
+    "kind": "record_finish",
+    "clock_uncertainty_seconds": 0.0,
+    "applied_to_export": false
+  }
+]
