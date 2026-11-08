@@ -404,7 +404,7 @@ The server owns the match; every `state` carries it as `match`.
 - **Length:** `duration_s`, 60/120/300 s from the menu (the server clamps to 10–600 s).
 - **Rules:** `sword_only` (menu: Rules → Sword only) drops every sign but the fist for the match, so there is no fireball, shield or domain expansion; in solo the AI follows you at blade's reach and slashes instead of throwing.
 - **Rules:** a KO ends the match at once. At time-out the higher HP wins; a tie goes to sudden death (`time_left` stays 0, next hit wins). A fighter's headset disconnecting ends it for the other (`reason: disconnect`), and `match_quit` from either fighter ends it with no winner (`reason: quit`, `ended_by`).
-- **Spells:** in `lobby` and `ready` they're free practice, and a defeated player respawns at full HP. When the countdown starts the fighters' HP, items and cooldowns reset and projectiles clear. Nobody can cast during the countdown or on the results screen, and spectators can't cast while a match is playing.
+- **Spells:** off in `lobby` and `ready` (no spells while navigating the menus); a defeated player respawns at full HP there. When the countdown starts the fighters' HP, items and cooldowns reset and projectiles clear. Nobody can cast during the countdown or on the results screen, and spectators can't cast while a match is playing.
 - **AI opponent** (`spellgame/ai.py`): exists from `ready` to the end of a solo match. It stands 2.5 m in front of its target, strafes, throws a fireball every 2–3 s with a little aim error, and sometimes raises its shield against an incoming one. Its poses go through the same pipeline as a headset's (broadcast as `pose` with `player_id: AI`), so every spell view renders it.
 
 ## 6. Message types (default schema)

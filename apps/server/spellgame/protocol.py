@@ -496,7 +496,7 @@ class MatchPhase:
     """Server-owned match flow (architecture.md §5.2): `lobby` → `ready` → `countdown` → `playing` → `ended`."""
 
     LOBBY = "lobby"
-    """Menus; spells work as free practice and a defeated player respawns."""
+    """Menus; no spells, and a defeated player respawns."""
     READY = "ready"
     """A match is set up; waiting for every fighter's `ready`."""
     COUNTDOWN = "countdown"

@@ -41,6 +41,10 @@ class Tuning:
     snap_replaces_sword_s: float = 1.0
     """A snap this soon after drawing the sword sheathes it and conjures the fireball: the band often reads the snap's
     wind-up as a fist."""
+    sword_release_grace_s: float = 0.4
+    """The sword stays out this long after the fist reading drops to anything but an open palm: the band's fist reading
+    flickers to none for 0.1–0.7 s mid-hold (replaying Ken's held-out fist recording: 8 drops in 29 s). An open palm
+    sheathes at once so the shield isn't delayed."""
     snap_sword_lock_s: float = 1.0
     """After a snap the sword can't be drawn for this long: the band often reads the hand just after a snap as a
     fist."""
@@ -201,6 +205,7 @@ class PlayerState:
     sword_hits: dict[str, float] = field(default_factory=dict)
     """Target ID to the time the sword last hit or was blocked by them."""
     sword_locked_until: float = 0.0
+    fist_seen_at: float = float("-inf")
     shield_boost: float = 0.0
     stunned_until: float = 0.0
     """Caught in an opponent's domain: no spells until then."""
@@ -505,10 +510,19 @@ class GameState:
         )
 
     def _step_sword(self, player: PlayerState, dt: float) -> list[p.Message]:
-        """The sword is out exactly while the fist is held (unless a parry knocked it away recently)."""
+        """The sword is out while the fist is held (unless a parry knocked it away recently), riding out short drops."""
         able = player.alive and player.connected and player.sign == p.Sign.FIST
+        if able:
+            player.fist_seen_at = self.time
         if player.item == Item.SWORD:
-            return self._swing(player, dt) if able else [self._sheathe(player)]
+            keep = able or (
+                player.alive
+                and player.connected
+                and player.sign != p.Sign.OPEN_PALM
+                and self.time >= player.stunned_until
+                and self.time - player.fist_seen_at <= self.tuning.sword_release_grace_s
+            )
+            return self._swing(player, dt) if keep else [self._sheathe(player)]
         if not able or player.item != Item.NONE or self.time < player.sword_locked_until:
             return []
         return [self._draw_sword(player)]
