@@ -12,6 +12,7 @@ import shutil
 
 import numpy as np
 from scipy import signal,stats,ndimage
+from spelltrain.dataset_policy import require_usable_capture
 
 
 def digest(path):
@@ -95,6 +96,7 @@ def supplemental_review(source,output,t,r):
 
 
 def load_envelopes(source):
+    require_usable_capture(source)
     meta=json.loads((source/'metadata.json').read_text());n=meta['counts']['emg']
     raw=np.empty((n,16,8),np.uint16);native=np.empty(n);receipt=np.empty(n)
     python=np.empty(n);seq=np.empty(n,np.int64);epoch=np.empty(n,np.int64)
@@ -263,6 +265,7 @@ def plot(output,t,energy,intended,candidates,duration):
 
 
 def publish_original(source,target):
+    require_usable_capture(source)
     target.mkdir(parents=True,exist_ok=True);files={}
     for path in sorted(source.iterdir()):
         if not path.is_file():raise ValueError('Unexpected source subdirectory; review before publication')

@@ -15,6 +15,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 from review_micah_dynamic import clock_fit, digest, save
+from spelltrain.dataset_policy import require_usable_capture
 
 FS = 2048
 WINDOW = 400  # 195.3125 ms, divisible into eight 24.4 ms subwindows
@@ -45,6 +46,7 @@ def features(w):
 
 def extract(source, cache):
     source = Path(source)
+    require_usable_capture(source)
     meta = json.loads((source/'metadata.json').read_text())
     if not meta.get('recording_complete'):
         raise ValueError('Finish capture before analysis')

@@ -11,6 +11,7 @@ import numpy as np
 from spelltrain.common import read_json, write_json, json_lines
 from spelltrain.neural import NeuralEMGPredictor
 from spelltrain.neural_data import verify_files, check_trial_coverage
+from spelltrain.dataset_policy import require_usable_capture
 
 
 def main():
@@ -20,6 +21,7 @@ def main():
     parser.add_argument('--output', required=True)
     parser.add_argument('--development', action='store_true')
     args = parser.parse_args(); source = Path(args.capture)
+    require_usable_capture(source)
     if Path(args.output).exists():
         parser.error('Output exists; choose a new report path')
     manifest = read_json(source/'guided-manifest.json'); metadata = read_json(source/'metadata.json')

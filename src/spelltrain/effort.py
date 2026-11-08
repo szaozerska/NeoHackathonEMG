@@ -51,6 +51,8 @@ def sensor_times(row, fs=2048):
 def effort_dataset(directory, margin=.75, signal=None, include_snap=False,
                    label_file=LABEL_FILE, expected_protocol=PROTOCOL, alignment='received',
                    include_waveforms=False):
+    from .dataset_policy import require_usable_capture
+    require_usable_capture(directory)
     directory = Path(directory)
     meta = read_json(directory/'metadata.json')
     if meta.get('synthetic') or meta.get('incomplete'):

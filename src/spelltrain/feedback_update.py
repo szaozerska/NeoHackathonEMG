@@ -14,9 +14,11 @@ from .signals import SignalWindows
 from .effort import sensor_times,_hash
 from .retraining import prepare_records,supervised_weights,fit_state,score_snap_events
 from .gestures import state_evaluation
+from .dataset_policy import require_usable_capture
 
 
 def capture_features(directory, include_waveforms=False):
+    require_usable_capture(directory)
     directory=Path(directory);meta=read_json(directory/'metadata.json')
     if not meta.get('recording_complete'):raise ValueError('Finish the feedback recording first')
     rows=[r for r in json_lines(directory/'streams.jsonl') if r['kind']=='emg']

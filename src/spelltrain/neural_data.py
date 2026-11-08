@@ -11,6 +11,7 @@ from .effort import effort_dataset, _hash
 from .retraining import prepare_records
 from .feedback_update import capture_features
 from .camera_retraining import reviewed_records
+from .dataset_policy import require_usable_capture
 
 
 def verify_files(directory, hashes):
@@ -39,6 +40,7 @@ def build_dataset(reference_cache, reference_review, camera_reviews=()):
     sources, records, quality = [], [], []
     for source in cache['sources']:
         directory = Path(source['directory'])
+        require_usable_capture(directory)
         supplemental = read_json(directory/'metadata.json').get('training_profile') == 'supplemental'
         label_file = 'supplemental-trials-v4.json' if supplemental else 'gesture-trials-v3.json'
         verify_files(directory, {name: source[key] for name, key in (
@@ -137,6 +139,7 @@ def add_reviewed_examples(dataset, path, config):
     This interface is separate from the historical protocol-specific adapter.
     """
     manifest = read_json(path)
+    require_usable_capture(Path(path).parent)
     if manifest.get('independently_reviewed') is not True:
         raise ValueError('Independent example review required')
     root = Path(path).resolve().parent
@@ -167,6 +170,7 @@ def add_guided_capture(dataset, directory):
     rotation/intensity variants. Count > 1 still supplies at-least-one evidence.
     """
     directory = Path(directory)
+    require_usable_capture(directory)
     if any(s.get('directory') == str(directory.resolve()) for s in dataset['sources']):
         raise ValueError('Duplicate guided capture')
     manifest = read_json(directory/'guided-manifest.json')
