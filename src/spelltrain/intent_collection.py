@@ -114,6 +114,7 @@ class IntentCollection:
         if self.intent_markers[-1]['label']=='intended':raise ValueError('Release Space before changing the selected motion.')
         if motion not in ('snap','shield_hold','sword_hold') or (motion=='snap' and effort is not None) or (motion!='snap' and effort not in ('low','medium','high')):
             raise ValueError('Select Snap, or a Shield/Sword hold with low, medium or high effort.')
+        if self.capture.meta.get('test_condition')=='static' and motion=='snap':raise ValueError('Static testing supports Shield and Sword holds only.')
         self.interaction(kind='motion_selection')
         self.selected_motion={'motion':motion,'effort':effort,'source':'participant_selection','performed_verified':False}
         self.motion_selections.append({'capture_t':self.clock()-self.capture.start,**self.selected_motion})
@@ -345,6 +346,7 @@ class IntentCollection:
                         'wearing_session':self.wearing_session,'dataset_role':self.capture.meta['dataset_role'],
                         'source':'participant_spacebar_untrimmed' if self.defer_cleanup else 'participant_toggle_with_interaction_exclusion','supervision':'weak_interval_label',
                         'gesture_label':None,'selected_motion':marker.get('selected_motion'),'exact_action_times_verified':False})
+        for interval in intervals:interval['test_condition']=self.capture.meta.get('test_condition','dynamic')
         write_json(self.capture.directory/'intent-gate-intervals.json',{'intervals':intervals,'gesture_labels_required':False,
             'interaction_guard_seconds':self.interaction_guard,'postprocessing_required':self.defer_cleanup,
             'policy':'Untrimmed participant windows; use raw EMG and baseline context for later cleanup. Missing samples are not imputed.' if self.defer_cleanup else 'Guarded participant reports intersected with continuous EMG; not inferred mental intent.'})
@@ -358,6 +360,7 @@ class IntentCollection:
                 'time_basis':'native_band_microseconds','host_receipt_segments':self.signal_segments,
                 'note':'Continuity uses native batch timestamps and sequence, not bursty host arrivals. Mapped host bounds are estimates. Reported label windows remain untrimmed; missing samples are not imputed.'})
             truth={'contributor':'Micah','input_modalities':['emg'],'camera_used':False,
+                'test_condition':self.capture.meta.get('test_condition','dynamic'),
                 'label_source':'participant_spacebar_reports','exact_action_onsets_verified':False,
                 'postprocessing_required':self.defer_cleanup,'cleanup_applied':not self.defer_cleanup,
                 'interaction_guard_seconds':self.interaction_guard,

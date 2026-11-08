@@ -1,6 +1,6 @@
 /* Space down begins an intended interval; Space up ends it. No camera or inference. */
 (()=>{
- const $=id=>document.getElementById(id);
+ const $=id=>document.getElementById(id),staticMode=document.body.dataset.testCondition==='static';
  let live=null,busy=false,polling=false,alignment=null,spaceHeld=false,pending=0,queue=Promise.resolve();
  async function api(action,value={}){
   const response=await fetch('/api/'+action,{method:'POST',headers:{'Content-Type':'application/json','X-Session-Token':window.contributionToken},body:JSON.stringify(value)});
@@ -20,13 +20,13 @@
   $('start').disabled=busy||!live.connected||!!live.recording?.active;$('start').textContent=motionReady?'Start full sensor session':'Start EMG-only session';$('connect').disabled=busy||!!live.recording?.active;
   $('stop').disabled=busy||pending>0||spaceHeld;
   $('intent').className=intended?'intended':'';$('intentTitle').textContent=intended?'Intended · GREEN':'Non-intended · RED';
-  $('intentInstruction').textContent=intended?'Perform the selected motion while holding Space. Release when finished.':'Rest or move naturally. Hold Space when ready for the selected action.';
+  $('intentInstruction').textContent=intended?(staticMode?'Keep your arm still and maintain the selected hold. Release when finished.':'Perform the selected motion while holding Space. Release when finished.'):(staticMode?'Rest with your arm still. Select Shield or Sword effort before holding Space.':'Rest or move naturally. Hold Space when ready for the selected action.');
   for(const button of document.querySelectorAll('[data-motion]')){
    const chosen=motion?.motion===button.dataset.motion&&(motion?.effort||'')===(button.dataset.effort||'');
    button.setAttribute('aria-pressed',String(chosen));button.style.background=chosen?'#365b7f':'';
    button.disabled=busy||pending>0||spaceHeld||intended;
   }
-  $('selectedMotion').textContent=motion?'Next motion: '+motion.motion.replace('_',' ')+(motion.effort?' · '+motion.effort+' relative effort':''):'Select a motion before holding Space.';
+  $('selectedMotion').textContent=motion?'Next motion: '+motion.motion.replace('_',' ')+(motion.effort?' · '+motion.effort+' relative effort':''):staticMode?'Select a Shield/Sword effort before holding Space.':'Select a motion before holding Space.';
   if(active){
    $('guardState').textContent=!live.connected?'No fresh EMG · missing data is flagged separately.':intended?'Intended active now · cleanup deferred':'Non-intended baseline active · cleanup deferred';
    $('elapsed').textContent=live.recording.duration.toFixed(1)+' seconds recorded';$('markers').textContent=Math.max(0,live.collection.annotation.markers-1)+' key boundaries';$('path').textContent='Saving locally: '+live.recording.path;
@@ -41,7 +41,7 @@
   finally{polling=false}
  }
  async function work(action){if(busy||pending)return;busy=true;$('error').textContent='';render();try{await action()}catch(error){$('error').textContent=error.message}finally{busy=false;await refresh();render()}}
- $('start').onclick=()=>work(async()=>{await sync();await api('collection/start',{profile:'micah_emg',wearing_session:$('wearing').value.trim(),role:$('role').value,focus:'live_intent',initial_intent:'non_intended',interaction_guard:0,capture_mode:live.band_context?.gyro?.age_seconds<1.5&&live.band_context?.orientation?.age_seconds<1.5&&live.sensor_timing?.forearm&&live.sensor_timing?.delivered_sensor_hz?.gyro&&live.sensor_timing?.delivered_sensor_hz?.orientation?'full_context':'emg_only',clock_alignment:alignment});$('saved').textContent='';$('start').blur();});
+ $('start').onclick=()=>work(async()=>{await sync();await api('collection/start',{profile:'micah_emg',test_condition:staticMode?'static':'dynamic',wearing_session:$('wearing').value.trim(),role:$('role').value,focus:'live_intent',initial_intent:'non_intended',interaction_guard:0,capture_mode:live.band_context?.gyro?.age_seconds<1.5&&live.band_context?.orientation?.age_seconds<1.5&&live.sensor_timing?.forearm&&live.sensor_timing?.delivered_sensor_hz?.gyro&&live.sensor_timing?.delivered_sensor_hz?.orientation?'full_context':'emg_only',clock_alignment:alignment});$('saved').textContent='';$('start').blur();});
  for(const button of document.querySelectorAll('[data-motion]'))button.onclick=()=>work(async()=>{await api('collection/select-motion',{motion:button.dataset.motion,effort:button.dataset.effort||null});button.blur();});
  function mark(label,client_t){
   if(!ownSession()||!alignment)return;

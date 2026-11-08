@@ -19,6 +19,7 @@ class Predictor:
 tester=LiveTester({'report':{'model_version':'v4'},'signal':DEFAULT_SIGNAL},
     'data/browser-check/unused.jsonl',predictor=Predictor(),capture_root='data/browser-check/intent-captures')
 tester.contribution_root=Path('data/browser-check/Micah data contribution')
+tester.static_root=Path('data/browser-check/Static contribution')
 def pump():
     seq=0;start=time.monotonic()
     while not tester.stop.wait(.005):

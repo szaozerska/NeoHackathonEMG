@@ -52,6 +52,7 @@ class LiveTester:
         self.live_input=None
         self.collection=None;self.last_collection_report=None
         self.contribution_root=Path(__file__).resolve().parents[2]/'Micah data contribution'
+        self.static_root=Path(__file__).resolve().parents[2]/'Micah contributed data/static'
         self.equipment_preview=EquipmentPreview()
         self.band_context={};self.band_event_counts={};self.target_hand='Right'
         self.sensor_timing=SensorTiming()
@@ -96,11 +97,14 @@ class LiveTester:
                 if not math.isfinite(guard) or not (0 if contribution else .5)<=guard<=3 or value.get('initial_intent','non_intended') not in ('intended','non_intended'):raise ValueError('Invalid click guard or initial toggle state')
                 if contribution and (value.get('focus')!='live_intent' or value.get('initial_intent')!='non_intended'):
                     raise ValueError('Micah EMG sessions start in non-intended mode.')
-                self.start_capture(root=self.contribution_root if contribution else None,emg_only=contribution);self.target_hand=value.get('hand','Right')
+                condition=value.get('test_condition','dynamic')
+                if condition not in ('dynamic','static'):raise ValueError('Invalid test condition')
+                self.start_capture(root=(self.static_root if condition=='static' else self.contribution_root) if contribution else None,emg_only=contribution);self.target_hand=value.get('hand','Right')
                 self.collection=IntentCollection(self.capture,self.clock,wearing,value.get('role','train'),self.target_hand,value.get('focus','full'),value.get('initial_intent','non_intended'),guard,defer_cleanup=contribution)
                 if contribution:
                     self.capture.meta.update(kind='micah_emg_intent_contribution',contributor='Micah',
                         requested_capture_mode=capture_mode,
+                        test_condition=condition,
                         collection_protocol='spacebar-held-motion-intent-v1',camera_policy='disabled',
                         input_modalities=['emg'],recorded_context=['available_gyro','available_orientation','available_band_events'],classification_policy='participant_motion_selection_only_no_model_predictions',
                         timing_policy='Native band microseconds, Kinesis receipt uptime, Python receipt uptime and browser alignment all retained. Arrival delay and forearm angles are estimates in the documented Kinesis frame.',
@@ -404,9 +408,17 @@ class LiveTester:
             def log_message(self,*_):pass
             def do_GET(self):
                 route=self.path.split('?',1)[0]
-                if route in ('/','/contribute','/collect','/live'):
+                if route in ('/','/contribute','/static','/collect','/live'):
                     name='dashboard-live.html' if route=='/live' else 'dashboard-collect.html' if route=='/collect' else 'dashboard-contribute.html'
                     body=files('spelltrain').joinpath(name).read_text().replace('__CSRF__',tester.csrf).encode()
+                    if route=='/static':
+                        body=body.decode().replace('<body>','<body data-test-condition="static">').replace('Micah data contribution','Micah static contribution')
+                        body=body.replace('<button data-motion="snap">Snap</button>','')
+                        body=body.replace('EMG + synchronized band context · intended vs non-intended · no camera','Static holds · Shield/Sword low, medium, high · no camera')
+                        body=body.replace('Rest or move naturally. Hold Space when ready for the selected action.','Hold your arm comfortably still. Hold Space for the selected steady pose.')
+                        body=body.replace('Select <strong>Snap</strong>, or a <strong>Shield/Sword effort</strong>.','Select a <strong>Shield or Sword effort</strong>. Keep your arm still and hold the pose for about 10 seconds, or longer if comfortable.')
+                        body=body.replace('Hold <kbd>Space</kbd> and perform the selected motion immediately.','Keep your arm comfortably still. Hold <kbd>Space</kbd> and maintain the selected open shield hand or closed sword grip for about 10 seconds or longer. This is a static test, not a movement test.')
+                        body=body.encode()
                     content_type='text/html; charset=utf-8'
                 elif route in ('/camera-live.js','/camera-worker.js','/collection.js','/contribution.js'):
                     body=files('spelltrain').joinpath(route[1:]).read_bytes();content_type='text/javascript'
