@@ -35,22 +35,35 @@ namespace SpellGame.Game
         private float _nextPoseSendTime;
         private BodyJoints _localJoints;
         private readonly Dictionary<string, BodyJoints> _remoteJoints = new();
+        private string _status = "";
+        private string _spaceStatus = "";
 
         public event Action<SignMessage> SignReceived;
         public event Action<SpellMessage> SpellReceived;
         public event Action<DamageMessage> DamageReceived;
         public event Action<ImpactMessage> ImpactReceived;
         public event Action<StateMessage> StateReceived;
+        public event Action<SpaceMessage> SpaceReceived;
 
         public string PlayerId => _playerId;
 
         /// <summary>Asks the server to start pairing mode (architecture.md §5).</summary>
-        public void StartPairing()
+        public void StartPairing() => Send(new PairStartMessage());
+
+        /// <summary>Sends a message to the server; dropped while not connected.</summary>
+        public void Send(Message message)
         {
             if (_connection == null || !_connection.IsOpen)
                 return;
 
-            _connection.Send(new PairStartMessage());
+            _connection.Send(message);
+        }
+
+        /// <summary>Second status line, for the shared room frame (architecture.md §5.1).</summary>
+        public void SetSpaceStatus(string text)
+        {
+            _spaceStatus = text;
+            RenderStatus();
         }
 
         /// <summary>The server this client connected to, once resolved.</summary>
@@ -156,6 +169,9 @@ namespace SpellGame.Game
                 case StateMessage state:
                     StateReceived?.Invoke(state);
                     break;
+                case SpaceMessage space:
+                    SpaceReceived?.Invoke(space);
+                    break;
             }
         }
 
@@ -191,7 +207,13 @@ namespace SpellGame.Game
 
         private void SetStatus(string text)
         {
-            statusLabel.text = text;
+            _status = text;
+            RenderStatus();
+        }
+
+        private void RenderStatus()
+        {
+            statusLabel.text = string.IsNullOrEmpty(_spaceStatus) ? _status : $"{_status}\n{_spaceStatus}";
         }
     }
 }
