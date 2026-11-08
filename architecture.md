@@ -152,7 +152,7 @@ The first message on every TCP connection:
 - The server uses this ID to link the two streams to one player.
 - The server gives each joining headset the lowest free player ID: `P1`, `P2`, and so on. Each headset shows its own ID. A relaunched app gets its old ID back (matched by `device.id`; a connection left over from the previous launch is dropped), and IDs nobody uses any more are reused, so restarting for testing doesn't make the numbers climb.
 - **Pairing a Neural Band with a headset** uses **pairing mode** (the "Pair Neural Bands" screen):
-  - Triggered from the game server's monitor (`p`), a headset's B or Y button, or by any other connected client (headset or classifier) sending `pair_start`.
+  - Triggered from the game server's monitor (`p`), a headset (hold X+Y on the left controller for 3 s), or by any other connected client (headset or classifier) sending `pair_start`.
   - The server sends `pair_start`, then `pair_prompt` naming the first headset without a band (in join order): that player pinches their fingers.
   - The next unpaired classifier to report a `pinch` (using the band's built-in decoded `gesture` events, so no trained model is needed) is paired with the prompted player. The server then prompts the next headset without a band, and so on.
   - If the prompted headset disconnects, the server moves on to the next one. Pairing mode ends once every connected headset has a band; a headset that joins later needs pairing mode started again.
@@ -171,6 +171,7 @@ Both headsets share one physical room, so every pose, projectile and hit has to 
   1. The host creates an `OVRSpatialAnchor` on the floor between the players (its +z pointing from P1 towards P2), saves it, and calls `ShareAsync` with the `group_uuid` from `space`.
   2. The host sends `anchor_shared` with the anchor's UUID. The server announces it in `space` to every headset.
   3. Every headset, including the host, loads the anchor from the group and aligns its tracking space to it: Meta's `Alignment.cs` sample, or MRUK's `SetCustomWorldLockAnchor`. Then it sends `aligned` with `method: anchor` and the anchor's UUID.
+     Alignment takes the anchor's full position (height too) and its yaw, so the host's floor becomes every headset's floor. A system recenter moves the tracking origin, so a headset that recenters aligns to the anchor again and re-sends `aligned`.
   4. The server rejects `anchor_shared` from a headset that isn't the host. It also rejects an `aligned` naming any anchor other than the current one. A newly shared anchor clears every headset's aligned flag.
 - **Fallback: marked floor spots.** Use this if anchor sharing fails (no internet, no Meta account, no Space Setup).
   - Mark the two spots on the floor `--spot-distance` apart (default 3 m). P1 stands at `(0, 0, -d/2)` facing +z; P2 stands at `(0, 0, +d/2)` facing -z.

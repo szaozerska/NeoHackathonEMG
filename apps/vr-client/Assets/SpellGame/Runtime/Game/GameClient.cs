@@ -291,7 +291,7 @@ namespace SpellGame.Game
         /// "Waiting for … to pinch" behind; a following <c>pair_prompt</c> replaces it straight away.
         /// </summary>
         private string IdleStatus() =>
-            _bandPaired ? $"You are {_playerId} · band paired" : $"You are {_playerId} · press B or Y to pair bands";
+            _bandPaired ? $"You are {_playerId} · band paired" : $"You are {_playerId} · hold X+Y to pair bands";
 
         private void SetStatus(string text)
         {

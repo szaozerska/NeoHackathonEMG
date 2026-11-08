@@ -37,7 +37,7 @@ Assets/SpellGame/
     Game/GameClient.cs         Composition root: discover → connect → hello → stream pose, dispatch state
     Game/DebugSkeletonsView.cs Draws local and remote skeletons as debug line segments
     Game/ControllerBand.cs     Debug band: Touch trigger = snap, grip = fist, A/X = open palm, sent as this headset's classifier
-    Game/PairingButton.cs      B or Y on either controller sends pair_start: the server starts pairing mode (§5)
+    Game/PairingButton.cs      holding X+Y on the left controller for 3 s sends pair_start: the server starts pairing mode (§5)
     Game/SharedSpaceAligner.cs Shared room frame (§5.1): host shares an OVRSpatialAnchor, everyone aligns the rig to it; floor-spot fallback
     Game/FireballView.cs       Fireball visuals: snap burst, held orb on the band hand, projectile + trail, impact, cooldown ember
     Game/SwordView.cs          Sword visuals: draw/sheathe flash, glowing blade along the forearm, speed-scaled swing trail, hit sparks
@@ -48,7 +48,7 @@ Assets/SpellGame/
     QuestProjectConfigurator.cs  Menu "SpellGame/Configure Project for Quest 3"
     MainSceneBuilder.cs          Menu "SpellGame/Rebuild Main Scene"
     UiThemeBuilder.cs            TMP Essential Resources + Rajdhani SDF fonts + UI materials (run by Rebuild Main Scene)
-  UI/                          Crystal panel shader, Rajdhani fonts (OFL); see UI/README.md
+  UI/                          Crystal panel shader and UI theme notes (fonts in Fonts/); see UI/README.md
     QuestBuild.cs                Menus "SpellGame/Build APK", "Build And Run On Headset"; headless QuestBuild.BuildBatch
   Scenes/Main.unity            OVRCameraRig with passthrough + body tracking + debug skeletons + GameClient + pairing button + shared-space aligner + status label + Fireball View + Sword View + Shield View
 ```
@@ -84,7 +84,7 @@ The client ignores its own pose when the server echoes it back.
 - **Windows teammates** can instead connect the Quest with Quest Link or Air Link and press Play. The Standalone target
   uses the same OpenXR and Meta setup.
 - On first launch the headset asks for body-tracking permission. Grant it, or no pose packets are sent.
-- **Pairing a Neural Band:** press **B or Y** on either controller (or `p` in the server's monitor) to start pairing mode.
+- **Pairing a Neural Band:** hold **X+Y** on the left controller for 3 seconds (or `p` in the server's monitor) to start pairing mode.
   The status label tells the prompted player to pinch and everyone else whose turn it is, then shows "band paired".
 - **No Guardian boundary:** the app asks the OS to hide the boundary while passthrough is on
   (`OVRManager.shouldBoundaryVisibilityBeSuppressed`, Boundary Visibility Support in **Configure Quest Project**), so

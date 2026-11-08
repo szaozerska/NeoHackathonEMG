@@ -16,7 +16,7 @@ namespace SpellGame.Editor
     /// </summary>
     public static class UiThemeBuilder
     {
-        private const string FontFolder = "Assets/SpellGame/UI/Fonts";
+        private const string FontFolder = "Assets/SpellGame/Fonts";
         private const string MaterialFolder = "Assets/SpellGame/UI/Materials";
         private const string ResourcesFolder = "Assets/SpellGame/Resources";
         private const string CrystalShaderName = "SpellGame/UI/CrystalPanel";

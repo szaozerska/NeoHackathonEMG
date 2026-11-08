@@ -63,6 +63,7 @@ namespace SpellGame.Game
         private readonly List<Material> _cardMaterials = new();
         private Vector3 _bannerTarget;
         private float _shownAt;
+        private float _showAt = float.PositiveInfinity;
         private Color _titleColor;
         private bool _won;
         private int _burstsLeft;
@@ -153,8 +154,9 @@ namespace SpellGame.Game
             // The KO hit's damage event arrives in the same tick as the `ended` state, before it.
             _counting = _match.Phase is MatchPhase.Countdown or MatchPhase.Playing;
 
+            // After a K.O. the banner waits for the K.O. moment (MatchMomentsView).
             if (_match.Phase == MatchPhase.Ended && from == MatchPhase.Playing)
-                Show();
+                _showAt = Time.unscaledTime + (_match.Reason == MatchEndReason.Ko ? MatchMomentsView.KoBeatSeconds : 0f);
             else if (_match.Phase != MatchPhase.Ended)
                 Hide();
         }
@@ -201,6 +203,7 @@ namespace SpellGame.Game
 
         private void Hide()
         {
+            _showAt = float.PositiveInfinity;
             _banner.gameObject.SetActive(false);
             _crown.gameObject.SetActive(false);
             _burstsLeft = 0;
@@ -323,6 +326,11 @@ namespace SpellGame.Game
 
         private void Update()
         {
+            if (Time.unscaledTime >= _showAt)
+            {
+                _showAt = float.PositiveInfinity;
+                Show();
+            }
             if (!_banner.gameObject.activeSelf)
                 return;
 

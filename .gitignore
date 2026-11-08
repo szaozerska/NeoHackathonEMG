@@ -7,6 +7,7 @@
 **/[Mm]emoryCaptures/
 **/[Rr]ecordings/
 **/[Tt]est[Rr]esults/
+**/.utmp/
 
 # Local prototype build output (approved current builds remain trackable)
 /Product/Micah/**/[Bb]uild/

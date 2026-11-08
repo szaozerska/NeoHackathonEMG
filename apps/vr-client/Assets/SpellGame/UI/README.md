@@ -7,8 +7,8 @@ P1 red / P2 blue (`UiStyle.P1`, `UiStyle.P2`) are only used for player names and
 | File | What |
 | --- | --- |
 | `Shaders/CrystalPanel.shader` (`SpellGame/UI/CrystalPanel`) | Procedural translucent panel: crystal tint, bright rim, cut corners, inner facet, slow highlight streak, outer glow, optional top accent strip. One pass, no textures. Sizes come in metres through `_Rect` / `_Facet` (set by `UiStyle.Crystal`). |
-| `Fonts/Rajdhani-Bold.ttf`, `Fonts/Rajdhani-SemiBold.ttf` | Display (titles, buttons, numbers) and body text. |
-| `Fonts/Rajdhani-* SDF.asset` | Generated: dynamic TextMeshPro SDF font assets (atlas + material as sub-assets). |
+| `../Fonts/Rajdhani-Bold.ttf`, `../Fonts/Rajdhani-SemiBold.ttf` | Display (titles, buttons, numbers) and body text; shared with the match moments (`MatchMomentsView`). |
+| `../Fonts/Rajdhani-* SDF.asset` | Generated: dynamic TextMeshPro SDF font assets (atlas + material as sub-assets). |
 | `Materials/*.mat` | Generated: text materials with outline + underlay, and `Crystal.mat`. Tweaks are kept on rebuild. |
 | `../Resources/SpellGameUiTheme.asset` | Generated `UiTheme`: the fonts and materials above, loaded by `UiStyle` at runtime. |
 
@@ -26,5 +26,5 @@ rim and glow write more alpha and stay bright in a lit room. Text has a dark out
 ## Sources and licences
 
 - Rajdhani by Indian Type Foundry, from [google/fonts `ofl/rajdhani`](https://github.com/google/fonts/tree/main/ofl/rajdhani),
-  SIL Open Font License 1.1 (`Fonts/Rajdhani-OFL.txt`).
+  SIL Open Font License 1.1 (`../Fonts/Rajdhani-OFL.txt`).
 - Shader and theme code are written for this project.

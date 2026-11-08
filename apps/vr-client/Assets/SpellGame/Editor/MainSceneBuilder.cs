@@ -1,13 +1,16 @@
 using System.IO;
 using SpellGame.Game;
+using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.TextCore.LowLevel;
 
 namespace SpellGame.Editor
 {
     /// <summary>
-    /// Regenerates the scene: passthrough OVRCameraRig + Movement SDK body tracking + debug skeletons + GameClient + shared-space aligner + spell views + match menus + AI avatar.
+    /// Regenerates the scene: passthrough OVRCameraRig + Movement SDK body tracking + debug skeletons + GameClient + shared-space aligner + spell views + match menus + match moments + AI avatar.
+    /// Also imports TMP Essential Resources and builds the Rajdhani TextMeshPro font asset on first run.
     /// Headless: <c>Unity -batchmode -quit -projectPath . -executeMethod SpellGame.Editor.MainSceneBuilder.Build</c>
     /// </summary>
     public static class MainSceneBuilder
@@ -18,6 +21,11 @@ namespace SpellGame.Editor
         private const string ShieldFolder = "Assets/SpellGame/Shield";
         private const string CameraRigPrefabPath = "Packages/com.meta.xr.sdk.core/Prefabs/OVRCameraRig.prefab";
         private const string UnlitShaderName = "Universal Render Pipeline/Unlit";
+        private const string MomentsFolder = "Assets/SpellGame/Moments";
+        private const string FontPath = "Assets/SpellGame/Fonts/Rajdhani-Bold.ttf";
+        private const string FontAssetPath = "Assets/SpellGame/Fonts/Rajdhani-Bold SDF.asset";
+        private const string TmpShaderName = "TextMeshPro/Distance Field";
+        private const string MomentCharacters = "0123456789 !.:FIGHTKOSUDENATHMfightkosudenathm";
 
         [MenuItem("SpellGame/Rebuild Main Scene")]
         public static void Build()
@@ -41,6 +49,7 @@ namespace SpellGame.Editor
             CreateHealthView(client, trackingSpace.Find("CenterEyeAnchor"));
             CreateMatchMenu(client, rig, aligner);
             CreateEndGameView(client, rig);
+            CreateMatchMoments(client, rig);
             CreateAiAvatarView(client);
             CreateSpellAudio(client);
             CreateHitCallouts(client);
@@ -301,6 +310,91 @@ namespace SpellGame.Editor
             serializedView.FindProperty("cameraRig").objectReferenceValue = rig;
             serializedView.FindProperty("baseMaterial").objectReferenceValue = UnlitMaterial("DebugSkeleton", new Color(0.2f, 1f, 0.4f));
             serializedView.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void CreateMatchMoments(GameClient client, OVRCameraRig rig)
+        {
+            var view = new GameObject("Match Moments").AddComponent<MatchMomentsView>();
+            var serializedView = new SerializedObject(view);
+            serializedView.FindProperty("gameClient").objectReferenceValue = client;
+            serializedView.FindProperty("cameraRig").objectReferenceValue = rig;
+            serializedView.FindProperty("passthrough").objectReferenceValue = rig.GetComponent<OVRPassthroughLayer>();
+            serializedView.FindProperty("baseMaterial").objectReferenceValue = UnlitMaterial("DebugSkeleton", new Color(0.2f, 1f, 0.4f));
+            var font = EnsureTmpEssentials() ? MomentsFont() : null;
+            serializedView.FindProperty("font").objectReferenceValue = font;
+            serializedView.FindProperty("textMaterial").objectReferenceValue = font != null ? MomentTextMaterial(font) : null;
+            foreach (var line in new[] { "three", "two", "one", "fight", "ko", "time", "suddenDeath" })
+            {
+                var file = line == "suddenDeath" ? "sudden_death" : line;
+                var clip = AssetDatabase.LoadAssetAtPath<AudioClip>($"{MomentsFolder}/Announcer/{file}.ogg");
+                if (clip == null)
+                    Debug.LogWarning($"[SpellGame] Announcer line {MomentsFolder}/Announcer/{file}.ogg is missing.");
+                serializedView.FindProperty(line).objectReferenceValue = clip;
+            }
+            serializedView.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>TextMeshPro needs its Essential Resources (TMP Settings, SDF shaders) in the project; imports them once.</summary>
+        private static bool EnsureTmpEssentials()
+        {
+            if (Resources.Load<TMP_Settings>("TMP Settings") != null && Shader.Find(TmpShaderName) != null)
+                return true;
+            TMP_PackageResourceImporter.ImportResources(true, false, false);
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            if (Resources.Load<TMP_Settings>("TMP Settings") != null && Shader.Find(TmpShaderName) != null)
+                return true;
+            Debug.LogWarning("[SpellGame] Importing TMP Essential Resources; run SpellGame/Rebuild Main Scene again once it " +
+                             "finishes so the match moments get their font.");
+            return false;
+        }
+
+        /// <summary>Dynamic SDF font asset for Rajdhani Bold, created next to the .ttf on first build (atlas + material as sub-assets).</summary>
+        private static TMP_FontAsset MomentsFont()
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontAssetPath);
+            if (existing != null)
+                return existing;
+
+            var source = AssetDatabase.LoadAssetAtPath<Font>(FontPath);
+            if (source == null)
+            {
+                Debug.LogWarning($"[SpellGame] {FontPath} is missing; the match moments use the TMP default font.");
+                return null;
+            }
+            var asset = TMP_FontAsset.CreateFontAsset(source, 90, 12, GlyphRenderMode.SDFAA, 1024, 1024, AtlasPopulationMode.Dynamic, false);
+            if (asset == null)
+                return null;
+            asset.name = Path.GetFileNameWithoutExtension(FontAssetPath);
+            AssetDatabase.CreateAsset(asset, FontAssetPath);
+            asset.atlasTexture.name = $"{asset.name} Atlas";
+            asset.material.name = $"{asset.name} Material";
+            AssetDatabase.AddObjectToAsset(asset.atlasTexture, asset);
+            AssetDatabase.AddObjectToAsset(asset.material, asset);
+            asset.TryAddCharacters(MomentCharacters);
+            EditorUtility.SetDirty(asset);
+            AssetDatabase.SaveAssets();
+            return asset;
+        }
+
+        /// <summary>
+        /// The font's material with glow and underlay on, saved as an asset so the player build keeps those shader variants
+        /// (they are shader_features); <see cref="MomentText.GlowMaterial"/> sets the colours at runtime.
+        /// </summary>
+        private static Material MomentTextMaterial(TMP_FontAsset font)
+        {
+            var path = $"{MomentsFolder}/MomentText.mat";
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                material = new Material(font.material) { name = "MomentText" };
+                AssetDatabase.CreateAsset(material, path);
+            }
+            material.shader = font.material.shader;
+            material.CopyPropertiesFromMaterial(font.material);
+            material.EnableKeyword("GLOW_ON");
+            material.EnableKeyword("UNDERLAY_ON");
+            EditorUtility.SetDirty(material);
+            return material;
         }
 
         private static void CreateAiAvatarView(GameClient client)
