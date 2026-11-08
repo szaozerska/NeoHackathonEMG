@@ -1,14 +1,34 @@
 [
   {
-    "id": "none-001",
+    "id": "none-001-a",
     "kind": "none",
     "instruction": "Keep the hand relaxed; do not hold a fist or shield",
     "intended_count": 0,
     "start": 7.703146833999199,
+    "end": 129.6271867506701,
+    "confirmed": true,
+    "reported_count": null,
+    "label_source": "participant_confirmation",
+    "exact_event_times_verified": false,
+    "split_from": "none-001",
+    "split_reason": "stream sequence gaps between 129.827 and 130.277 s (capture clock); hold confirmed throughout by participant",
+    "original_start": 7.703146833999199,
+    "original_end": 307.7069374999992
+  },
+  {
+    "id": "none-001-b",
+    "kind": "none",
+    "instruction": "Keep the hand relaxed; do not hold a fist or shield",
+    "intended_count": 0,
+    "start": 130.8769683340157,
     "end": 307.7069374999992,
     "confirmed": true,
     "reported_count": null,
     "label_source": "participant_confirmation",
-    "exact_event_times_verified": false
+    "exact_event_times_verified": false,
+    "split_from": "none-001",
+    "split_reason": "stream sequence gaps between 129.827 and 130.277 s (capture clock); hold confirmed throughout by participant",
+    "original_start": 7.703146833999199,
+    "original_end": 307.7069374999992
   }
 ]
