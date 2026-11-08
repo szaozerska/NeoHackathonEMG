@@ -362,7 +362,8 @@ class GameState:
         self.domain_until = self.time + tuning.domain_expand_s + tuning.domain_stun_s
         for target in targets:
             target.stunned_until = self.domain_until
-        return [
+        events: list[p.Message] = [self._sheathe(caster)] if caster.item == Item.SWORD else []
+        return events + [
             p.DomainExpansion(
                 caster_id=caster.player_id,
                 target_ids=[target.player_id for target in targets],

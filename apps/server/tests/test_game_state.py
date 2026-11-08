@@ -624,6 +624,18 @@ def test_domain_expansion_cancels_a_held_fireball_and_blocks_snaps():
     assert match.game.players["P2"].item == Item.NONE
 
 
+def test_domain_expansion_replaces_the_casters_sword():
+    match = sword_match()
+    match.draw_sword()
+    match.run(1.0, p1_hand=SWORD_DRAWN_HAND, sign=p.Sign.NONE)
+    assert match.p1.item == Item.SWORD
+    match.inputs["P1"].domain_expanded = True
+    events = match.step(p1_hand=SWORD_DRAWN_HAND)
+    assert of_type(events, p.DomainExpansion)
+    assert (Item.SWORD, p.SpellState.SHEATHED) in [(e.spell, e.state) for e in of_type(events, p.Spell)]
+    assert match.p1.item == Item.NONE
+
+
 def test_only_one_domain_runs_at_a_time_and_a_stunned_player_cannot_expand():
     match = Match()
     expand_domain(match)
