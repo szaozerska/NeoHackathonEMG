@@ -304,8 +304,8 @@ class GameServer:
         self.space.choose_host([slot.player_id for slot in headsets])
         if self.space.host_id != previous_host and self.space.host_id is not None:
             log.info("%s hosts the shared anchor", self.space.host_id)
-        for slot in headsets:
-            slot.vr.send(self.space.message_for(slot.join_order))  # type: ignore[union-attr]
+        for seat, slot in enumerate(headsets, start=1):
+            slot.vr.send(self.space.message_for(seat))  # type: ignore[union-attr]
 
     def _on_anchor_shared(self, conn: ClientConnection, slot: PlayerSlot, message: p.AnchorShared) -> None:
         if not self.space.share_anchor(slot.player_id, message.anchor_uuid):
@@ -371,7 +371,7 @@ class GameServer:
     def _step_match(self) -> None:
         headsets = [slot.player_id for slot in sorted(self.players.values(), key=lambda s: s.join_order) if slot.vr]
         before = self.match.phase
-        self.match.step(self.game, headsets, self.dt)
+        self.match.step(self.game, headsets, self.dt, set(self.space.aligned))
         after = self.match.phase
         if after == before:
             return

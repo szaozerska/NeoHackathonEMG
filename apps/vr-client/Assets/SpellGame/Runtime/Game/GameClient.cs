@@ -38,6 +38,9 @@ namespace SpellGame.Game
         private string _playerId;
         private bool _bandPaired;
         private float _nextPoseSendTime;
+
+        /// <summary>Sent in the next <c>hello</c>, so a reconnecting headset keeps its player ID and floor spot.</summary>
+        private string _lastPlayerId;
         private BodyJoints _localJoints;
         private readonly Dictionary<string, BodyJoints> _remoteJoints = new();
         private string _status = "";
@@ -157,13 +160,14 @@ namespace SpellGame.Game
             }
 
             _connection = connection;
-            _connection.Send(new HelloMessage { Role = ClientRole.Vr, Device = DeviceInfo.ThisDevice() });
+            _connection.Send(new HelloMessage { Role = ClientRole.Vr, Device = DeviceInfo.ThisDevice(), PlayerId = _lastPlayerId });
         }
 
         private void CloseConnection()
         {
             _connection?.Dispose();
             _connection = null;
+            _lastPlayerId = _playerId ?? _lastPlayerId;
             _playerId = null;
             _bandPaired = false;
             _remoteJoints.Clear();

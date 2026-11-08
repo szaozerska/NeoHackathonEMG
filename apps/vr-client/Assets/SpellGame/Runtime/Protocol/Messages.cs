@@ -63,7 +63,7 @@ namespace SpellGame.Protocol
         public string Role { get; set; }
         public DeviceInfo Device { get; set; }
 
-        /// <summary>Optional: a classifier pairs directly with this player.</summary>
+        /// <summary>Optional: a headset reclaims its ID after a reconnect; a classifier pairs directly with this player.</summary>
         public string PlayerId { get; set; }
     }
 

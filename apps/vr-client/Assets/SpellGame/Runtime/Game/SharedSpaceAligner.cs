@@ -37,6 +37,16 @@ namespace SpellGame.Game
         private string _alignedTo;
         private bool _busy;
 
+        /// <summary>
+        /// Called when the player says they're ready: they're standing on their spot facing the other player, so a
+        /// headset that isn't aligned yet (anchor still loading, or sharing failed offline) aligns to its floor spot.
+        /// </summary>
+        public void AlignToFloorSpotIfUnaligned()
+        {
+            if (_space != null && _alignedTo == null)
+                AlignToFloorSpot(force: true);
+        }
+
         private void OnEnable() => gameClient.SpaceReceived += OnSpace;
 
         private void OnDisable() => gameClient.SpaceReceived -= OnSpace;
@@ -210,9 +220,9 @@ namespace SpellGame.Game
         }
 
         /// <summary>The floor-spot fallback: this player is standing on their spot, facing <c>spot_yaw</c>.</summary>
-        private void AlignToFloorSpot()
+        private void AlignToFloorSpot(bool force = false)
         {
-            if (_busy || _space == null)
+            if ((_busy && !force) || _space == null)
                 return;
 
             AlignTo(OriginFromFloorSpot(_space));

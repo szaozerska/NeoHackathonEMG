@@ -93,7 +93,8 @@ The client ignores its own pose when the server echoes it back.
   - Anchor sharing needs internet, a Meta account on each headset, and **Settings → Privacy → Enhanced Spatial Services**
     turned on.
   - **Fallback:** if sharing fails, each player stands on their marked floor spot (`--spot-distance` apart, default
-    3 m), faces the other player and **clicks the left thumbstick**. Tick `Floor Spots Only` on the Shared Space Aligner to
+    3 m), faces the other player and **clicks the left thumbstick**. In a 2-player match, pressing **I'm ready!** does
+    the same for a headset that isn't aligned yet, and the server holds the countdown until both headsets are aligned. Tick `Floor Spots Only` on the Shared Space Aligner to
     skip anchors entirely.
   - **Re-anchor:** **click the right thumbstick** (or press `a` in the server monitor) after tracking was lost or the
     anchor drifted.
