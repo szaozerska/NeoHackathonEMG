@@ -40,7 +40,7 @@ def test_neural_states_map_to_game_signs_and_snap_is_momentary():
     ]
     classifier = NeuralSignClassifier("unused", heartbeat_s=5.0, predictor=ScriptedPredictor(outputs))
     signs = [prediction.sign if (prediction := classifier.push(batch(i))) else None for i in range(len(outputs))]
-    assert signs == [None, p.Sign.FIST, None, p.Sign.SNAP, p.Sign.FIST, p.Sign.NONE, p.Sign.OPEN_PALM, p.Sign.NONE]
+    assert signs == [None, p.Sign.FIST, None, p.Sign.SNAP, p.Sign.FIST, p.Sign.INFINITE_VOID, p.Sign.OPEN_PALM, p.Sign.NONE]
 
 
 def test_unchanged_state_is_resent_as_heartbeat_and_packet_keeps_sensor_clock():

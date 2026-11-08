@@ -52,6 +52,8 @@ class Sign:
     FIST = "fist"
     OPEN_PALM = "open_palm"
     SNAP = "snap"
+    INFINITE_VOID = "infinite_void"
+    """Held for `Tuning.domain_void_hold_s`, it expands the player's domain like the headset's `DomainExpand`."""
 
 
 class Finger:
