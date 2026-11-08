@@ -78,7 +78,7 @@ class SpellState:
     CAST = "cast"
     CANCELLED = "cancelled"
     SHEATHED = "sheathed"
-    """The sword was put away (the fist was released)."""
+    """The sword or shield was put away (the fist or open palm was released)."""
 
 
 class ProtocolError(ValueError):
@@ -234,7 +234,8 @@ class Wrist(Message):
 class Spell(Message):
     """Spell lifecycle event.
 
-    Fireball: `charging` on snap, `cast` on throw, `cancelled` on fizzle. Sword: `cast` on draw, `sheathed` on release.
+    Fireball: `charging` on snap, `cast` on throw, `cancelled` on fizzle.
+    Sword and shield: `cast` on draw/raise, `sheathed` on release (and for a sword, when it is parried).
     """
 
     TYPE: ClassVar[str] = "spell"
@@ -261,7 +262,11 @@ class Damage(Message):
 
 @dataclass
 class Impact(Message):
-    """A projectile ended: it hit a player (`hit`) or ran out of lifetime (`expired`)."""
+    """A spell contact.
+
+    Fireballs: `hit` a player, `blocked` by a shield, or `expired`. Swords (`projectile_id` 0): `blocked` by a shield,
+    or `parried` by a boosted one, which knocks the sword away. `target_id` is the player hit or shielding.
+    """
 
     TYPE: ClassVar[str] = "impact"
     projectile_id: int
@@ -280,11 +285,13 @@ class PlayerSnapshot:
     band_paired: bool
     sign: str
     item: str
-    """What the player currently holds: `none`, `fireball` or `sword`."""
+    """What the player currently holds: `none`, `fireball`, `sword` or `shield`."""
     band_hand: str = Hand.RIGHT
     """The hand wearing the Neural Band, where held spells are drawn."""
     cooldown: float = 0.0
     """Seconds until the player can conjure again."""
+    shield_boost: float = 0.0
+    """0-1 power from the last shield push; at `Tuning.shield_parry_min_boost` or more a sword contact is a parry."""
 
     def to_dict(self) -> dict[str, Any]:
         return {f.name: getattr(self, f.name) for f in fields(self)}
