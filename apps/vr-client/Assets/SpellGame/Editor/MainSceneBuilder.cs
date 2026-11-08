@@ -319,7 +319,23 @@ namespace SpellGame.Editor
             serializedView.FindProperty("gameClient").objectReferenceValue = client;
             serializedView.FindProperty("centerEye").objectReferenceValue = centerEye;
             serializedView.FindProperty("baseMaterial").objectReferenceValue = UnlitMaterial("DebugSkeleton", new Color(0.2f, 1f, 0.4f));
+            serializedView.FindProperty("flashMaterial").objectReferenceValue = DamageFlashMaterial();
             serializedView.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>Additive glow on the fireball particle shader with no mask texture: the strip mesh's vertex alpha shapes it.</summary>
+        private static Material DamageFlashMaterial()
+        {
+            var material = FireballMaterial("DamageFlash", "FireballParticle");
+            material.SetTexture("_MainTex", null);
+            material.SetFloat("_AlphaWrite", 0.6f);
+            material.SetFloat("_Intensity", 1f);
+            material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.One);
+            material.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.One);
+            material.SetFloat("_SrcBlendAlpha", (float)UnityEngine.Rendering.BlendMode.One);
+            material.SetFloat("_DstBlendAlpha", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            EditorUtility.SetDirty(material);
+            return material;
         }
 
         private static void CreateMatchMenu(GameClient client, OVRCameraRig rig, SharedSpaceAligner aligner)
