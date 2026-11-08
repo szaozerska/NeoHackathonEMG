@@ -19,7 +19,7 @@ from collections.abc import Callable
 from spellgame.protocol import DISCOVERY_PORT, GAME_PORT
 
 from .band_gestures import GestureCleaner
-from .emg_classifier import ClassifierWorker, EmgClassifier, EmgLogger, SignPrediction
+from .emg_classifier import ClassifierWorker, EmgClassifier, EmgLogger, NeuralSignClassifier, SignPrediction
 from .kinesis_feed import BandGestureEvent, BandStatus, EmgBatch, FeedEvent, KinesisFeed, validate_feed_url
 from .kinesis_haptics import HapticsWorker
 from .server_link import ServerLink
@@ -120,6 +120,10 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=GAME_PORT)
     parser.add_argument("--discovery-port", type=int, default=DISCOVERY_PORT)
     parser.add_argument("--discovery-s", type=float, default=2.5, help="how long to listen for server beacons")
+    parser.add_argument(
+        "--neural-model",
+        help="send signs from this trained neural EMG bundle (e.g. models/neural-emg-04); omit to only log EMG",
+    )
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
     logging.basicConfig(
@@ -130,7 +134,8 @@ def main() -> None:
             input("Paste the stream URL from Kinesis's stream tab: ").strip()
         )
         server = (args.host, args.port) if args.host else pick_server(args.discovery_port, args.discovery_s)
-        asyncio.run(run_hand_client(kinesis_url, server, EmgLogger()))
+        classifier = NeuralSignClassifier(args.neural_model) if args.neural_model else EmgLogger()
+        asyncio.run(run_hand_client(kinesis_url, server, classifier))
 
 
 if __name__ == "__main__":
