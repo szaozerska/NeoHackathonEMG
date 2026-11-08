@@ -321,6 +321,15 @@ class Spell(Message):
     direction: list[float] | None
 
 
+class Zone:
+    """The body part a hit landed on (`spellgame.hitboxes`)."""
+
+    HEAD = "head"
+    TORSO = "torso"
+    ARM = "arm"
+    LEG = "leg"
+
+
 @dataclass
 class Damage(Message):
     TYPE: ClassVar[str] = "damage"
@@ -332,6 +341,8 @@ class Damage(Message):
     """What dealt the damage: `fireball` or `sword`."""
     pos: list[float] | None = None
     """Where the hit landed, e.g. for damage numbers."""
+    zone: str | None = None
+    """The `Zone` that was hit."""
 
 
 @dataclass

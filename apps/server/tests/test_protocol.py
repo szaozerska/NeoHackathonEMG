@@ -30,7 +30,7 @@ def test_pose_from_unity_client_skips_null_joints_and_ignores_extra_fields():
 def test_wire_format_uses_type_field_and_snake_case():
     line = p.encode(p.Damage(target_id="P2", source_id="P1", amount=20.0, hp_after=80.0))
     assert line == (
-        '{"type":"damage","target_id":"P2","source_id":"P1","amount":20.0,"hp_after":80.0,"kind":null,"pos":null}'
+        '{"type":"damage","target_id":"P2","source_id":"P1","amount":20.0,"hp_after":80.0,"kind":null,"pos":null,"zone":null}'
     )
 
 
