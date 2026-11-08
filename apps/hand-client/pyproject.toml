@@ -9,8 +9,11 @@ description = "Hand-sign classification client: Neural Band via Kinesis in, sign
 requires-python = ">=3.11"
 dependencies = ["spellgame-server", "numpy>=1.26"]
 
-[project.optional-dependencies]
-dev = ["pytest>=8", "ruff>=0.6"]
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11"]
+
+[tool.uv.sources]
+spellgame-server = { path = "../server", editable = true }
 
 [project.scripts]
 hand-client = "handclient.main:main"

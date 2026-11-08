@@ -12,14 +12,13 @@ The game server from [architecture.md](../../architecture.md) §2.3. Python 3.11
 
 ```bash
 cd apps/server
-python3 -m venv .venv
-.venv/bin/pip install -e '.[dev]'
+uv sync
 ```
 
 ## Run
 
 ```bash
-.venv/bin/python -m spellgame                 # --port, --tick-hz, --no-beacon, --no-tui, -v
+uv run python -m spellgame                 # --port, --tick-hz, --no-beacon, --no-tui, -v
 ```
 
 The server opens a live monitor (Textual): connected headsets and hand clients side by side, each with its player ID,
@@ -29,9 +28,9 @@ address, the device it reported in `hello`, and its most recent incoming packets
 Without a headset or a band, the fake clients stand in for them (each finds the server via the beacon, or pass `--host`):
 
 ```bash
-.venv/bin/python -m spellgame.tools.fake_vr --position 0,0 --facing 0 --throw-every 2   # P1, throws every 2 s
-.venv/bin/python -m spellgame.tools.fake_band --snap-every 2                            # P1's band, snaps every 2 s
-.venv/bin/python -m spellgame.tools.fake_vr --position 0,3 --facing 180                 # P2, stands 3 m away
+uv run python -m spellgame.tools.fake_vr --position 0,0 --facing 0 --throw-every 2   # P1, throws every 2 s
+uv run python -m spellgame.tools.fake_band --snap-every 2                            # P1's band, snaps every 2 s
+uv run python -m spellgame.tools.fake_vr --position 0,3 --facing 180                 # P2, stands 3 m away
 ```
 
 Start them in that order so join-order pairing gives the band to P1. Without `--snap-every`, `fake_band` reads gestures
@@ -40,8 +39,8 @@ from stdin: `s` snap, `f` fist, `p` open palm, `n` none. `fake_vr` prints the `s
 ## Test
 
 ```bash
-.venv/bin/python -m pytest
-.venv/bin/ruff check . && .venv/bin/ruff format --check .
+uv run pytest
+uv run ruff check . && uv run ruff format --check .
 ```
 
 ## Layout

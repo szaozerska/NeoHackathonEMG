@@ -8,7 +8,8 @@ Diagram: https://www.tldraw.com/f/j9TtJhe8cWZyB6hVz3jwV?d=v-977.-580.3038.1929.p
   - what flows between them (§3);
   - the transports, including TCP for game traffic and the UDP discovery beacon (§4, §4.1);
   - the server-authoritative model;
-  - the shared player ID (§5).
+  - the shared player ID (§5);
+  - Python tooling: `uv` for every Python package (§2).
   
   Any implementation must preserve these.
 - **Recommended, not binding:** the libraries and implementation choices in the **Stack** and **Data collection** items of §2.2 (classifier) and §2.3 (server). Swap them out if something else works better.
@@ -25,6 +26,8 @@ A multiplayer mixed-reality (passthrough AR) spell-casting game.
 There is one Quest, one Neural Band, and one classification Mac per player, plus one shared server Mac. Everything runs on one local network.
 
 ## 2. Components
+
+**Python tooling:** every Python package (the game server, the hand-sign client, and any tools) uses [`uv`](https://docs.astral.sh/uv/) as its package manager and for its environment. Declare dependencies in `pyproject.toml`, commit the `uv.lock`, and run things through uv (`uv sync`, `uv run …`, `uv add …`) instead of `pip` and hand-made `venv`s.
 
 ### 2.1 Meta Quest 3: AR client (Unity, passthrough; called the VR client / role `vr` in code and protocol)
 - **Inputs:**
