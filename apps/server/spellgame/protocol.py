@@ -556,6 +556,21 @@ class Rematch(Message):
 
 
 @dataclass
+class MatchPause(Message):
+    """VR → server, from a fighter while `playing`: pause (limited per fighter) or resume (after a short countdown)."""
+
+    TYPE: ClassVar[str] = "match_pause"
+    paused: bool = True
+
+
+@dataclass
+class MatchRestart(Message):
+    """VR → server, from a fighter mid-match: vote to restart; it restarts from the countdown once every human has."""
+
+    TYPE: ClassVar[str] = "match_restart"
+
+
+@dataclass
 class MatchSnapshot:
     phase: str = MatchPhase.LOBBY
     mode: str | None = None
@@ -577,6 +592,14 @@ class MatchSnapshot:
     """Who sent `match_quit`, for a quit."""
     ai_id: str | None = None
     """The AI opponent's player ID in a solo match; its poses arrive like any other player's."""
+    paused_by: str | None = None
+    """The fighter who paused a `playing` match; everything is frozen until it resumes."""
+    resume_in: float = 0.0
+    """Seconds until a paused match resumes, once someone chose resume (or the pause ran out); 0 otherwise."""
+    pauses_left: list[int] = field(default_factory=list)
+    """Pauses each fighter has left this match, in `fighters` order."""
+    restart_votes: list[str] = field(default_factory=list)
+    """Fighters who asked to restart; the match restarts once every human fighter has."""
 
     def to_dict(self) -> dict[str, Any]:
         return {f.name: _to_json(getattr(self, f.name)) for f in fields(self)}

@@ -476,6 +476,18 @@ namespace SpellGame.Protocol
 
         /// <summary>The AI opponent's player ID in a solo match.</summary>
         public string AiId { get; set; }
+
+        /// <summary>The fighter who paused a <c>playing</c> match; null while it runs.</summary>
+        public string PausedBy { get; set; }
+
+        /// <summary>Seconds until a paused match resumes, once someone chose resume; 0 otherwise.</summary>
+        public float ResumeIn { get; set; }
+
+        /// <summary>Pauses each fighter has left, in <see cref="Fighters"/> order.</summary>
+        public List<int> PausesLeft { get; set; } = new();
+
+        /// <summary>Fighters who asked to restart; it restarts once every human fighter has.</summary>
+        public List<string> RestartVotes { get; set; } = new();
     }
 
     /// <summary>VR → server: set up the next match and wait for ready.</summary>
@@ -504,6 +516,21 @@ namespace SpellGame.Protocol
     public sealed class RematchMessage : Message
     {
         public const string TypeName = "rematch";
+        public override string Type => TypeName;
+    }
+
+    /// <summary>VR → server, from a fighter while playing: pause (a few per match) or resume (after a countdown).</summary>
+    public sealed class MatchPauseMessage : Message
+    {
+        public const string TypeName = "match_pause";
+        public override string Type => TypeName;
+        public bool Paused { get; set; } = true;
+    }
+
+    /// <summary>VR → server, from a fighter mid-match: vote to restart; it restarts once every human fighter has.</summary>
+    public sealed class MatchRestartMessage : Message
+    {
+        public const string TypeName = "match_restart";
         public override string Type => TypeName;
     }
 }
