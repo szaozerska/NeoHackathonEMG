@@ -260,11 +260,10 @@ namespace SpellGame.Game
         /// <summary>Changes whenever what the current screen shows changes, so the panel is rebuilt only then.</summary>
         private string PanelKey()
         {
-            var players = _state?.Players.Select(p => $"{p.PlayerId}:{p.Hp:0}") ?? Enumerable.Empty<string>();
             return _view switch
             {
                 View.Ready => $"ready|{Me}|{_match.Mode}|{_match.DurationS}|{string.Join(",", _match.Fighters)}|{string.Join(",", _match.Ready)}",
-                View.Results => $"results|{Me}|{_match.Winner}|{_match.Reason}|{_match.EndedBy}|{string.Join(",", players)}",
+                View.Results => $"results|{IsFighter}",
                 _ => _view.ToString(),
             };
         }
@@ -334,41 +333,14 @@ namespace SpellGame.Game
             Layout(panel, title, string.Join("\n", lines), buttons.ToArray());
         }
 
+        /// <summary>Just the choices: <see cref="EndGameView"/>'s banner above shows the result, reason and stats.</summary>
         private void BuildResults(Panel panel)
         {
-            string title;
-            if (_match.Reason == MatchEndReason.Quit)
-                title = "MATCH ENDED";
-            else if (_match.Winner == null)
-                title = "DRAW";
-            else if (_match.Winner == Me)
-                title = "VICTORY!";
-            else if (IsFighter)
-                title = "DEFEAT";
-            else
-                title = $"{_match.Winner} WINS";
-
-            var reason = _match.Reason switch
-            {
-                MatchEndReason.Ko => "Knockout",
-                MatchEndReason.Time => "Time's up: most HP wins",
-                MatchEndReason.Quit => $"Ended by {(_match.EndedBy == Me ? "you" : _match.EndedBy)}",
-                MatchEndReason.Disconnect => "Opponent disconnected",
-                _ => "",
-            };
-            var lines = new List<string> { reason };
-            foreach (var fighter in _match.Fighters)
-            {
-                var hp = _state?.Players.FirstOrDefault(p => p.PlayerId == fighter)?.Hp ?? 0f;
-                var name = fighter == Me ? "You" : fighter == _match.AiId ? "AI mage" : fighter;
-                lines.Add($"{name}:  {Mathf.Max(0f, hp):0} HP");
-            }
-
             var buttons = new List<(string, Color, Action)>();
             if (IsFighter)
                 buttons.Add(("Rematch", PrimaryColor, () => gameClient.Send(new RematchMessage())));
             buttons.Add(("Main menu", ButtonColor, () => gameClient.Send(new MatchQuitMessage())));
-            Layout(panel, title, string.Join("\n", lines), buttons.ToArray());
+            Layout(panel, "PLAY AGAIN?", "", buttons.ToArray());
         }
 
         private static string ControlsText() => string.Join("\n",
