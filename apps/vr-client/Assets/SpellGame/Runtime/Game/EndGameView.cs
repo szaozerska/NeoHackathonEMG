@@ -23,7 +23,8 @@ namespace SpellGame.Game
 
         [Header("Placement")]
         [SerializeField] private float bannerDistance = 2.2f;
-        [SerializeField] private float bannerLift = 0.3f;
+        [Tooltip("Height of the banner's bottom edge above eye level, so it clears the Rematch / Main menu panel below it.")]
+        [SerializeField] private float bannerBottom = 0.04f;
         [Tooltip("Degrees off your view before the banner glides back in front of you.")]
         [SerializeField] private float refollowAngle = 45f;
         [SerializeField] private float followSpeed = 2.5f;
@@ -60,6 +61,7 @@ namespace SpellGame.Game
         private TextMeshPro _title;
         private TextMeshPro _subtitle;
         private Transform _cards;
+        private float _bannerHeight;
         private readonly List<Material> _cardMaterials = new();
         private Vector3 _bannerTarget;
         private float _shownAt;
@@ -418,7 +420,8 @@ namespace SpellGame.Game
             return forward.sqrMagnitude > 1e-4f ? forward.normalized : Vector3.forward;
         }
 
-        private Vector3 BannerSpot() => Eye.position + FlatForward() * bannerDistance + Vector3.up * bannerLift;
+        private Vector3 BannerSpot() =>
+            Eye.position + FlatForward() * bannerDistance + Vector3.up * (bannerBottom + _bannerHeight * 0.5f * _banner.lossyScale.y);
 
         private void FollowView()
         {
@@ -463,6 +466,7 @@ namespace SpellGame.Game
             var cardHeight = titleHeight + subtitleHeight + BannerPad;
             var cardWidth = Mathf.Max(0.9f, Mathf.Max(UiStyle.Width(_title), UiStyle.Width(_subtitle)) + 0.25f);
             var height = cardHeight + (cardsHeight > 0f ? CardGap + cardsHeight : 0f);
+            _bannerHeight = height;
             var top = height * 0.5f;
             _bannerBack.Transform.localPosition = new Vector3(0f, top - cardHeight * 0.5f, 0f);
             _bannerBack.Apply(UiStyle.Panel, new Vector2(cardWidth, cardHeight));
