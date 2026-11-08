@@ -65,9 +65,7 @@ class Match:
         return self.phase in (Phase.COUNTDOWN, Phase.PLAYING)
 
     def can_cast(self, player_id: str) -> bool:
-        """Spells work as practice in the menus and for fighters while playing; not during the countdown or results."""
-        if self.phase in (Phase.LOBBY, Phase.READY):
-            return True
+        """Only fighters while playing: no spells in the menus (navigating never conjures one), countdown or results."""
         return self.phase == Phase.PLAYING and not self.paused and player_id in self.fighters
 
     def restrict(self, player_input: PlayerInput) -> PlayerInput:

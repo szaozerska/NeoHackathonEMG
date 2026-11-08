@@ -163,6 +163,9 @@ def test_headset_starts_pairing_mode_bands_pair_by_pinch_and_fireball_deals_dama
             await pinch_when_prompted(band1, "P2")
             assert server.prompted_player_id is None
             band1, band2 = band2, band1
+            # Spells are off in the menus, so skip straight to a running match.
+            server.match.setup("P1", p.MatchMode.VERSUS, 60.0)
+            server.match.phase, server.match.fighters = p.MatchPhase.PLAYING, ["P1", "P2"]
 
             loop = asyncio.get_running_loop()
             start = loop.time()

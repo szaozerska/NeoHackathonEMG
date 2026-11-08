@@ -162,9 +162,9 @@ def test_solo_owner_leaving_the_ready_screen_returns_to_the_lobby():
     assert match.phase == p.MatchPhase.LOBBY and match.ai_id is None
 
 
-def test_casting_is_practice_in_menus_and_only_for_fighters_while_playing():
+def test_casting_is_off_in_menus_and_only_for_fighters_while_playing():
     game, match = setup_versus()
-    assert match.can_cast("P3")
+    assert not match.can_cast("P1") and not Match().can_cast("P1")
     start(game, match, headsets=["P1", "P2", "P3"])
     assert match.can_cast("P1") and not match.can_cast("P3")
     match.quit("P1")
