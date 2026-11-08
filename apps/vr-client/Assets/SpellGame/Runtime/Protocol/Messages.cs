@@ -14,6 +14,16 @@ namespace SpellGame.Protocol
     public static class ClientRole
     {
         public const string Vr = "vr";
+        public const string Classifier = "classifier";
+    }
+
+    /// <summary>The <c>sign</c> labels the Neural Band side reports. <c>snap</c> is momentary; the others are held.</summary>
+    public static class BandSign
+    {
+        public const string None = "none";
+        public const string Fist = "fist";
+        public const string OpenPalm = "open_palm";
+        public const string Snap = "snap";
     }
 
     public static class HandSide
@@ -27,6 +37,7 @@ namespace SpellGame.Protocol
         public const string Charging = "charging";
         public const string Cast = "cast";
         public const string Cancelled = "cancelled";
+        public const string Sheathed = "sheathed";
     }
 
     public sealed class HelloMessage : Message
@@ -34,6 +45,9 @@ namespace SpellGame.Protocol
         public const string TypeName = "hello";
         public override string Type => TypeName;
         public string Role { get; set; }
+
+        /// <summary>Optional: a classifier pairs directly with this player.</summary>
+        public string PlayerId { get; set; }
     }
 
     public sealed class WelcomeMessage : Message
@@ -164,17 +178,27 @@ namespace SpellGame.Protocol
         public string SourceId { get; set; }
         public float Amount { get; set; }
         public float HpAfter { get; set; }
+
+        /// <summary>What dealt the damage: <see cref="SpellKind.Fireball"/> or <see cref="SpellKind.Sword"/>.</summary>
+        public string Kind { get; set; }
+
+        /// <summary>Where the hit landed, [x, y, z]; may be null.</summary>
+        public float[] Pos { get; set; }
     }
 
     public static class SpellKind
     {
         public const string Fireball = "fireball";
+        public const string Sword = "sword";
+        public const string Shield = "shield";
     }
 
     public static class ImpactReason
     {
         public const string Hit = "hit";
         public const string Expired = "expired";
+        public const string Blocked = "blocked";
+        public const string Parried = "parried";
     }
 
     public sealed class ImpactMessage : Message
@@ -207,6 +231,9 @@ namespace SpellGame.Protocol
 
         /// <summary>Seconds until the player can conjure again.</summary>
         public float Cooldown { get; set; }
+
+        /// <summary>0-1 shield power from the last push; high enough, a sword contact is a parry.</summary>
+        public float ShieldBoost { get; set; }
     }
 
     public sealed class ProjectileSnapshot
