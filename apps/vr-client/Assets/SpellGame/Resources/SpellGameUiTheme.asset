@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e649992797b4f1cb36ae1d34daaa675, type: 3}
+  m_Name: SpellGameUiTheme
+  m_EditorClassIdentifier: SpellGame.Runtime::SpellGame.Game.UiTheme
+  displayName: Smoky Opal
+  palette:
+    Fill: {r: 0.27450982, g: 0.2901961, b: 0.36078432, a: 0.72}
+    FacetLight: {r: 0.37254903, g: 0.38431373, b: 0.47058824, a: 0.7}
+    FacetDark: {r: 0.15686275, g: 0.16862746, b: 0.22745098, a: 0.66}
+    Rim: {r: 1, g: 1, b: 1, a: 1}
+    Ink: {r: 0.078431375, g: 0.08627451, b: 0.12156863, a: 1}
+    Text: {r: 1, g: 1, b: 1, a: 1}
+    TextDim: {r: 0.85490197, g: 0.87058824, b: 0.92156863, a: 1}
+    Accent: {r: 0.78431374, g: 0.8235294, b: 1, a: 1}
+    P1: {r: 1, g: 0.25, b: 0.25, a: 1}
+    P2: {r: 0.25, g: 0.5, b: 1, a: 1}
+    Pointer: {r: 1, g: 1, b: 1, a: 1}
+    Ash: {r: 0.35, g: 0.35, b: 0.4, a: 1}
+    Confetti:
+    - {r: 1, g: 1, b: 1, a: 1}
+    - {r: 0.78431374, g: 0.8235294, b: 1, a: 1}
+    - {r: 0.5882353, g: 0.6117647, b: 0.7254902, a: 1}
+  shape:
+    Skew: 0
+    CornerCut: 0
+    RimWidth: 0.003
+    OutlineWidth: 0.004
+    ShadowDrop: 0.005
+    Facets: 1
+  sounds:
+    Hover: {fileID: 0}
+    Press: {fileID: 0}
+    TimeUp: {fileID: 0}
+  displayFont: {fileID: 11400000, guid: aa6230b9cac4c42f59909c431b69bd0b, type: 2}
+  bodyFont: {fileID: 11400000, guid: c1738e3cba8a14a119ed5ff5b4431a67, type: 2}
+  displayMaterial: {fileID: 2100000, guid: 577ed09d78fb4483a9bd6cf683dec302, type: 2}
+  bodyMaterial: {fileID: 2100000, guid: 3fe70abf7d5464086b49c39e3eb60d39, type: 2}
+  crystal: {fileID: 2100000, guid: 686c44ebe15b541f7a682ae6bbca7d17, type: 2}
