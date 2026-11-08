@@ -584,18 +584,22 @@ def test_only_one_domain_runs_at_a_time_and_a_stunned_player_cannot_expand():
     assert not [e for e in expand_domain(match, "P2") if isinstance(e, p.DomainExpansion)]
 
 
-def test_holding_the_void_sign_expands_the_domain_once_and_brief_misreads_do_nothing():
+def test_holding_the_void_sign_expands_the_domain_once_through_brief_misreads():
     match = Match()
-    hold_s = match.game.tuning.domain_void_hold_s
+    tuning = match.game.tuning
+    hold_s = tuning.domain_void_hold_s
     match.inputs["P1"].sign = p.Sign.INFINITE_VOID
-    events = match.run(hold_s - 0.2)
+    events = match.run(hold_s - 0.5)
     match.inputs["P1"].sign = p.Sign.NONE
-    events += match.run(0.1)
+    events += match.run(tuning.domain_void_gap_s + 0.3)
     match.inputs["P1"].sign = p.Sign.INFINITE_VOID
-    events += match.run(hold_s - 0.2)
+    events += match.run(hold_s - 0.6)
+    match.inputs["P1"].sign = p.Sign.NONE
+    events += match.run(0.2)
+    match.inputs["P1"].sign = p.Sign.INFINITE_VOID
     assert not of_type(events, p.DomainExpansion)
 
-    events = match.run(0.4)
+    events = match.run(0.5)
     assert [e.caster_id for e in of_type(events, p.DomainExpansion)] == ["P1"]
     events = match.run(match.game.tuning.domain_expand_s + match.game.tuning.domain_stun_s + 1.0)
     assert not of_type(events, p.DomainExpansion)
