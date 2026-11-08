@@ -33,18 +33,17 @@ namespace SpellGame.Game
         [SerializeField] private float fadeOutSeconds = 0.5f;
 
         [Header("Streaks")]
-        [SerializeField, Min(1f)] private float streaksPerSecond = 3600f;
+        [SerializeField, Min(1f)] private float streaksPerSecond = 7200f;
         [Tooltip("Streaks keep coming this long after they reach the targets, then die out.")]
         [SerializeField] private float streakTailSeconds = 0.4f;
         [Tooltip("Streaks start between these distances from the line between caster and target: far enough to keep clear " +
                  "of the players' heads, wide enough to fill the view.")]
         [SerializeField] private float tunnelInnerRadius = 1.5f;
         [SerializeField] private float tunnelRadius = 7.5f;
-        [Tooltip("At the target the streaks are this share of their starting distance from the line.")]
-        [SerializeField, Range(0f, 1f)] private float convergence = 0.35f;
         [SerializeField] private Vector2 streakSpeed = new(18f, 30f);
         [SerializeField] private Vector2 streakWidth = new(0.012f, 0.036f);
-        [SerializeField] private Vector2 streakLifetime = new(0.12f, 0.3f);
+        [Tooltip("Streaks run from this far behind the caster to this far past the target, into the vanishing point.")]
+        [SerializeField] private float streakFarDistance = 60f;
         [Tooltip("Rendered length per m/s of speed.")]
         [SerializeField] private float streakStretch = 0.06f;
         [SerializeField, Range(0f, 1f)] private float whiteStreakShare = 0.35f;
@@ -132,7 +131,7 @@ namespace SpellGame.Game
             main.playOnAwake = false;
             main.loop = true;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.maxParticles = 3000;
+            main.maxParticles = 20000;
             var emission = particles.emission;
             emission.enabled = false;
             var shape = particles.shape;
@@ -231,8 +230,9 @@ namespace SpellGame.Game
         }
 
         /// <summary>
-        /// Straight streaks spawn anywhere between the caster and the advancing front and fly toward their target, dying
-        /// before they pass the front; they start spread across <see cref="tunnelRadius"/> and close in toward the target.
+        /// Straight streaks parallel to the line from caster to target, spread across a ring around it. They spawn anywhere
+        /// from <see cref="streakFarDistance"/> behind the caster up to the advancing front and die when they reach it;
+        /// once they have landed, the front is <see cref="streakFarDistance"/> past the target, so they run off out of sight.
         /// </summary>
         private void EmitStreaks(float elapsed, float travel)
         {
@@ -253,17 +253,16 @@ namespace SpellGame.Game
             var axis = target - _domain.Origin;
             var distance = axis.magnitude;
             var offset = RandomPerpendicular(axis) * RandomTunnelRadius();
-            var direction = (axis + offset * (convergence - 1f)).normalized;
-            var front = distance * travel;
-            var along = Random.Range(-tunnelRadius, front);
+            var direction = axis / distance;
+            var front = travel < 1f ? distance * travel : distance + streakFarDistance;
+            var along = Random.Range(-streakFarDistance, front);
             var speed = Random.Range(streakSpeed.x, streakSpeed.y);
-            var untilFront = Mathf.Max(0.02f, (front - along) / speed);
             _streaks.Emit(new ParticleSystem.EmitParams
             {
                 position = _domain.Origin + offset + direction * along,
                 velocity = direction * speed,
                 startSize = Random.Range(streakWidth.x, streakWidth.y),
-                startLifetime = Mathf.Min(Random.Range(streakLifetime.x, streakLifetime.y), untilFront),
+                startLifetime = Mathf.Max(0.02f, (front - along) / speed),
                 startColor = Random.value < whiteStreakShare ? Color.white : StreakColors[Random.Range(0, StreakColors.Length)],
                 applyShapeToPosition = false,
             }, 1);

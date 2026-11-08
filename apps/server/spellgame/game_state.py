@@ -93,7 +93,7 @@ class Tuning:
     shield_parry_lock_s: float = 1.5
     """After a parry the attacker can't draw a sword for this long."""
 
-    domain_expand_s: float = 2.5
+    domain_expand_s: float = 5.0
     """Infinite Void: how long the streaks take to reach the targets."""
     domain_stun_s: float = 5.0
     """After the streaks land, targets can't attack for this long."""
