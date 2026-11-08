@@ -233,7 +233,7 @@ def add_guided_capture(dataset, directory, hold_negatives=False, audio_onsets=Fa
     validate_dataset(dataset)
 
 
-INTERVAL_STATES = {'shield_hold': 'open', 'sword_hold': 'fist'}
+INTERVAL_STATES = {'shield_hold': 'open', 'sword_hold': 'fist', 'animation_gesture': 'infinite_void'}
 
 
 def interval_capture_features(directory, signal=None):
@@ -292,11 +292,14 @@ def add_interval_capture(dataset, directory, validation_after=.7, signal=None):
     by_kind = {k: sorted((f for f in features if f['kind'] == k), key=lambda f: f['t']) for k in ('state', 'snap')}
     ends = {k: np.array([f['t'] for f in v]) for k, v in by_kind.items()}
     session = meta['id']; added = {'state': 0, 'snap': 0, 'bags': 0}
+    # Animation Gesture (Infinite Void) contributions report possible gesture contamination in
+    # red time, so their non-intended intervals are not used as negatives.
+    animation = 'animation_gesture' in classes
     for index, interval in enumerate(intervals):
         a, b = interval['start'], interval['end']
         part = 'validation' if index in validation else 'train'
         motion = (interval.get('selected_motion') or {}).get('motion') if interval['intended'] else None
-        if interval['intended'] and motion not in INTERVAL_STATES and motion != 'snap':
+        if interval['intended'] and motion not in INTERVAL_STATES and motion != 'snap' or animation and not interval['intended']:
             continue
         group = f'{session}:interval-{index:04d}'
         base = {'part': part, 'group': group, 'trial': group, 'session': session,
@@ -324,7 +327,8 @@ def add_interval_capture(dataset, directory, validation_after=.7, signal=None):
                     added['snap'] += 1
             continue
         state = INTERVAL_STATES.get(motion, 'none')
-        margin = .15 if interval['intended'] else .3
+        # Space marks the first finger interaction; the multi-step sign forms and undoes inside the hold.
+        margin = 1. if motion == 'animation_gesture' else .15 if interval['intended'] else .3
         for kind in ('state', 'snap'):
             for r in rows(kind, a+margin, b-margin):
                 if r['start'] < a+margin or (not interval['intended'] and not clear(r)):
