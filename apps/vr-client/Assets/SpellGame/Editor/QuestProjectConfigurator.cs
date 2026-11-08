@@ -142,6 +142,8 @@ namespace SpellGame.Editor
             config.bodyTrackingSupport = OVRProjectConfig.FeatureSupport.Required;
             config.handTrackingSupport = OVRProjectConfig.HandTrackingSupport.ControllersAndHands;
             config.insightPassthroughSupport = OVRProjectConfig.FeatureSupport.Required;
+            config.anchorSupport = OVRProjectConfig.AnchorSupport.Enabled;
+            config.sharedAnchorSupport = OVRProjectConfig.FeatureSupport.Required;
             OVRProjectConfig.CommitProjectConfig(config);
 
             var runtime = OVRRuntimeSettings.GetRuntimeSettings();

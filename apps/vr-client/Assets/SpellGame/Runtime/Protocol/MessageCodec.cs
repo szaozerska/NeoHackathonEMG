@@ -25,6 +25,7 @@ namespace SpellGame.Protocol
             [PairStartMessage.TypeName] = typeof(PairStartMessage),
             [PairPromptMessage.TypeName] = typeof(PairPromptMessage),
             [PairedMessage.TypeName] = typeof(PairedMessage),
+            [SpaceMessage.TypeName] = typeof(SpaceMessage),
             [PoseMessage.TypeName] = typeof(PoseMessage),
             [SignMessage.TypeName] = typeof(SignMessage),
             [SpellMessage.TypeName] = typeof(SpellMessage),

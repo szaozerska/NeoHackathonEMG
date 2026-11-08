@@ -101,6 +101,63 @@ namespace SpellGame.Protocol
         public string PlayerId { get; set; }
     }
 
+    /// <summary>How a headset joined the shared room frame (architecture.md §5.1).</summary>
+    public static class AlignMethod
+    {
+        public const string Anchor = "anchor";
+        public const string FloorSpots = "floor_spots";
+    }
+
+    /// <summary>Server → VR: the shared room frame. Sent on join and whenever the host or anchor changes.</summary>
+    public sealed class SpaceMessage : Message
+    {
+        public const string TypeName = "space";
+        public override string Type => TypeName;
+
+        /// <summary>Meta group UUID to share the anchor to and load it from.</summary>
+        public string GroupUuid { get; set; }
+
+        /// <summary>The headset that creates and shares the anchor.</summary>
+        public string HostId { get; set; }
+
+        /// <summary>The shared anchor to align to; null until the host has shared one.</summary>
+        public string AnchorUuid { get; set; }
+
+        /// <summary>This headset's floor spot in the shared frame, for the floor-spot fallback.</summary>
+        public float[] SpotPos { get; set; }
+
+        /// <summary>Degrees about +y the player faces on their spot; 0 is +z.</summary>
+        public float SpotYaw { get; set; }
+    }
+
+    /// <summary>VR (host only) → server: the anchor at the shared frame's origin was saved and shared to the group.</summary>
+    public sealed class AnchorSharedMessage : Message
+    {
+        public const string TypeName = "anchor_shared";
+        public override string Type => TypeName;
+        public string AnchorUuid { get; set; }
+    }
+
+    /// <summary>VR → server: this headset's poses are now in the shared frame.</summary>
+    public sealed class AlignedMessage : Message
+    {
+        public const string TypeName = "aligned";
+        public override string Type => TypeName;
+
+        /// <summary>An <see cref="AlignMethod"/>.</summary>
+        public string Method { get; set; }
+
+        /// <summary>The anchor aligned to; required for <see cref="AlignMethod.Anchor"/>.</summary>
+        public string AnchorUuid { get; set; }
+    }
+
+    /// <summary>Any client → server: drop the anchor and re-align everyone.</summary>
+    public sealed class SpaceResetMessage : Message
+    {
+        public const string TypeName = "space_reset";
+        public override string Type => TypeName;
+    }
+
     public sealed class JointPose
     {
         /// <summary>[x, y, z]</summary>
@@ -251,6 +308,9 @@ namespace SpellGame.Protocol
 
         /// <summary>0-1 shield power from the last push; high enough, a sword contact is a parry.</summary>
         public float ShieldBoost { get; set; }
+
+        /// <summary>The headset has reported its poses are in the shared room frame.</summary>
+        public bool Aligned { get; set; }
     }
 
     public sealed class ProjectileSnapshot

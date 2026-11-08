@@ -7,7 +7,7 @@ using UnityEngine;
 namespace SpellGame.Editor
 {
     /// <summary>
-    /// Regenerates the scene: passthrough OVRCameraRig + Movement SDK body tracking + debug skeletons + GameClient + spell views.
+    /// Regenerates the scene: passthrough OVRCameraRig + Movement SDK body tracking + debug skeletons + GameClient + shared-space aligner + spell views.
     /// Headless: <c>Unity -batchmode -quit -projectPath . -executeMethod SpellGame.Editor.MainSceneBuilder.Build</c>
     /// </summary>
     public static class MainSceneBuilder
@@ -30,6 +30,7 @@ namespace SpellGame.Editor
             var client = CreateGameClient(bodySkeleton, debugSkeletons, statusLabel);
             CreateControllerBand(client);
             CreatePairingButton(client);
+            CreateSharedSpaceAligner(client, rig);
             CreateFireballView(client);
             CreateSwordView(client);
             CreateShieldView(client);
@@ -125,6 +126,15 @@ namespace SpellGame.Editor
             var serializedButton = new SerializedObject(button);
             serializedButton.FindProperty("gameClient").objectReferenceValue = client;
             serializedButton.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void CreateSharedSpaceAligner(GameClient client, OVRCameraRig rig)
+        {
+            var aligner = client.gameObject.AddComponent<SharedSpaceAligner>();
+            var serializedAligner = new SerializedObject(aligner);
+            serializedAligner.FindProperty("gameClient").objectReferenceValue = client;
+            serializedAligner.FindProperty("cameraRig").objectReferenceValue = rig;
+            serializedAligner.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void CreateFireballView(GameClient client)
