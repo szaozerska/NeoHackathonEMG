@@ -32,6 +32,18 @@
     "neural-emg-04/model.json": {
       "sha256": "acbef6f972cec3df7c61c1655cb1fec77be11b966854e8bb7f9d3c6753c00fb6",
       "role": "experimental_manifest"
+    },
+    "neural-emg-05/state-fnn-seed7.pt": {
+      "sha256": "c4c8d31f9dcc42af650b5d4a64725cfc060e65af932b1d4b2930f592d8e86121",
+      "role": "live_state"
+    },
+    "neural-emg-05/snap-cnn-seed7.pt": {
+      "sha256": "ba4f47feda0b5d0ecfdf243fd82b7386c940649de730eeb41a4cc2d95c6d6216",
+      "role": "live_snap"
+    },
+    "neural-emg-05/model.json": {
+      "sha256": "95f115ca17e35a156fe89d02abf71018ec458ec7dedc9e973c1ffc1d3d30cd00",
+      "role": "live_manifest"
     }
   },
   "kinesis": {

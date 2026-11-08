@@ -167,9 +167,9 @@ After `--with-game`, use the repository-local uv:
 ```
 
 The hand-client prompts for Kinesis's current stream URL and game server. Read
-the two app READMEs for pairing/server controls. It currently uses `EmgLogger`
-as its classifier: wiring the new neural outputs into game messages is future
-integration work, not an effect of installing this bench.
+the two app READMEs for pairing/server controls. It sends signs from
+`models/neural-emg-05` by default (needs `--extra neural`); `--neural-model`
+picks another bundle and `--log-only` only logs EMG.
 
 ## Ask Codex or Claude
 

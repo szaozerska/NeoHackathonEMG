@@ -1,8 +1,8 @@
 # neural-emg-05 (pooled Ken/Micah/Sophie split)
 
 Trained with `scripts/build_pooled_dataset.py` (seed 7, 70/15/15, 3 s blocks, 820/328-sample windows) and
-`scripts/train_neural_emg.py --dataset` (FNN and CNN, seed 7; selected on validation). Not automatically activated:
-use `--neural-model models/neural-emg-05` in the hand client.
+`scripts/train_neural_emg.py --dataset` (FNN and CNN, seed 7; selected on validation). Default model of the hand
+client (`--neural-model` picks another bundle, `--log-only` sends no signs).
 
 - state: FNN, threshold 0.55. Test: 86.4% of windows, 95.7% of clips.
 - snap: CNN, threshold 0.995. Test: 26 TP, 3 FP, 5 FN.
