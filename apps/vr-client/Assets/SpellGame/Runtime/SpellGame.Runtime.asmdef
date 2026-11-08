@@ -2,7 +2,8 @@
     "name": "SpellGame.Runtime",
     "rootNamespace": "SpellGame",
     "references": [
-        "Oculus.VR"
+        "Oculus.VR",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

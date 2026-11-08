@@ -103,6 +103,9 @@ about 12–14 hits a minute.
 - **Charge-up:** spells take time to charge (e.g. holding a conjured fireball longer makes it stronger), driving
   `spell.charge`.
 - **Difficulty settings:** selectable `Tuning` presets (HP, damage, spell speed, aim assist, cooldowns), chosen from the menu.
+- **Themes to choose from:** a theme is a named set of spell sounds, spell graphics (orb, blade, shield, impacts),
+  menu/HUD styling and optional background music, picked from the menu. Start with one generic theme (the current
+  synthesised sounds and VFX) and move each sound and look behind the theme so themed sets can be swapped in later.
 - More spells, more complex versions of the three basic ones, and cosmetic modes.
 
 ## Verification

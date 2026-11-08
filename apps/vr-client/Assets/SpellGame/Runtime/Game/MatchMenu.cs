@@ -16,7 +16,8 @@ namespace SpellGame.Game
     /// snap stand-in); without controllers, look at a button for a moment to press it.</item>
     /// <item>Menu button (left controller): during a match, end it; otherwise bring the panel back in front of you.</item>
     /// </list>
-    /// Screens: mode → length → how to cast (first time) → ready → 3-2-1-FIGHT → timer badge → results.
+    /// Screens: mode → length → how to cast (first time) → ready → timer badge → results. The 3-2-1-FIGHT! and K.O.
+    /// moments are <see cref="MatchMomentsView"/>; after a K.O. the results wait for it.
     /// The server owns the flow; this only sends intents and renders <see cref="MatchSnapshot"/>.
     /// </summary>
     public sealed class MatchMenu : MonoBehaviour
@@ -97,17 +98,15 @@ namespace SpellGame.Game
         private float _hapticStop;
         private OVRInput.Controller _hapticController;
 
-        private TextMesh _countdownText;
-        private Vector3 _countdownTarget;
-        private int _lastCount = -1;
-        private float _fightShownAt = float.NegativeInfinity;
         private Transform _timerBadge;
         private TextMesh _timerText;
         private Material _timerMaterial;
         private bool _timerPlaced;
+        private float _timerAt;
+        private float _resultsAt;
 
         private AudioSource _audio;
-        private AudioClip _tick, _beep, _go, _end;
+        private AudioClip _tick, _beep, _end;
         private Material _panelMaterial;
 
         private static Mesh _quadMesh;
@@ -131,7 +130,9 @@ namespace SpellGame.Game
         private bool IsFighter => Me != null && _match.Fighters.Contains(Me);
 
         /// <summary>The connection screen covers every other screen until the server has welcomed this headset.</summary>
-        private View ShownView => gameClient.Connection == ConnectionState.Connected ? _view : View.Connection;
+        private View ShownView => gameClient.Connection != ConnectionState.Connected ? View.Connection
+            : _view == View.Results && Time.unscaledTime < _resultsAt ? View.None
+            : _view;
 
         private void Awake()
         {
@@ -143,10 +144,8 @@ namespace SpellGame.Game
             _audio.spatialBlend = 0f;
             _tick = Tone("Tick", 1400f, 0.03f, 0.15f);
             _beep = Tone("Beep", 660f, 0.18f, 0.35f);
-            _go = Tone("Go", 990f, 0.45f, 0.4f);
             _end = Tone("End", 440f, 0.6f, 0.35f);
             CreatePointer();
-            CreateCountdown();
             CreateTimerBadge();
         }
 
@@ -201,19 +200,18 @@ namespace SpellGame.Game
                     break;
                 case MatchPhase.Countdown:
                     _view = View.None;
-                    _lastCount = -1;
-                    _countdownTarget = InFront(2f, 0.05f);
-                    _countdownText.transform.position = _countdownTarget;
                     break;
                 case MatchPhase.Playing:
                     _view = View.None;
-                    _fightShownAt = Time.time;
                     _timerPlaced = false;
-                    _audio.PlayOneShot(_go);
+                    _timerAt = Time.unscaledTime + (from == MatchPhase.Countdown ? MatchMomentsView.FightSeconds : 0f);
                     break;
                 case MatchPhase.Ended:
                     _view = View.Results;
-                    _audio.PlayOneShot(_end);
+                    var knockout = from == MatchPhase.Playing && _match.Reason == MatchEndReason.Ko;
+                    _resultsAt = Time.unscaledTime + (knockout ? MatchMomentsView.KoBeatSeconds : 0f);
+                    if (!knockout)
+                        _audio.PlayOneShot(_end);
                     break;
             }
         }
@@ -225,7 +223,6 @@ namespace SpellGame.Game
 
             UpdatePanel();
             UpdatePointer();
-            UpdateCountdown();
             UpdateTimer();
             if (_hapticStop > 0f && Time.time >= _hapticStop)
             {
@@ -624,44 +621,11 @@ namespace SpellGame.Game
             _hapticStop = Time.time + seconds;
         }
 
-        // ---------------------------------------------------------------- countdown and timer
-
-        private void UpdateCountdown()
-        {
-            var counting = _match.Phase == MatchPhase.Countdown;
-            var fight = _match.Phase == MatchPhase.Playing && Time.time - _fightShownAt < 1f;
-            _countdownText.gameObject.SetActive(counting || fight);
-            if (!counting && !fight)
-                return;
-
-            var t = 1f - Mathf.Exp(-2f * Time.deltaTime);
-            var text = _countdownText.transform;
-            text.position = Vector3.Lerp(text.position, _countdownTarget, t);
-            FaceViewer(text);
-            if (counting)
-            {
-                var count = Mathf.Max(1, Mathf.CeilToInt(_match.Countdown));
-                if (count != _lastCount)
-                {
-                    _lastCount = count;
-                    _audio.PlayOneShot(_beep);
-                }
-                var pop = 1f + 0.4f * Mathf.Clamp01(1f - (count - _match.Countdown) * 3f);
-                _countdownText.text = count.ToString();
-                _countdownText.color = Color.white;
-                text.localScale = Vector3.one * pop;
-            }
-            else
-            {
-                _countdownText.text = "FIGHT!";
-                _countdownText.color = AccentText;
-                text.localScale = Vector3.one * (1f + 0.3f * (Time.time - _fightShownAt));
-            }
-        }
+        // ---------------------------------------------------------------- timer
 
         private void UpdateTimer()
         {
-            var playing = _match.Phase == MatchPhase.Playing;
+            var playing = _match.Phase == MatchPhase.Playing && Time.unscaledTime >= _timerAt;
             _timerBadge.gameObject.SetActive(playing);
             if (!playing)
                 return;
@@ -696,12 +660,6 @@ namespace SpellGame.Game
             _pointer.enabled = false;
             _pointerDot = SpellVfx.CreateOrb("Pointer Dot", transform, _pointer.sharedMaterial, 0.015f);
             _pointerDot.gameObject.SetActive(false);
-        }
-
-        private void CreateCountdown()
-        {
-            _countdownText = CreateText("Countdown", transform, "3", Vector3.zero, 0.05f, Color.white, FontStyle.Bold);
-            _countdownText.gameObject.SetActive(false);
         }
 
         private void CreateTimerBadge()
