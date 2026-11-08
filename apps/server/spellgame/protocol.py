@@ -9,7 +9,8 @@ import json
 from dataclasses import dataclass, field, fields
 from typing import Any, ClassVar
 
-GAME_PORT = 9000
+# Not 9000: Quest OS refuses outgoing TCP to port 9000 (connect fails with EACCES).
+GAME_PORT = 9100
 DISCOVERY_PORT = 47777
 BEACON_PREFIX = "SPELLGAME "
 

@@ -22,7 +22,7 @@ namespace SpellGame.Game
         [Header("Server")]
         [Tooltip("Leave empty to find the server through the UDP discovery beacon.")]
         [SerializeField] private string manualServerHost = "";
-        [SerializeField] private int manualServerPort = 9000;
+        [SerializeField] private int manualServerPort = 9100;
         [SerializeField] private int discoveryPort = 47777;
 
         [Header("Pose stream")]
@@ -37,6 +37,7 @@ namespace SpellGame.Game
         private readonly Dictionary<string, BodyJoints> _remoteJoints = new();
         private string _status = "";
         private string _spaceStatus = "";
+        private string _hpStatus = "";
 
         public event Action<SignMessage> SignReceived;
         public event Action<SpellMessage> SpellReceived;
@@ -167,6 +168,7 @@ namespace SpellGame.Game
                     ImpactReceived?.Invoke(impact);
                     break;
                 case StateMessage state:
+                    UpdateHpStatus(state);
                     StateReceived?.Invoke(state);
                     break;
                 case SpaceMessage space:
@@ -211,9 +213,34 @@ namespace SpellGame.Game
             RenderStatus();
         }
 
+        /// <summary>Own HP (or death) and every other player's HP, on a line under the status.</summary>
+        private void UpdateHpStatus(StateMessage state)
+        {
+            var own = "";
+            var others = new List<string>();
+            foreach (var player in state.Players)
+            {
+                if (player.PlayerId == _playerId)
+                    own = player.Hp > 0f ? $"HP {player.Hp:0}" : "YOU ARE DEAD (no respawn yet)";
+                else
+                    others.Add(player.Hp > 0f ? $"{player.PlayerId} {player.Hp:0}" : $"{player.PlayerId} dead");
+            }
+
+            var text = others.Count == 0 ? own : $"{own}   ·   {string.Join("  ", others)}";
+            if (text == _hpStatus)
+                return;
+            _hpStatus = text;
+            RenderStatus();
+        }
+
         private void RenderStatus()
         {
-            statusLabel.text = string.IsNullOrEmpty(_spaceStatus) ? _status : $"{_status}\n{_spaceStatus}";
+            var lines = new List<string> { _status };
+            if (!string.IsNullOrEmpty(_spaceStatus))
+                lines.Add(_spaceStatus);
+            if (!string.IsNullOrEmpty(_hpStatus))
+                lines.Add(_hpStatus);
+            statusLabel.text = string.Join("\n", lines);
         }
     }
 }
