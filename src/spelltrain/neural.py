@@ -239,7 +239,7 @@ def fit_classifier(train, validation, spec, architecture, config, seed, weak_bag
         metric = val_loss
         if selection:
             metric = -selection[1](probabilities(model, sx)) if epoch+1 > warmup or epoch+1 == config['epochs'] else float('inf')
-            scores.append(-metric)
+            scores.append(None if metric == float('inf') else -metric)
         if metric < best_metric-1e-5 or (metric == best_metric and val_loss < best_loss):
             best_metric = metric; best_loss = val_loss
             best = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
