@@ -276,7 +276,7 @@ def add_interval_capture(dataset, directory, validation_after=.7, signal=None):
     features, meta = interval_capture_features(original, signal)
     if not meta.get('recording_complete'):
         raise ValueError('Interval capture incomplete')
-    if meta['model']['signal'] != dataset['signal']:
+    if {**meta['model']['signal'], **(signal or {})} != dataset['signal']:
         raise ValueError('Interval capture signal settings differ')
     intervals = read_json(original/'truth-values.json')['intervals']
     analysis = directory/'analysis'
