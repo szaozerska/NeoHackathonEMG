@@ -112,7 +112,10 @@ class IntentCollection:
 
     def select_motion(self,motion,effort=None):
         if self.intent_markers[-1]['label']=='intended':raise ValueError('Release Space before changing the selected motion.')
-        if motion not in ('snap','shield_hold','sword_hold') or (motion=='snap' and effort is not None) or (motion!='snap' and effort not in ('low','medium','high')):
+        animation=self.capture.meta.get('collection_variant')=='animation'
+        if animation and (motion!='animation_gesture' or effort is not None):
+            raise ValueError('This session collects Animation Gesture only.')
+        if not animation and (motion not in ('snap','shield_hold','sword_hold') or (motion=='snap' and effort is not None) or (motion!='snap' and effort not in ('low','medium','high'))):
             raise ValueError('Select Snap, or a Shield/Sword hold with low, medium or high effort.')
         if self.capture.meta.get('test_condition')=='static' and motion=='snap':raise ValueError('Static testing supports Shield and Sword holds only.')
         self.interaction(kind='motion_selection')

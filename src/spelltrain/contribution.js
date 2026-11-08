@@ -1,7 +1,7 @@
 /* Space down begins an intended interval; Space up ends it. No camera or inference. */
 (()=>{
- const $=id=>document.getElementById(id),staticMode=document.body.dataset.testCondition==='static';
- let live=null,busy=false,polling=false,alignment=null,spaceHeld=false,pending=0,queue=Promise.resolve();
+ const $=id=>document.getElementById(id),animationMode=document.body.dataset.testCondition==='animation',staticMode=animationMode||document.body.dataset.testCondition==='static';
+ let live=null,busy=false,polling=false,alignment=null,spaceHeld=false,pending=0,queue=Promise.resolve(),holdStarted=null,lastHoldSeconds=0;
  async function api(action,value={}){
   const response=await fetch('/api/'+action,{method:'POST',headers:{'Content-Type':'application/json','X-Session-Token':window.contributionToken},body:JSON.stringify(value)});
   const result=await response.json();if(!response.ok)throw Error(result.error||'Request failed');return result;
@@ -20,13 +20,14 @@
   $('start').disabled=busy||!live.connected||!!live.recording?.active;$('start').textContent=motionReady?'Start full sensor session':'Start EMG-only session';$('connect').disabled=busy||!!live.recording?.active;
   $('stop').disabled=busy||pending>0||spaceHeld;
   $('intent').className=intended?'intended':'';$('intentTitle').textContent=intended?'Intended · GREEN':'Non-intended · RED';
-  $('intentInstruction').textContent=intended?(staticMode?'Keep your arm still and maintain the selected hold. Release when finished.':'Perform the selected motion while holding Space. Release when finished.'):(staticMode?'Rest with your arm still. Select Shield or Sword effort before holding Space.':'Rest or move naturally. Hold Space when ready for the selected action.');
+  $('intentInstruction').textContent=animationMode?(intended?'Maintain Animation Gesture. Release Space when finished.':'Rest normally. Hold Space when ready for Animation Gesture.'):(intended?(staticMode?'Keep your arm still and maintain the selected hold. Release when finished.':'Perform the selected motion while holding Space. Release when finished.'):(staticMode?'Rest with your arm still. Select Shield or Sword effort before holding Space.':'Rest or move naturally. Hold Space when ready for the selected action.'));
+  if($('holdElapsed')){const seconds=holdStarted===null?lastHoldSeconds:performance.now()/1000-holdStarted;$('holdElapsed').textContent=seconds.toFixed(1)+' / 30 seconds'+(seconds>=30?' · target reached; release when ready':'');}
   for(const button of document.querySelectorAll('[data-motion]')){
    const chosen=motion?.motion===button.dataset.motion&&(motion?.effort||'')===(button.dataset.effort||'');
    button.setAttribute('aria-pressed',String(chosen));button.style.background=chosen?'#365b7f':'';
    button.disabled=busy||pending>0||spaceHeld||intended;
   }
-  $('selectedMotion').textContent=motion?'Next motion: '+motion.motion.replace('_',' ')+(motion.effort?' · '+motion.effort+' relative effort':''):staticMode?'Select a Shield/Sword effort before holding Space.':'Select a motion before holding Space.';
+  $('selectedMotion').textContent=animationMode?'Animation Gesture · selected automatically':motion?'Next motion: '+motion.motion.replace('_',' ')+(motion.effort?' · '+motion.effort+' relative effort':''):staticMode?'Select a Shield/Sword effort before holding Space.':'Select a motion before holding Space.';
   if(active){
    $('guardState').textContent=!live.connected?'No fresh EMG · missing data is flagged separately.':intended?'Intended active now · cleanup deferred':'Non-intended baseline active · cleanup deferred';
    $('elapsed').textContent=live.recording.duration.toFixed(1)+' seconds recorded';$('markers').textContent=Math.max(0,live.collection.annotation.markers-1)+' key boundaries';$('path').textContent='Saving locally: '+live.recording.path;
@@ -41,7 +42,7 @@
   finally{polling=false}
  }
  async function work(action){if(busy||pending)return;busy=true;$('error').textContent='';render();try{await action()}catch(error){$('error').textContent=error.message}finally{busy=false;await refresh();render()}}
- $('start').onclick=()=>work(async()=>{await sync();await api('collection/start',{profile:'micah_emg',test_condition:staticMode?'static':'dynamic',wearing_session:$('wearing').value.trim(),role:$('role').value,focus:'live_intent',initial_intent:'non_intended',interaction_guard:0,capture_mode:live.band_context?.gyro?.age_seconds<1.5&&live.band_context?.orientation?.age_seconds<1.5&&live.sensor_timing?.forearm&&live.sensor_timing?.delivered_sensor_hz?.gyro&&live.sensor_timing?.delivered_sensor_hz?.orientation?'full_context':'emg_only',clock_alignment:alignment});$('saved').textContent='';$('start').blur();});
+ $('start').onclick=()=>work(async()=>{await sync();await api('collection/start',{profile:'micah_emg',test_condition:animationMode?'animation':staticMode?'static':'dynamic',wearing_session:$('wearing').value.trim(),role:$('role').value,focus:'live_intent',initial_intent:'non_intended',interaction_guard:0,capture_mode:live.band_context?.gyro?.age_seconds<1.5&&live.band_context?.orientation?.age_seconds<1.5&&live.sensor_timing?.forearm&&live.sensor_timing?.delivered_sensor_hz?.gyro&&live.sensor_timing?.delivered_sensor_hz?.orientation?'full_context':'emg_only',clock_alignment:alignment});$('saved').textContent='';lastHoldSeconds=0;holdStarted=null;$('start').blur();});
  for(const button of document.querySelectorAll('[data-motion]'))button.onclick=()=>work(async()=>{await api('collection/select-motion',{motion:button.dataset.motion,effort:button.dataset.effort||null});button.blur();});
  function mark(label,client_t){
   if(!ownSession()||!alignment)return;
@@ -59,14 +60,14 @@
   if(event.code==='Space'&&ownSession()){
    event.preventDefault();event.stopPropagation();if(event.repeat||spaceHeld||busy)return;
    if(!live.collection.selected_motion){$('error').textContent='Select Snap or a Shield/Sword effort first.';return;}
-   spaceHeld=true;$('error').textContent='';mark('intended',performance.now()/1000);
+   spaceHeld=true;holdStarted=performance.now()/1000;$('error').textContent='';mark('intended',holdStarted);
   }else if(ownSession()&&!event.repeat)interaction('keyboard');
  },true);
  document.addEventListener('keyup',event=>{
-  if(event.code!=='Space'||!spaceHeld)return;event.preventDefault();spaceHeld=false;mark('non_intended',performance.now()/1000);
+  if(event.code!=='Space'||!spaceHeld)return;event.preventDefault();spaceHeld=false;const released=performance.now()/1000;lastHoldSeconds=released-holdStarted;holdStarted=null;mark('non_intended',released);
  },true);
  document.addEventListener('pointerdown',event=>{if(event.target.closest('button,input,select,textarea,a'))interaction('mouse')},true);
- window.addEventListener('blur',()=>{if(ownSession()){interaction('focus_lost');if(spaceHeld){spaceHeld=false;mark('non_intended',performance.now()/1000)}}});
+ window.addEventListener('blur',()=>{if(ownSession()){interaction('focus_lost');if(spaceHeld){spaceHeld=false;const released=performance.now()/1000;lastHoldSeconds=released-holdStarted;holdStarted=null;mark('non_intended',released)}}});
  window.addEventListener('focus',()=>{if(ownSession())interaction('focus_regained')});
  window.addEventListener('beforeunload',event=>{if(ownSession()){event.preventDefault();event.returnValue=''}});
  setInterval(refresh,150);setInterval(()=>{if(ownSession()&&!pending&&!busy)sync().catch(error=>{$('error').textContent='Clock recalibration failed: '+error.message})},30000);refresh();

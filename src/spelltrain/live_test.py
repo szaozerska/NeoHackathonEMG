@@ -53,6 +53,7 @@ class LiveTester:
         self.collection=None;self.last_collection_report=None
         self.contribution_root=Path(__file__).resolve().parents[2]/'Micah data contribution'
         self.static_root=Path(__file__).resolve().parents[2]/'Micah contributed data/static'
+        self.animation_root=Path(__file__).resolve().parents[2]/'Micah contributed data/animation'
         self.equipment_preview=EquipmentPreview()
         self.band_context={};self.band_event_counts={};self.target_hand='Right'
         self.sensor_timing=SensorTiming()
@@ -98,13 +99,15 @@ class LiveTester:
                 if contribution and (value.get('focus')!='live_intent' or value.get('initial_intent')!='non_intended'):
                     raise ValueError('Micah EMG sessions start in non-intended mode.')
                 condition=value.get('test_condition','dynamic')
-                if condition not in ('dynamic','static'):raise ValueError('Invalid test condition')
-                self.start_capture(root=(self.static_root if condition=='static' else self.contribution_root) if contribution else None,emg_only=contribution);self.target_hand=value.get('hand','Right')
+                if condition not in ('dynamic','static','animation'):raise ValueError('Invalid test condition')
+                roots={'dynamic':self.contribution_root,'static':self.static_root,'animation':self.animation_root}
+                self.start_capture(root=roots[condition] if contribution else None,emg_only=contribution);self.target_hand=value.get('hand','Right')
                 self.collection=IntentCollection(self.capture,self.clock,wearing,value.get('role','train'),self.target_hand,value.get('focus','full'),value.get('initial_intent','non_intended'),guard,defer_cleanup=contribution)
                 if contribution:
                     self.capture.meta.update(kind='micah_emg_intent_contribution',contributor='Micah',
                         requested_capture_mode=capture_mode,
-                        test_condition=condition,
+                        test_condition='static' if condition=='animation' else condition,
+                        collection_variant=condition,
                         collection_protocol='spacebar-held-motion-intent-v1',camera_policy='disabled',
                         input_modalities=['emg'],recorded_context=['available_gyro','available_orientation','available_band_events'],classification_policy='participant_motion_selection_only_no_model_predictions',
                         timing_policy='Native band microseconds, Kinesis receipt uptime, Python receipt uptime and browser alignment all retained. Arrival delay and forearm angles are estimates in the documented Kinesis frame.',
@@ -116,6 +119,10 @@ class LiveTester:
                         label_policy='Immediate participant reports: Space down marks intended, Space up marks non-intended. No keyboard-edge clipping or fixed minimum interval. Preserve baseline context, key times and sensor coverage for later cleanup. Motion/effort are participant selections, not verified physical onsets or force.')
                     self.capture.meta.pop('equipment_rule',None)
                     self.collection._save()
+                    if condition=='animation':
+                        self.capture.meta.update(gesture_label='Animation Gesture',suggested_hold_seconds=30)
+                        self.collection.select_motion('animation_gesture')
+                        self.collection._save()
                 return {'collection':self.collection.status(),'recording':self.capture.status()}
             if not self.collection or not self.capture:raise ValueError('Start a guided session first.')
             if action=='select-motion':return self.collection.select_motion(value['motion'],value.get('effort'))
@@ -408,8 +415,8 @@ class LiveTester:
             def log_message(self,*_):pass
             def do_GET(self):
                 route=self.path.split('?',1)[0]
-                if route in ('/','/contribute','/static','/collect','/live'):
-                    name='dashboard-live.html' if route=='/live' else 'dashboard-collect.html' if route=='/collect' else 'dashboard-contribute.html'
+                if route in ('/','/contribute','/static','/animation','/collect','/live'):
+                    name='dashboard-animation.html' if route=='/animation' else 'dashboard-live.html' if route=='/live' else 'dashboard-collect.html' if route=='/collect' else 'dashboard-contribute.html'
                     body=files('spelltrain').joinpath(name).read_text().replace('__CSRF__',tester.csrf).encode()
                     if route=='/static':
                         body=body.decode().replace('<body>','<body data-test-condition="static">').replace('Micah data contribution','Micah static contribution')
