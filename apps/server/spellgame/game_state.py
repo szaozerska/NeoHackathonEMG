@@ -41,10 +41,12 @@ class Tuning:
     snap_replaces_sword_s: float = 1.0
     """A snap this soon after drawing the sword sheathes it and conjures the fireball: the band often reads the snap's
     wind-up as a fist."""
+    sword_sticky: bool = True
+    """Once drawn, the sword stays out until another spell replaces it (open palm → shield, snap → fireball), or
+    the player is stunned or knocked out: the band's fist reading is too unreliable to hold it (it drops to none for
+    0.1–0.7 s mid-hold, 8 times in 29 s on Ken's held-out fist recording). False: it goes away once the fist reading has
+    been gone for `sword_release_grace_s`."""
     sword_release_grace_s: float = 0.4
-    """The sword stays out this long after the fist reading drops to anything but an open palm: the band's fist reading
-    flickers to none for 0.1–0.7 s mid-hold (replaying Ken's held-out fist recording: 8 drops in 29 s). An open palm
-    sheathes at once so the shield isn't delayed."""
     snap_sword_lock_s: float = 1.0
     """After a snap the sword can't be drawn for this long: the band often reads the hand just after a snap as a
     fist."""
@@ -373,7 +375,9 @@ class GameState:
         if not player.alive or not player.connected or self.time < player.cooldown_until:
             return []
         events: list[p.Message] = []
-        if player.item == Item.SWORD and self.time - player.item_since <= self.tuning.snap_replaces_sword_s:
+        if player.item == Item.SWORD and (
+            self.tuning.sword_sticky or self.time - player.item_since <= self.tuning.snap_replaces_sword_s
+        ):
             events.append(self._sheathe(player))
         if player.item != Item.NONE:
             return events
@@ -510,7 +514,7 @@ class GameState:
         )
 
     def _step_sword(self, player: PlayerState, dt: float) -> list[p.Message]:
-        """The sword is out while the fist is held (unless a parry knocked it away recently), riding out short drops."""
+        """A fist draws the sword (unless a parry knocked it away recently); `Tuning.sword_sticky`: how it goes."""
         able = player.alive and player.connected and player.sign == p.Sign.FIST
         if able:
             player.fist_seen_at = self.time
@@ -520,7 +524,7 @@ class GameState:
                 and player.connected
                 and player.sign != p.Sign.OPEN_PALM
                 and self.time >= player.stunned_until
-                and self.time - player.fist_seen_at <= self.tuning.sword_release_grace_s
+                and (self.tuning.sword_sticky or self.time - player.fist_seen_at <= self.tuning.sword_release_grace_s)
             )
             return self._swing(player, dt) if keep else [self._sheathe(player)]
         if not able or player.item != Item.NONE or self.time < player.sword_locked_until:

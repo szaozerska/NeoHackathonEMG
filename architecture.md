@@ -463,7 +463,7 @@ Timestamps (`t`) are sender-local and used only for ordering within one stream. 
 | Gesture | Band | Quest | Server behaviour |
 |---|---|---|---|
 | **Fireball** (implemented) | `snap` | Throw: the held fireball moving ≥ 2.5 m/s, mostly along the body's facing | Snap conjures a held fireball. It is heavy: its velocity follows the hand with a 0.15 s lag, so a wrist flick barely moves it and a full arm swing is needed for a fast throw. It leaves the hand once the hand slows below it, with its own velocity (light aim assist), as a projectile hit-tested against the target's hitboxes (§9.1). Held fireballs fizzle after 8 s |
-| **Sword** | `fist` held | Fist starts near the left hip, then pulls up diagonally | Drawn while the fist is held, gone on release. Blade capsule along the hand; damage scales with tip speed |
+| **Sword** | `fist` held | Fist starts near the left hip, then pulls up diagonally | A fist draws it; it stays out until an open palm (shield) or a snap (fireball) replaces it, or you're stunned or knocked out (`Tuning.sword_sticky`; the band's fist reading is too flickery to hold it). Blade capsule along the hand; damage scales with tip speed |
 | **Shield** | `open_palm` held | Palm facing away from the player; push impulse = peak push speed | Raised shield blocks all damage for 0.5 s, then the blocked share fades along a logistic curve to zero over 3.5 s (the rest hits the shield arm); a forceful push gives a short power boost, and a sword contact during the boost is a parry |
 
 Tuning values live in `apps/server/spellgame/game_state.py` (`Tuning`).
