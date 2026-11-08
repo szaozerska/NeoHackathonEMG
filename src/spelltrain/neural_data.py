@@ -337,6 +337,18 @@ def add_interval_capture(dataset, directory, validation_after=.7):
 
 
 
+RESERVED = __import__('re').compile(r'valid|holdout|held.?out|test.?set|evaluation', __import__('re').I)
+
+
+def require_training_directory(directory):
+    """Reserved validation/test recordings and contributor rejections never enter training."""
+    directory = Path(directory)
+    if any(RESERVED.search(part) for part in directory.resolve().parts[-4:]):
+        raise ValueError(f'{directory} is reserved validation/test data')
+    if any((d/'DO_NOT_USE.json').exists() or (d/'DO_NOT_USE.md').exists() for d in (directory, *directory.parents[:2])):
+        raise ValueError(f'{directory} is marked DO NOT USE')
+
+
 def guided_only_dataset(directories, interval_directories=()):
     """Train from guided captures alone, without the historical reference review.
 
@@ -346,6 +358,8 @@ def guided_only_dataset(directories, interval_directories=()):
     unrefined count bags stay training-only.
     """
     directories = sorted(Path(d) for d in directories)
+    for d in [*directories, *interval_directories]:
+        require_training_directory(d)
     if not directories:
         raise ValueError('No guided captures given')
     signal = read_json(directories[0]/'metadata.json')['model']['signal']

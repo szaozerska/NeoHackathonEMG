@@ -89,7 +89,8 @@ def check_workspace():
 def upload_interval_captures(root):
     """Space-interval contributions (Micah static/dynamic); the animation gesture is not a game class."""
     found = sorted(p for kind in ('static', 'dynamic') for p in (Path(root)/kind).glob('*')
-                   if (p/'truth-values.json').exists() or (p/'original/truth-values.json').exists())
+                   if ((p/'truth-values.json').exists() or (p/'original/truth-values.json').exists())
+                   and not (p/'DO_NOT_USE.json').exists())
     try:
         present = {Path(e.path).name for e in volume.listdir('interval')}
     except Exception:
