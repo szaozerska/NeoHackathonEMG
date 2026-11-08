@@ -91,6 +91,7 @@ class IntentCollection:
         self.interactions=[{'capture_t':0.,'guard_seconds':interaction_guard,'kind':'record_start'}]
         self.space_down=None
         self.selected_motion=None;self.motion_selections=[];self.focus_lost=None
+        self.animation_phase_markers=[]
         self.signal_segments=[];self.global_last_seq=None;self.global_last_t=None;self.global_generation=None
         self.sensor_segments=[];self.last_sensor_seq=None;self.last_sensor_t=None;self.last_sensor_epoch=None
         self.capture.meta.update(kind='intent_collection_v1',wearing_session=wearing_session,target_hand=hand,
@@ -113,9 +114,12 @@ class IntentCollection:
     def select_motion(self,motion,effort=None):
         if self.intent_markers[-1]['label']=='intended':raise ValueError('Release Space before changing the selected motion.')
         animation=self.capture.meta.get('collection_variant')=='animation'
+        steps=self.capture.meta.get('collection_variant')=='animation_steps'
+        if steps and (motion not in ('animation_cross_fingers','animation_curl_ring_pinky','animation_thumb_approach','animation_sequence') or effort is not None):
+            raise ValueError('Select an Animation Gesture component or the combined sequence.')
         if animation and (motion!='animation_gesture' or effort is not None):
             raise ValueError('This session collects Animation Gesture only.')
-        if not animation and (motion not in ('snap','shield_hold','sword_hold') or (motion=='snap' and effort is not None) or (motion!='snap' and effort not in ('low','medium','high'))):
+        if not animation and not steps and (motion not in ('snap','shield_hold','sword_hold') or (motion=='snap' and effort is not None) or (motion!='snap' and effort not in ('low','medium','high'))):
             raise ValueError('Select Snap, or a Shield/Sword hold with low, medium or high effort.')
         if self.capture.meta.get('test_condition')=='static' and motion=='snap':raise ValueError('Static testing supports Shield and Sword holds only.')
         self.interaction(kind='motion_selection')
@@ -161,7 +165,54 @@ class IntentCollection:
             marker['selected_motion']=dict(self.selected_motion) if label=='intended' and self.selected_motion else None
         self.intent_markers.append(marker);self.capture.append('intent_toggle',host,marker=marker)
         write_json(self.capture.directory/'intent-toggle-markers.json',self.intent_markers)
+        if self.capture.meta.get('collection_variant')=='animation_steps':
+            if label=='intended':
+                phase={'animation_cross_fingers':'cross_fingers','animation_curl_ring_pinky':'curl_ring_pinky',
+                       'animation_thumb_approach':'thumb_approach','animation_sequence':'cross_fingers'}[self.selected_motion['motion']]
+                self.mark_animation_phase(phase,host,uncertainty,alignment,source='participant_spacebar_start')
+            else:
+                self.animation_phase_markers.append({'capture_t':host-self.capture.start,'phase':'end',
+                    'intent_marker_index':len(self.intent_markers)-1,'source':'participant_spacebar_release',
+                    'exact_action_time_verified':False,'clock_uncertainty_seconds':uncertainty})
+                self.save_animation_phases()
         return self.annotation_status()
+
+    def mark_animation_phase(self,phase,host=None,uncertainty=0.,alignment=None,source='participant_phase_report'):
+        if self.capture.meta.get('collection_variant')!='animation_steps':raise ValueError('Start the step-mapping collector first.')
+        if self.intent_markers[-1]['label']!='intended':raise ValueError('Hold Space before marking a finger step.')
+        combined=self.selected_motion['motion']=='animation_sequence'
+        order=['cross_fingers','curl_ring_pinky','thumb_approach','combined_hold'] if combined else [
+            {'animation_cross_fingers':'cross_fingers','animation_curl_ring_pinky':'curl_ring_pinky','animation_thumb_approach':'thumb_approach'}[self.selected_motion['motion']], 'component_hold']
+        if phase not in order:raise ValueError('Choose a phase that belongs to the selected action.')
+        host=self.clock() if host is None else host
+        trial=len(self.intent_markers)-1
+        previous=[m for m in self.animation_phase_markers if m['intent_marker_index']==trial]
+        if previous and order.index(phase)<=order.index(previous[-1]['phase']):raise ValueError('Finger-step markers must progress forward; release Space to restart.')
+        if host-self.capture.start<max(self.intent_markers[-1]['capture_t'],previous[-1]['capture_t'] if previous else 0):raise ValueError('Phase marker arrived out of order.')
+        self.interaction(host,uncertainty,'animation_phase_report')
+        marker={'capture_t':host-self.capture.start,'phase':phase,'selected_motion':dict(self.selected_motion),
+                'intent_marker_index':trial,'source':source,'clock_uncertainty_seconds':uncertainty,
+                'browser_clock_alignment':alignment,'exact_action_time_verified':False,
+                'skipped_preceding_phases':order[(order.index(previous[-1]['phase'])+1 if previous else 0):order.index(phase)]}
+        self.animation_phase_markers.append(marker)
+        self.capture.append('animation_phase_report',host,marker=marker)
+        self.save_animation_phases()
+        return marker
+
+    def save_animation_phases(self,final=False):
+        phases=[]
+        for i,marker in enumerate(self.animation_phase_markers):
+            if marker['phase']=='end':continue
+            next_marker=self.animation_phase_markers[i+1] if i+1<len(self.animation_phase_markers) else None
+            end=next_marker['capture_t'] if next_marker else self.capture.meta.get('duration_seconds',self.clock()-self.capture.start)
+            if end>marker['capture_t']:
+                phases.append({'start':marker['capture_t'],'end':end,'phase':marker['phase'],
+                    'selected_motion':marker['selected_motion'],'intended':True,'intent_marker_index':marker['intent_marker_index'],
+                    'test_condition':self.capture.meta['test_condition'],'supervision':'weak_participant_phase_report',
+                    'exact_action_times_verified':False,'end_reported':next_marker is not None})
+        write_json(self.capture.directory/'animation-phase-markers.json',{'markers':self.animation_phase_markers,'participant_reports_only':True})
+        write_json(self.capture.directory/'animation-phase-intervals.json',{'intervals':phases,'recording_complete':final,
+            'note':'Reports map component/sequence steps to EMG time; they are not sensor-verified movement onset or completion. Unmarked internal transitions remain unknown.'})
 
     def annotation_status(self):
         return {'label':self.intent_markers[-1]['label'],'markers':len(self.intent_markers),
@@ -372,6 +423,10 @@ class IntentCollection:
             write_json(self.capture.directory/'truth-values.json',truth)
             names+=('truth-values.json','signal-coverage.json')
         hashes={name:hashlib.sha256((self.capture.directory/name).read_bytes()).hexdigest() for name in names}
+        if self.capture.meta.get('collection_variant')=='animation_steps':
+            self.save_animation_phases(final=True)
+            hashes.update({name:hashlib.sha256((self.capture.directory/name).read_bytes()).hexdigest()
+                for name in ('animation-phase-markers.json','animation-phase-intervals.json')})
         write_json(self.capture.directory/'guided-manifest.json',{'schema':1,'wearing_session':self.wearing_session,
             'supervision':'untrimmed_participant_intervals_requires_postprocessing' if self.defer_cleanup else 'weak_clip_labels',
             'postprocessing_required':self.defer_cleanup,'source_hashes':hashes,'open_hold_and_transitions_require_review':True})
@@ -399,7 +454,9 @@ class IntentCollection:
         return {'phase':self.phase,'index':self.index,'total':len(self.plan),'trial':trial,'remaining':remaining,
                 'saved_trials':len(self.trials),'usable_trials':sum(t.get('confirmed',False) for t in self.trials),
                 'wearing_session':self.wearing_session,'role':self.role,'hand':self.hand,'failure_flags':len(self.flags),
-                'annotation':self.annotation_status(),'selected_motion':self.selected_motion}
+                'annotation':self.annotation_status(),'selected_motion':self.selected_motion,
+                'animation_phase':self.animation_phase_markers[-1] if self.animation_phase_markers else None,
+                'animation_phase_reports':sum(v['phase']!='end' for v in self.animation_phase_markers)}
 
 
 class EquipmentPreview:

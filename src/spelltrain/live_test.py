@@ -99,17 +99,18 @@ class LiveTester:
                 if contribution and (value.get('focus')!='live_intent' or value.get('initial_intent')!='non_intended'):
                     raise ValueError('Micah EMG sessions start in non-intended mode.')
                 condition=value.get('test_condition','dynamic')
-                if condition not in ('dynamic','static','animation'):raise ValueError('Invalid test condition')
+                if condition not in ('dynamic','static','animation','animation_steps'):raise ValueError('Invalid test condition')
                 animation_condition=value.get('animation_condition','static')
-                if condition=='animation' and animation_condition not in ('static','dynamic'):raise ValueError('Choose static or dynamic Animation Gesture testing.')
+                if condition in ('animation','animation_steps') and animation_condition not in ('static','dynamic'):raise ValueError('Choose static or dynamic Animation Gesture testing.')
                 roots={'dynamic':self.contribution_root,'static':self.static_root,'animation':self.animation_root}
                 if condition=='animation' and animation_condition=='dynamic':roots['animation']=self.animation_root/'dynamic'
+                roots['animation_steps']=self.animation_root/'steps'
                 self.start_capture(root=roots[condition] if contribution else None,emg_only=contribution);self.target_hand=value.get('hand','Right')
                 self.collection=IntentCollection(self.capture,self.clock,wearing,value.get('role','train'),self.target_hand,value.get('focus','full'),value.get('initial_intent','non_intended'),guard,defer_cleanup=contribution)
                 if contribution:
                     self.capture.meta.update(kind='micah_emg_intent_contribution',contributor='Micah',
                         requested_capture_mode=capture_mode,
-                        test_condition=animation_condition if condition=='animation' else condition,
+                        test_condition=animation_condition if condition in ('animation','animation_steps') else condition,
                         collection_variant=condition,
                         collection_protocol='spacebar-held-motion-intent-v1',camera_policy='disabled',
                         input_modalities=['emg'],recorded_context=['available_gyro','available_orientation','available_band_events'],classification_policy='participant_motion_selection_only_no_model_predictions',
@@ -130,13 +131,21 @@ class LiveTester:
                             movement_protocol='Natural arm movements and continuous rotations with gesture; matching arm/rotation movements without gesture in red.' if animation_condition=='dynamic' else 'Comfortably steady arm; preserve natural finger transitions.')
                         self.collection.select_motion('animation_gesture')
                         self.collection._save()
+                    if condition=='animation_steps':
+                        self.capture.meta.update(gesture_label='Animation Gesture',collection_protocol='animation-component-and-sequence-v1',
+                            requested_sequence=['cross_fingers','curl_ring_pinky','thumb_approach','combined_hold'],
+                            phase_supervision='participant_space_and_number_keys_not_sensor_verified',
+                            component_comparison_policy='Compare isolated steps with matching reported sequence phases; preserve preparation context and entire transitions.',
+                            recommended_repetitions=5,sequence_timestamps_verified=False)
+                        self.collection._save();self.collection.save_animation_phases()
                 return {'collection':self.collection.status(),'recording':self.capture.status()}
             if not self.collection or not self.capture:raise ValueError('Start a guided session first.')
             if action=='select-motion':return self.collection.select_motion(value['motion'],value.get('effort'))
-            if action in ('intent-mark','interaction'):
+            if action in ('intent-mark','interaction','animation-phase'):
                 alignment=value.get('alignment',{})
                 host=float(value['client_t'])+float(alignment['host_offset_seconds'])
                 uncertainty=float(alignment['uncertainty_seconds'])
+                if action=='animation-phase':return self.collection.mark_animation_phase(value['phase'],host,uncertainty,{**alignment,'client_event_t':value['client_t'],'mapped_host_event_uptime':host,'server_received_host_uptime':self.clock()})
                 if action=='intent-mark':return self.collection.mark_intent(value['label'],host,uncertainty,{**alignment,'client_event_t':value['client_t'],'mapped_host_event_uptime':host,'server_received_host_uptime':self.clock()})
                 self.collection.interaction(host,uncertainty,value.get('kind','button'));return {'saved':True}
             if action=='clock-sync':
@@ -423,8 +432,8 @@ class LiveTester:
             def log_message(self,*_):pass
             def do_GET(self):
                 route=self.path.split('?',1)[0]
-                if route in ('/','/contribute','/static','/animation','/collect','/live'):
-                    name='dashboard-animation.html' if route=='/animation' else 'dashboard-live.html' if route=='/live' else 'dashboard-collect.html' if route=='/collect' else 'dashboard-contribute.html'
+                if route in ('/','/contribute','/static','/animation','/animation-steps','/collect','/live'):
+                    name='dashboard-animation-steps.html' if route=='/animation-steps' else 'dashboard-animation.html' if route=='/animation' else 'dashboard-live.html' if route=='/live' else 'dashboard-collect.html' if route=='/collect' else 'dashboard-contribute.html'
                     body=files('spelltrain').joinpath(name).read_text().replace('__CSRF__',tester.csrf).encode()
                     if route=='/static':
                         body=body.decode().replace('<body>','<body data-test-condition="static">').replace('Micah data contribution','Micah static contribution')
