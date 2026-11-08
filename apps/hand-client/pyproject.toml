@@ -7,10 +7,7 @@ name = "spellgame-hand-client"
 version = "0.1.0"
 description = "Hand-sign classification client: Neural Band via Kinesis in, signs and gestures out (architecture.md §2.2)"
 requires-python = ">=3.11"
-dependencies = ["spellgame-server", "numpy>=1.26"]
-
-[project.optional-dependencies]
-neural = ["spelltrain[neural]"]
+dependencies = ["spellgame-server", "spelltrain[neural]", "numpy>=1.26"]
 
 [dependency-groups]
 dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11"]
