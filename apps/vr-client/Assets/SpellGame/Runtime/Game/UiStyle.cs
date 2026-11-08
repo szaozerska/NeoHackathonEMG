@@ -132,28 +132,33 @@ namespace SpellGame.Game
         /// <summary>Result cards and body text.</summary>
         public static CrystalStyle Card => Base();
 
-        /// <summary>Primary / selected button: the darker crystal with an ink outline.</summary>
+        /// <summary>Primary button: accent-tinted see-through glass with a bright rim.</summary>
         public static CrystalStyle Primary
         {
             get
             {
-                var style = Base();
-                style.Fill = WithAlpha(Color.Lerp(style.Fill, style.FacetDark, 0.6f), Mathf.Max(style.Fill.a, 0.8f));
-                style.Outline = Ink;
-                style.OutlineWidth = Shape.OutlineWidth;
+                var style = Glass(Accent, 0.38f);
+                style.Rim = WithAlpha(Color.Lerp(Rim, Color.white, 0.4f), 0.95f);
                 return style;
             }
         }
 
-        /// <summary>Secondary button: lighter, plainer crystal.</summary>
-        public static CrystalStyle Secondary
+        /// <summary>Secondary button: nearly clear glass with a thin rim.</summary>
+        public static CrystalStyle Secondary => Glass(Fill, 0.16f);
+
+        /// <summary>Flat see-through glass for buttons: no facets, outline or drop shadow.</summary>
+        private static CrystalStyle Glass(Color tint, float opacity)
         {
-            get
-            {
-                var style = Base(0.8f, 0.6f, 0.25f);
-                style.Fill = WithAlpha(style.FacetLight, style.FacetLight.a * 0.85f);
-                return style;
-            }
+            var style = Base(0.6f, 0f, 0f);
+            style.Fill = WithAlpha(tint, opacity);
+            style.FacetLight = style.FacetDark = WithAlpha(tint, 0f);
+            style.Rim = WithAlpha(style.Rim, 0.7f);
+            style.Outline = WithAlpha(style.Outline, 0f);
+            style.Shadow = WithAlpha(style.Shadow, 0f);
+            style.OutlineWidth = 0f;
+            style.ShadowDrop = 0f;
+            style.Facets = 0f;
+            return style;
         }
 
         /// <summary>Small always-on badges (match timer).</summary>
@@ -187,10 +192,9 @@ namespace SpellGame.Game
         /// <summary>Pointer on it: tinted toward the accent, thicker rim, ink outline.</summary>
         public static CrystalStyle Hovered(CrystalStyle style)
         {
-            style.Fill = WithAlpha(Color.Lerp(style.Fill, Accent, 0.25f), Mathf.Max(style.Fill.a, 0.8f));
+            style.Fill = WithAlpha(Color.Lerp(style.Fill, Accent, 0.35f), Mathf.Min(0.6f, style.Fill.a + 0.2f));
+            style.Rim = WithAlpha(Color.Lerp(style.Rim, Color.white, 0.6f), 1f);
             style.RimWidth *= 1.6f;
-            style.Outline = Ink;
-            style.OutlineWidth = Mathf.Max(style.OutlineWidth, Shape.OutlineWidth * 1.3f);
             return style;
         }
 
