@@ -8,6 +8,9 @@
 **/[Rr]ecordings/
 **/[Tt]est[Rr]esults/
 **/.utmp/
+# Scenes Unity saves after a crash
+**/Assets/_Recovery/
+**/Assets/_Recovery.meta
 
 # Local prototype build output (approved current builds remain trackable)
 /Product/Micah/**/[Bb]uild/
