@@ -36,13 +36,16 @@ Assets/SpellGame/
     Tracking/BodyPoseSampler.cs        OVRSkeleton (FullBody) → head/chest/hips/arms/hands/legs/feet
     Game/GameClient.cs         Composition root: discover → connect → hello → stream pose, dispatch state
     Game/DebugSkeletonsView.cs Draws local and remote skeletons as debug line segments
+    Game/ControllerBand.cs     Debug band: Touch trigger = snap, grip = fist, A/X = open palm, sent as this headset's classifier
     Game/FireballView.cs       Fireball visuals: snap burst, held orb on the band hand, projectile + trail, impact, cooldown ember
     Game/SwordView.cs          Sword visuals: draw/sheathe flash, glowing blade along the forearm, speed-scaled swing trail, hit sparks
+    Game/ShieldView.cs         Shield visuals: disc in front of the band hand, swells with push boost, block/parry flashes
     Game/SpellVfx.cs           Procedural orbs, blades, trails and particle bursts (no art assets yet)
   Editor/                      SpellGame.Editor assembly
     QuestProjectConfigurator.cs  Menu "SpellGame/Configure Project for Quest 3"
     MainSceneBuilder.cs          Menu "SpellGame/Rebuild Main Scene"
-  Scenes/Main.unity            OVRCameraRig with passthrough + body tracking + debug skeletons + GameClient + status label + Fireball View + Sword View
+    QuestBuild.cs                Menus "SpellGame/Build APK", "Build And Run On Headset"; headless QuestBuild.BuildBatch
+  Scenes/Main.unity            OVRCameraRig with passthrough + body tracking + debug skeletons + GameClient + status label + Fireball View + Sword View + Shield View
 ```
 
 `GameClient` raises `SignReceived`, `SpellReceived`, `DamageReceived`, `ImpactReceived` and `StateReceived`, and

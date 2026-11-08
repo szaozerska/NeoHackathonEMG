@@ -11,6 +11,7 @@
 # Local prototype build output (approved current builds remain trackable)
 /Product/Micah/**/[Bb]uild/
 /Product/Micah/**/[Bb]uilds/
+/apps/vr-client/[Bb]uilds/
 
 # Generated IDE files
 .vs/

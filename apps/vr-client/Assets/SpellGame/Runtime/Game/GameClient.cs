@@ -43,6 +43,9 @@ namespace SpellGame.Game
 
         public string PlayerId => _playerId;
 
+        /// <summary>The server this client connected to, once resolved.</summary>
+        public IPEndPoint ServerEndpoint { get; private set; }
+
         /// <summary>
         /// Latest joints for a player: the local player's come from local tracking (no network delay), others' from the server.
         /// </summary>
@@ -65,6 +68,7 @@ namespace SpellGame.Game
 
             SetStatus($"Connecting to {endpoint}…");
             _connection = await ServerConnection.ConnectAsync(endpoint, destroyCancellationToken);
+            ServerEndpoint = endpoint;
             _connection.Send(new HelloMessage { Role = ClientRole.Vr });
         }
 

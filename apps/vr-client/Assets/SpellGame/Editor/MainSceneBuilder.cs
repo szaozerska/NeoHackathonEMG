@@ -28,8 +28,10 @@ namespace SpellGame.Editor
             var statusLabel = CreateStatusLabel(trackingSpace.Find("CenterEyeAnchor"));
             var debugSkeletons = CreateDebugSkeletonsView();
             var client = CreateGameClient(bodySkeleton, debugSkeletons, statusLabel);
+            CreateControllerBand(client);
             CreateFireballView(client);
             CreateSwordView(client);
+            CreateShieldView(client);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
@@ -108,6 +110,14 @@ namespace SpellGame.Editor
             return client;
         }
 
+        private static void CreateControllerBand(GameClient client)
+        {
+            var band = client.gameObject.AddComponent<ControllerBand>();
+            var serializedBand = new SerializedObject(band);
+            serializedBand.FindProperty("gameClient").objectReferenceValue = client;
+            serializedBand.ApplyModifiedPropertiesWithoutUndo();
+        }
+
         private static void CreateFireballView(GameClient client)
         {
             var view = new GameObject("Fireball View").AddComponent<FireballView>();
@@ -126,6 +136,16 @@ namespace SpellGame.Editor
             serializedView.FindProperty("gameClient").objectReferenceValue = client;
             serializedView.FindProperty("bladeMaterial").objectReferenceValue = UnlitMaterial("Blade", new Color(0.55f, 0.9f, 1f));
             serializedView.FindProperty("trailMaterial").objectReferenceValue = UnlitMaterial("BladeTrail", new Color(0.2f, 0.6f, 1f));
+            serializedView.FindProperty("sparkMaterial").objectReferenceValue = UnlitMaterial("Spark", new Color(1f, 0.85f, 0.3f));
+            serializedView.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void CreateShieldView(GameClient client)
+        {
+            var view = new GameObject("Shield View").AddComponent<ShieldView>();
+            var serializedView = new SerializedObject(view);
+            serializedView.FindProperty("gameClient").objectReferenceValue = client;
+            serializedView.FindProperty("shieldMaterial").objectReferenceValue = UnlitMaterial("Shield", new Color(0.4f, 0.75f, 1f));
             serializedView.FindProperty("sparkMaterial").objectReferenceValue = UnlitMaterial("Spark", new Color(1f, 0.85f, 0.3f));
             serializedView.ApplyModifiedPropertiesWithoutUndo();
         }
