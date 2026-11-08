@@ -399,6 +399,9 @@ namespace SpellGame.Protocol
 
         /// <summary>0-1 progress of an Infinite Void hold on the band; 0 when released or once it fires.</summary>
         public float VoidCharge { get; set; }
+
+        /// <summary>How this headset joined the shared room frame (<c>marker</c>, <c>center</c>, …); null until it has.</summary>
+        public string AlignMethod { get; set; }
     }
 
     public sealed class ProjectileSnapshot

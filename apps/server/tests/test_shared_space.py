@@ -82,3 +82,14 @@ def test_marker_calibration_counts_as_aligned():
     assert not space.mixed_methods()
     fake = FakeAlignment(p.AlignMethod.MARKER)
     assert fake.replies(space.message_for(2), "P2") == [p.Aligned(method=p.AlignMethod.MARKER)]
+
+
+def test_mixed_methods_only_count_controller_touches_as_sharing_the_frame():
+    space = SharedSpace()
+    space.mark_aligned("P1", p.AlignMethod.MARKER, None)
+    space.mark_aligned("P2", p.AlignMethod.MARKER, None)
+    assert space.in_frame() == {"P1", "P2"}
+    space.mark_aligned("P2", p.AlignMethod.CENTER, None)
+    assert space.in_frame() == {"P2"}
+    space.mark_aligned("P1", p.AlignMethod.CENTER, None)
+    assert space.in_frame() == {"P1", "P2"}

@@ -72,6 +72,14 @@ class SharedSpace:
         self.anchor_uuid = None
         self.aligned.clear()
 
+    def in_frame(self) -> set[str]:
+        """Headsets that share one frame. Controller-tip touches (`center`) are done together, so when methods are
+        mixed (e.g. one headset found the QR marker, the other fell back to touching tips) only `center` counts."""
+        if not self.mixed_methods():
+            return set(self.aligned)
+        center = {player for player, method in self.aligned.items() if method == p.AlignMethod.CENTER}
+        return center or set()
+
     def mixed_methods(self) -> bool:
         """Anchor-aligned and floor-spot-aligned headsets don't share a frame."""
         return len(set(self.aligned.values())) > 1
