@@ -81,6 +81,10 @@ namespace SpellGame.Game
         private string _status = "";
         private float _calibratedAt = float.NegativeInfinity;
         private TextMeshPro _hint;
+        private string _phase = MatchPhase.Lobby;
+        private string _mode;
+        private float _trackerWaitSince = -1f;
+        private bool _qrSeen;
         private LineRenderer[] _ring;
         private int _ringShows;
 
@@ -95,6 +99,7 @@ namespace SpellGame.Game
         public string MarkerProblem =>
             MRUK.Instance == null || !MRUK.Instance.QRCodeTrackingSupported ? "This headset can't track QR codes"
             : !HasScenePermission() ? "Spatial data permission is off (Settings > Apps > SpellGame > Permissions)"
+            : _trackerWaitSince >= 0f && Time.time - _trackerWaitSince > 5f ? "The QR tracker didn't start: restart the app"
             : null;
 
         private string CalibratePrompt => MarkerAvailable ? MarkerPrompt : $"{MarkerProblem}.\n{TouchPrompt}";
@@ -108,9 +113,23 @@ namespace SpellGame.Game
 #endif
         }
 
-        private void OnEnable() => gameClient.SpaceReceived += OnSpace;
+        private void OnEnable()
+        {
+            gameClient.SpaceReceived += OnSpace;
+            gameClient.StateReceived += OnState;
+        }
 
-        private void OnDisable() => gameClient.SpaceReceived -= OnSpace;
+        private void OnDisable()
+        {
+            gameClient.SpaceReceived -= OnSpace;
+            gameClient.StateReceived -= OnState;
+        }
+
+        private void OnState(StateMessage state)
+        {
+            _phase = state.Match?.Phase ?? MatchPhase.Lobby;
+            _mode = state.Match?.Mode;
+        }
 
         // OVRManager.display is created in OVRManager.Awake, so subscribe once every Awake has run.
         private void Start()
@@ -123,7 +142,10 @@ namespace SpellGame.Game
         {
             OVRManager.display.RecenteredPose -= OnRecentered;
             if (MRUK.Instance != null)
+            {
                 MRUK.Instance.SceneSettings.TrackableAdded.RemoveListener(OnTrackableAdded);
+                MRUK.Instance.SceneSettings.TrackableRemoved.RemoveListener(OnTrackableRemoved);
+            }
         }
 
         /// <summary>QR codes are tracked through MRUK, which needs the spatial data (scene) permission.</summary>
@@ -141,6 +163,7 @@ namespace SpellGame.Game
             trackers.QRCodeTrackingEnabled = true;
             mruk.SceneSettings.TrackerConfiguration = trackers;
             mruk.SceneSettings.TrackableAdded.AddListener(OnTrackableAdded);
+            mruk.SceneSettings.TrackableRemoved.AddListener(OnTrackableRemoved);
 #if UNITY_ANDROID && !UNITY_EDITOR
             if (!HasScenePermission())
                 UnityEngine.Android.Permission.RequestUserPermission(OVRPermissionsRequester.ScenePermission);
@@ -161,13 +184,18 @@ namespace SpellGame.Game
             if (trackable.TrackableType != OVRAnchor.TrackableType.QRCode)
                 return;
 
-            if (!string.IsNullOrEmpty(markerPayload) && trackable.MarkerPayloadString != markerPayload)
-            {
-                Debug.Log($"[SpellGame] Ignoring QR code \"{trackable.MarkerPayloadString}\": not the floor marker");
-                return;
-            }
+            // Any QR code will do (the room shouldn't have others); the printed marker's text wins if several are seen.
+            _qrSeen = true;
+            var matches = string.IsNullOrEmpty(markerPayload) || trackable.MarkerPayloadString == markerPayload;
+            Debug.Log($"[SpellGame] QR code seen: \"{trackable.MarkerPayloadString}\"{(matches ? "" : " (not the marker's text, used anyway)")}");
+            if (matches || _marker == null)
+                _marker = trackable;
+        }
 
-            _marker = trackable;
+        private void OnTrackableRemoved(MRUKTrackable trackable)
+        {
+            if (trackable == _marker)
+                _marker = null;
         }
 
         /// <summary>
@@ -200,6 +228,14 @@ namespace SpellGame.Game
                     SetStatus(CalibratePrompt);
             }
 
+            var mruk = MRUK.Instance;
+            var trackerStarting = mruk != null && mruk.QRCodeTrackingSupported && HasScenePermission() &&
+                                  !mruk.TrackerConfiguration.QRCodeTrackingEnabled;
+            if (!trackerStarting)
+                _trackerWaitSince = -1f;
+            else if (_trackerWaitSince < 0f)
+                _trackerWaitSince = Time.time;
+
             UpdateMarker();
             UpdateHint();
         }
@@ -217,8 +253,14 @@ namespace SpellGame.Game
         private void UpdateHint()
         {
             var head = cameraRig.centerEyeAnchor;
-            var show = head.forward.y < -0.45f && !string.IsNullOrEmpty(_status) &&
-                       (!IsAligned(_space) || Time.time < _calibratedAt + 3f);
+            var calibrating = _mode == MatchMode.Versus && _phase == MatchPhase.Ready && !IsAligned(_space);
+            var text = _status;
+            if (calibrating && MarkerAvailable && _markerSamples == 0 && (_marker == null || !_marker.IsTracked))
+                text = _qrSeen
+                    ? "QR code lost: keep it in view, about 1 m away"
+                    : "Looking for the QR code…\n<size=70%>Stand next to it and look straight down; it needs good light</size>";
+            var show = head.forward.y < -0.45f && !string.IsNullOrEmpty(text) &&
+                       (calibrating || Time.time < _calibratedAt + 3f);
             if (_hint == null)
             {
                 if (!show)
@@ -236,8 +278,8 @@ namespace SpellGame.Game
             if (!show)
                 return;
 
-            if (_hint.text != _status)
-                _hint.text = _status;
+            if (_hint.text != text)
+                _hint.text = text;
             var target = head.position + head.forward * 0.7f + Vector3.up * 0.12f;
             var hint = _hint.transform;
             hint.position = Vector3.Lerp(hint.position, target, 1f - Mathf.Exp(-6f * Time.deltaTime));
@@ -261,9 +303,8 @@ namespace SpellGame.Game
                 return;
             }
 
-            // MRUK places trackables in tracking-space coordinates; the rig may already be moved by an alignment.
-            var trackingSpace = cameraRig.trackingSpace;
-            var rotation = trackingSpace.rotation * _marker.transform.rotation;
+            // MRUK poses trackables in world space (it reads the tracking space's pose itself), alignment included.
+            var rotation = _marker.transform.rotation;
             var normal = rotation * Vector3.forward;
             var top = rotation * Vector3.up;
             if (Mathf.Max(Mathf.Abs(normal.y), Mathf.Abs(top.y)) < 0.8f)
@@ -274,7 +315,7 @@ namespace SpellGame.Game
             }
 
             var along = Mathf.Abs(normal.y) > Mathf.Abs(top.y) ? top : normal;
-            var position = trackingSpace.TransformPoint(_marker.transform.position);
+            var position = _marker.transform.position;
             var forward = new Vector3(along.x, 0f, along.z).normalized;
             _markerPositions.Add(position);
             _markerPositionSum += position;
