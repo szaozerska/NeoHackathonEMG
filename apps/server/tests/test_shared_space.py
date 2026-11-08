@@ -63,3 +63,13 @@ def test_fake_headset_shares_once_then_aligns_once_per_anchor():
     assert host.replies(space.message_for(1), "P1") == []
     guest = FakeAlignment(p.AlignMethod.ANCHOR)
     assert guest.replies(space.message_for(2), "P2") == [p.Aligned(p.AlignMethod.ANCHOR, shared.anchor_uuid)]
+
+
+def test_center_calibration_counts_as_aligned_and_fake_headsets_report_it_once():
+    space = SharedSpace()
+    assert space.mark_aligned("P1", p.AlignMethod.CENTER, None)
+    assert space.mark_aligned("P2", p.AlignMethod.CENTER, None)
+    assert not space.mixed_methods()
+    fake = FakeAlignment(p.AlignMethod.CENTER)
+    assert fake.replies(space.message_for(1), "P1") == [p.Aligned(method=p.AlignMethod.CENTER)]
+    assert fake.replies(space.message_for(1), "P1") == []

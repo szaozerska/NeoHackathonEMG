@@ -57,7 +57,7 @@ class SharedSpace:
     def mark_aligned(self, player_id: str, method: str, anchor_uuid: str | None) -> bool:
         if method == p.AlignMethod.ANCHOR and (anchor_uuid is None or anchor_uuid != self.anchor_uuid):
             return False
-        if method not in (p.AlignMethod.ANCHOR, p.AlignMethod.FLOOR_SPOTS):
+        if method not in (p.AlignMethod.ANCHOR, p.AlignMethod.FLOOR_SPOTS, p.AlignMethod.CENTER):
             return False
         self.aligned[player_id] = method
         return True

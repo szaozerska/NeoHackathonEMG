@@ -207,6 +207,9 @@ class AlignMethod:
     """Loaded the host's Shared Spatial Anchor and aligned its tracking space to it."""
     FLOOR_SPOTS = "floor_spots"
     """Fallback: recentered while standing on its marked floor spot, facing `spot_yaw`."""
+    CENTER = "center"
+    """Both players touched right controller tips in the middle of the room, each pointing at the other: the touch
+    point (on the floor) is the origin and the controller's pointing direction is the player's `spot_yaw`."""
 
 
 @dataclass

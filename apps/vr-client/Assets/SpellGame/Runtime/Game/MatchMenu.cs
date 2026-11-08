@@ -376,10 +376,17 @@ namespace SpellGame.Game
                 var ready = _match.Ready.Contains(fighter)
                     ? "<b>READY</b>"
                     : "not ready";
-                lines.Add($"<color={UiStyle.Hex(UiStyle.PlayerColor(fighter))}><b>{name}</b></color>   {ready}{(aligned ? "" : "  ·  not in the room frame")}");
+                lines.Add($"<color={UiStyle.Hex(UiStyle.PlayerColor(fighter))}><b>{name}</b></color>   {ready}{(aligned ? "" : "  ·  not calibrated")}");
             }
-            if (_match.Mode == MatchMode.Versus)
-                lines.Add("Stand on your spot facing the other player,\nthen press I'm ready.");
+            var needsCalibration = _match.Mode == MatchMode.Versus && IsFighter && !AlignedFighters().Contains(Me);
+            if (needsCalibration)
+                lines.Add("\n<b>CALIBRATE THE ROOM</b> (both players)\n" +
+                          "1. Meet in the middle of the room, facing each other\n" +
+                          "2. Touch your right controller tips together,\n    each pointing at the other person\n" +
+                          "3. Click the LEFT thumbstick and hold still a moment\n" +
+                          "4. Walk back to your side");
+            else if (_match.Mode == MatchMode.Versus && IsFighter)
+                lines.Add("Room calibrated. Walk back to your side, then press I'm ready.");
             if (_match.Mode == MatchMode.Versus && _match.Fighters.Count < 2)
                 lines.Add("Waiting for a second headset to join…");
             if (!IsFighter && _match.Fighters.Count > 0)
@@ -389,14 +396,11 @@ namespace SpellGame.Game
             if (IsFighter)
             {
                 var ready = _match.Ready.Contains(Me);
-                buttons.Add(ready
+                buttons.Add(needsCalibration
+                    ? ("Calibrate first (left stick)", Kind.Secondary, () => { })
+                    : ready
                     ? ("Not ready", Kind.Secondary, () => gameClient.Send(new ReadyMessage { Ready = false }))
-                    : ("I'm ready!", Kind.Primary, () =>
-                    {
-                        if (_match.Mode == MatchMode.Versus && spaceAligner != null)
-                            spaceAligner.AlignToFloorSpotIfUnaligned();
-                        gameClient.Send(new ReadyMessage { Ready = true });
-                    }));
+                    : ("I'm ready!", Kind.Primary, () => gameClient.Send(new ReadyMessage { Ready = true })));
             }
             buttons.Add(("How to cast", Kind.Secondary, () => ShowControls(View.Ready)));
             buttons.Add(("Back to menu", Kind.Secondary, () => gameClient.Send(new MatchQuitMessage())));
@@ -422,7 +426,8 @@ namespace SpellGame.Game
                 "<b>SHIELD</b>   open palm forward (A); push it to parry a sword",
                 "",
                 "Dodge! Fireballs fly straight, so step out of the way.",
-                "Band: B / Y to pair   ·   Room: click left stick to align",
+                "Band: B / Y to pair",
+                "Room: touch right controller tips in the middle, click left stick",
                 "Menu button: end a match, or bring this panel back");
         }
 
