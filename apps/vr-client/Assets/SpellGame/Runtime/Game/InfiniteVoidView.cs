@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using SpellGame.Protocol;
 using UnityEngine;
 using UnityEngine.Rendering;
+using Random = UnityEngine.Random;
 
 namespace SpellGame.Game
 {
