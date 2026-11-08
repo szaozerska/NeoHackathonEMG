@@ -23,6 +23,7 @@ namespace SpellGame.Game
         [SerializeField, Range(0.1f, 0.9f)] private float pressThreshold = 0.5f;
 
         private ServerConnection _connection;
+        private string _connectionPlayerId;
         private bool _connecting;
         private string _sentSign;
 
@@ -38,7 +39,7 @@ namespace SpellGame.Game
                 return;
             }
 
-            if (!_connection.IsOpen)
+            if (!_connection.IsOpen || _connectionPlayerId != gameClient.PlayerId)
             {
                 _connection.Dispose();
                 _connection = null;
@@ -75,9 +76,11 @@ namespace SpellGame.Game
             _connecting = true;
             try
             {
-                var connection = await ServerConnection.ConnectAsync(gameClient.ServerEndpoint, destroyCancellationToken);
-                connection.Send(new HelloMessage { Role = ClientRole.Classifier, PlayerId = gameClient.PlayerId });
+                var playerId = gameClient.PlayerId;
+                var connection = await ServerConnection.ConnectAsync(gameClient.ServerEndpoint, gameClient.ConnectTimeout, destroyCancellationToken);
+                connection.Send(new HelloMessage { Role = ClientRole.Classifier, PlayerId = playerId });
                 _connection = connection;
+                _connectionPlayerId = playerId;
             }
             catch (System.Exception exception) when (exception is not System.OperationCanceledException)
             {

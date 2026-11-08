@@ -33,10 +33,16 @@ namespace SpellGame.Networking
 
         public bool IsOpen => !_readLoop.IsCompleted;
 
-        public static async Task<ServerConnection> ConnectAsync(IPEndPoint endpoint, CancellationToken cancellationToken)
+        /// <summary>
+        /// Opens the connection. Cancelling, or reaching <paramref name="timeout"/>, closes the socket mid-connect, so the
+        /// call then fails with a <see cref="SocketException"/> or <see cref="ObjectDisposedException"/>.
+        /// </summary>
+        public static async Task<ServerConnection> ConnectAsync(IPEndPoint endpoint, TimeSpan timeout, CancellationToken cancellationToken)
         {
             var client = new TcpClient { NoDelay = true };
-            using var disposeOnCancel = cancellationToken.Register(client.Dispose);
+            using var connectWindow = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            connectWindow.CancelAfter(timeout);
+            using var disposeOnCancel = connectWindow.Token.Register(client.Dispose);
             await client.ConnectAsync(endpoint.Address, endpoint.Port);
             return new ServerConnection(client, cancellationToken);
         }
