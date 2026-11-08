@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main():
     verify_bundle()
-    for name in ('numpy', 'scipy', 'scikit-learn', 'joblib', 'torch', 'spelltrain'):
+    for name in ('numpy', 'scipy', 'scikit-learn', 'joblib', 'sounddevice', 'torch', 'spelltrain'):
         print(name+': '+importlib.metadata.version(name))
     for version in ('v4', 'v6'):
         artifact = joblib.load(ROOT/f'models/gestures-{version}/model.joblib')

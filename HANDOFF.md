@@ -105,8 +105,11 @@ snaps, start a new Kinesis raw recording at a chosen path, then run:
 Omitting `--kinesis-file` makes the collector ask for the URL from Kinesis's
 **stream** tab instead, so no raw-recording save path is needed.
 
-Follow each countdown and confirm the actual count (`0` for a missed snap,
-`x` to discard uncertainty). Instructions cover soft/firm snaps with minimal,
+Follow each countdown, press **space with your other hand right after every
+snap**, then confirm the actual count (`0` for a missed snap, `x` to discard
+uncertainty). The collector also records the microphone as a timing reference
+for those marks (never a model input); allow terminal microphone access when
+macOS asks. Instructions cover soft/firm snaps with minimal,
 natural and exaggerated wrist rotation. Then collect `--kind negative` blocks
 with wrist rotation, pinching, finger movement and fist transitions without
 snapping. Also collect `--kind fist`, `--kind open`, and `--kind none` holds.

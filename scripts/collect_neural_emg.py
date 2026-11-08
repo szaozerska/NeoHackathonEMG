@@ -5,9 +5,12 @@ from collections import deque
 import json
 from pathlib import Path
 import random
+import sys
 import threading
 import time
+from spelltrain.audio_reference import AudioReference, AUDIO_FILE, TIMING_FILE
 from spelltrain.feeds import KINESIS_STREAM_ADAPTER, read_sse, tail_kinesis
+from spelltrain.terminal_marks import keypress_mode, space_presses_until
 from spelltrain.live_capture import LiveCapture
 from spelltrain.signals import DEFAULT_SIGNAL
 from spelltrain.common import write_json
@@ -29,6 +32,8 @@ NEGATIVE_VARIANTS = [
     'Wiggle/curl your fingers WITHOUT snapping',
     'Reach and return naturally WITHOUT snapping',
 ]
+
+MARK_GRACE_SECONDS = 1.
 
 
 def plan(kind, repetitions, seed=7, instruction=None, event=False):
@@ -85,9 +90,11 @@ def main():
         band_source = 'kinesis_live_stream'
         url = input('EMG only. In Kinesis enable Live EMG, then paste the stream URL from its stream tab: ').strip()
         reader = threading.Thread(target=read_sse, args=(url, KINESIS_STREAM_ADAPTER, stop, packet, report), daemon=True)
-    reader.start(); capture = None; trials = []
+    reader.start(); capture = None; audio = None; trials = []
+    action = 'snap' if args.kind in ('snap', 'negative') else args.kind
+    print('EMG is the only model input; microphone audio is saved as a timing reference for labels.', flush=True)
     if counted:
-        print('One action per short clip, repeated 20 times by default. No event timestamps are assumed.', flush=True)
+        print(f'One action per short clip, repeated 20 times by default. Press SPACE with your other hand right after every {action}.', flush=True)
     try:
         while state['last'] is None:
             if state['error']:
@@ -96,30 +103,48 @@ def main():
                 return
         capture = LiveCapture(args.output_root, time.monotonic, {'signal': DEFAULT_SIGNAL, 'model_version': 'guided-collection-no-model'})
         capture.meta.update(kind='neural_emg_guided', wearing_session=args.wearing_session, band_source=band_source,
-                            supervision='participant_confirmed_clip_labels_no_event_timestamps',
+                            supervision='participant_confirmed_clip_counts_with_spacebar_after_action_marks' if counted
+                            else 'participant_confirmed_clip_labels_no_event_timestamps',
                             dataset_role='training_only_weak_labels' if args.role == 'train' else 'untouched_guided_count_check')
-        print('Saving to '+str(capture.directory.resolve()), flush=True)
+        audio = AudioReference(capture.directory, capture.start, time.monotonic)
+        print('Saving to '+str(capture.directory.resolve())+' · microphone: '+audio.device, flush=True)
         with lock:
             state['capture'] = capture
             for now, row in buffer:
                 capture.append('emg', now, packet=row)
+        stop.wait(1.)
+        if audio.peak == 0:
+            raise ValueError('Microphone delivers silence: allow this terminal in System Settings → '
+                             'Privacy & Security → Microphone, then restart collection')
+        def record_mark(pressed_at):
+            with lock:
+                capture.append('action_mark', pressed_at, action=action, source='participant_spacebar_after_action')
+            print('  marked', flush=True)
         for index, trial in enumerate(trial_plan):
             input(f'\n{index+1}/{args.repetitions}: {trial["instruction"]}. Press Enter when ready. ')
             for remaining in (3, 2, 1):
                 print(remaining, flush=True); stop.wait(1.)
             if state['last'] is None or time.monotonic()-state['last'] > .5:
                 raise ValueError('No fresh EMG: recording paused; restart collection after checking Kinesis')
-            start = time.monotonic()-capture.start
+            go = time.monotonic(); start = go-capture.start
             print('\aGO — '+trial['instruction'], flush=True)
-            stop.wait(args.seconds)
-            end = time.monotonic()-capture.start
-            print('STOP', flush=True)
+            if counted:
+                with keypress_mode(sys.stdin.fileno()):
+                    presses = space_presses_until(sys.stdin.fileno(), go+args.seconds, time.monotonic, record_mark)
+                    stopped = time.monotonic(); end = stopped-capture.start
+                    print(f'STOP — press SPACE now if you just made a {action}', flush=True)
+                    presses += space_presses_until(sys.stdin.fileno(), stopped+MARK_GRACE_SECONDS,
+                                                   time.monotonic, record_mark)
+                marks = [pressed_at-capture.start for pressed_at in presses]
+            else:
+                stop.wait(args.seconds)
+                end = time.monotonic()-capture.start
+                print('STOP', flush=True)
             if counted:
                 while True:
-                    answer = input(f'How many actual {"snaps" if args.kind == "negative" else args.kind + "s"}? '
-                                   '[Enter = intended count; x = uncertain/discard] ').strip().lower()
+                    answer = input(f'How many actual {action}s? [Enter = {len(marks)} marked; x = uncertain/discard] ').strip().lower()
                     try:
-                        count = None if answer == 'x' else trial['intended_count'] if not answer else int(answer)
+                        count = None if answer == 'x' else len(marks) if not answer else int(answer)
                         if count is not None and count < 0:
                             raise ValueError()
                         break
@@ -131,15 +156,22 @@ def main():
                 count = None
             result = {**trial, 'start': start, 'end': end, 'confirmed': confirmed, 'reported_count': count,
                       'label_source': 'participant_confirmation', 'exact_event_times_verified': False}
+            if counted:
+                result.update(action_marks=marks, marks_match_count=count == len(marks),
+                              action_mark_source='participant_spacebar_after_action_includes_reaction_delay')
             trials.append(result); write_json(capture.directory/'guided-trials.json', trials)
+        capture.meta.update(audio_reference=audio.finish())
         with lock:
             state['capture'] = None; capture.finish()
         write_json(capture.directory/'guided-manifest.json', {
             'schema': 1, 'wearing_session': args.wearing_session, 'supervision': 'weak_clip_labels',
-            'source_hashes': {name: _hash(capture.directory/name) for name in ('streams.jsonl', 'metadata.json', 'guided-trials.json')}})
+            'source_hashes': {name: _hash(capture.directory/name) for name in
+                              ('streams.jsonl', 'metadata.json', 'guided-trials.json', AUDIO_FILE, TIMING_FILE)}})
         print('Saved '+str(capture.directory.resolve()), flush=True)
     finally:
         stop.set(); reader.join(timeout=2)
+        if audio is not None and not audio.closed:
+            capture.meta.update(audio_reference=audio.finish())
         if capture is not None and not capture.closed:
             with lock:
                 state['capture'] = None; capture.finish(reason='interrupted')
