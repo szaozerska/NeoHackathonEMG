@@ -426,13 +426,14 @@ namespace SpellGame.Game
                     lines.Add("\nPress I'm ready, then calibrate the room.");
                 else if (marker)
                     lines.Add("\n<b>CALIBRATE THE ROOM</b>\n" +
-                              "Look down at the QR marker in the middle of the room\n" +
-                              "and keep it in view until this says calibrated.\n" +
-                              "No marker? Meet in the middle, touch right controller tips\n" +
-                              "(each pointing at the other) and click the LEFT thumbstick.\n" +
-                              "The match can't start until both players are calibrated.");
+                              "1. Walk to the QR marker on the floor in the middle\n" +
+                              "2. Stand next to it and look straight down at it\n" +
+                              "3. Hold still until a cyan ring appears on it\n" +
+                              "No marker? Touch right controller tips in the middle\n" +
+                              "(each pointing at the other), click the LEFT thumbstick.");
                 else
-                    lines.Add("\n<b>CALIBRATE THE ROOM</b> (both players)\n" +
+                    lines.Add($"\n{spaceAligner?.MarkerProblem}" +
+                              "\n<b>CALIBRATE THE ROOM</b> (both players)\n" +
                               "1. Meet in the middle of the room, facing each other\n" +
                               "2. Touch your right controller tips together,\n    each pointing at the other person\n" +
                               "3. Click the LEFT thumbstick and hold still a moment\n" +
@@ -456,7 +457,11 @@ namespace SpellGame.Game
                 var ready = _match.Ready.Contains(Me);
                 buttons.Add(ready
                     ? ("Not ready", Kind.Secondary, () => gameClient.Send(new ReadyMessage { Ready = false }))
-                    : ("I'm ready!", Kind.Primary, () => gameClient.Send(new ReadyMessage { Ready = true })));
+                    : ("I'm ready!", Kind.Primary, () =>
+                    {
+                        spaceAligner?.RequestMarkerPermission();
+                        gameClient.Send(new ReadyMessage { Ready = true });
+                    }));
             }
             buttons.Add(("How to cast", Kind.Secondary, () => ShowControls(View.Ready)));
             buttons.Add(("Back to menu", Kind.Secondary, () => gameClient.Send(new MatchQuitMessage())));

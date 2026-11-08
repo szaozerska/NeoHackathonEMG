@@ -15,10 +15,18 @@ namespace SpellGame.Editor
         private const string ApkPath = "Builds/SpellGame.apk";
 
         [MenuItem("SpellGame/Build APK")]
-        public static void BuildApk() => Build(BuildOptions.None);
+        public static void BuildApk()
+        {
+            QuestProjectConfigurator.Configure();
+            Build(BuildOptions.None);
+        }
 
         [MenuItem("SpellGame/Build And Run On Headset")]
-        public static void BuildAndRun() => Build(BuildOptions.AutoRunPlayer);
+        public static void BuildAndRun()
+        {
+            QuestProjectConfigurator.Configure();
+            Build(BuildOptions.AutoRunPlayer);
+        }
 
         public static void BuildBatch()
         {
