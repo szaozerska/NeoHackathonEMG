@@ -34,6 +34,7 @@ namespace SpellGame.Editor
             CreateFireballView(client);
             CreateSwordView(client);
             CreateShieldView(client);
+            CreateHealthView(client, trackingSpace.Find("CenterEyeAnchor"));
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
@@ -157,6 +158,16 @@ namespace SpellGame.Editor
             serializedView.FindProperty("bladeMaterial").objectReferenceValue = UnlitMaterial("Blade", new Color(0.55f, 0.9f, 1f));
             serializedView.FindProperty("trailMaterial").objectReferenceValue = UnlitMaterial("BladeTrail", new Color(0.2f, 0.6f, 1f));
             serializedView.FindProperty("sparkMaterial").objectReferenceValue = UnlitMaterial("Spark", new Color(1f, 0.85f, 0.3f));
+            serializedView.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void CreateHealthView(GameClient client, Transform centerEye)
+        {
+            var view = new GameObject("Health View").AddComponent<HealthView>();
+            var serializedView = new SerializedObject(view);
+            serializedView.FindProperty("gameClient").objectReferenceValue = client;
+            serializedView.FindProperty("centerEye").objectReferenceValue = centerEye;
+            serializedView.FindProperty("baseMaterial").objectReferenceValue = UnlitMaterial("DebugSkeleton", new Color(0.2f, 1f, 0.4f));
             serializedView.ApplyModifiedPropertiesWithoutUndo();
         }
 
