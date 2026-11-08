@@ -31,7 +31,7 @@ image = (modal.Image.debian_slim(python_version='3.11')
 
 # Meta's DiscreteGesturesArchitecture uses 512 hidden x 3 layers; smaller sizes suit our data volume.
 LSTM_SIZES = {'quick': [(128, 2), (256, 2)], 'full': [(64, 2), (128, 2), (256, 2), (512, 3)]}
-BASELINES = ['fnn', 'cnn']
+BASELINES = ['fnn', 'cnn', 'tcn']
 
 
 @app.function(image=image, volumes={'/vol': volume}, cpu=4, memory=32768, timeout=3600)

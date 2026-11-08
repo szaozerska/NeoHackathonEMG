@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "architectures": ["lstm", "fnn", "cnn"],
+  "architectures": ["lstm", "fnn", "cnn", "tcn"],
   "seeds": [7, 19],
   "epochs": 60,
   "patience": 10,

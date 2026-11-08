@@ -32,6 +32,23 @@ class ReinhardCompression(nn.Module):
         return self.range*x/(self.midpoint+x.abs())
 
 
+class CausalBlock(nn.Module):
+    """Depthwise-separable dilated causal conv (left padding only), BatchNorm, GELU, residual."""
+    def __init__(self, width, dilation, dropout):
+        super().__init__()
+        self.pad = 2*dilation
+        self.depthwise = nn.Conv1d(width, width, 3, dilation=dilation, groups=width)
+        self.pointwise = nn.Conv1d(width, width, 1)
+        self.norm = nn.BatchNorm1d(width); self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x):
+        y = self.pointwise(self.depthwise(nn.functional.pad(x, (self.pad, 0))))
+        return x+self.dropout(nn.functional.gelu(self.norm(y)))
+
+
+TCN_AUGMENTATION = {'rotation': 1, 'channel_gain': .1, 'noise': .05}
+
+
 class EMGClassifier(nn.Module):
     def __init__(self, architecture, input_shape, classes, dropout=.25, hyper=None):
         super().__init__()
@@ -64,6 +81,13 @@ class EMGClassifier(nn.Module):
                 nn.AdaptiveAvgPool1d(4), nn.Flatten(),
                 nn.Linear(256, 64), nn.ReLU(), nn.Dropout(dropout))
             width = 64
+        elif architecture == 'tcn':
+            # Fallback to Meta's LSTM: causal dilated TCN on two streams (filtered EMG + 16 ms RMS envelope).
+            self.envelope = nn.AvgPool1d(32, stride=1)
+            self.stem = nn.Sequential(nn.Conv1d(2*input_shape[0], 64, 5, stride=4), nn.BatchNorm1d(64), nn.GELU())
+            self.blocks = nn.Sequential(*[CausalBlock(64, d, dropout) for d in (1, 2, 4, 8, 16)])
+            self.head = nn.Sequential(nn.Linear(128, 64), nn.GELU(), nn.Dropout(dropout))
+            width = 64
         else:
             raise ValueError('Unknown architecture: '+architecture)
         self.output = nn.Linear(width, classes)
@@ -74,6 +98,10 @@ class EMGClassifier(nn.Module):
             x, _ = self.lstm(self.post_conv_norm(x.transpose(1, 2)))
             # The window ends at its timestamp, so the last LSTM step has seen the whole (past-only) window.
             return self.output(self.post_lstm_norm(x[:, -1]))
+        if self.architecture == 'tcn':
+            envelope = self.envelope(nn.functional.pad(x*x, (31, 0))).clamp_min(1e-6).sqrt()
+            x = self.blocks(self.stem(nn.functional.pad(torch.cat([x, envelope], 1), (4, 0))))
+            return self.output(self.head(torch.cat([x.mean(-1), x[:, :, -1]], 1)))
         return self.output(self.encoder(x))
 
 
@@ -142,6 +170,7 @@ def fit_classifier(train, validation, spec, architecture, config, seed, weak_bag
     w = torch.from_numpy(row_weights(train)).to(device); vw = torch.from_numpy(row_weights(validation)).to(device)
     y = y.to(device); vy = vy.to(device); bags = [b.to(device) for b in bags]
     hyper = lstm_settings(config) if architecture == 'lstm' else None
+    aug = hyper or (TCN_AUGMENTATION if architecture == 'tcn' else None)
     model = EMGClassifier(architecture, x.shape[1:], len(labels), config['dropout'], hyper).to(device)
     lr = hyper['learning_rate'] if hyper else config['learning_rate']
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=config['weight_decay'])
@@ -171,14 +200,14 @@ def fit_classifier(train, validation, spec, architecture, config, seed, weak_bag
             if architecture != 'fnn':
                 raw = batch*tstd+tmean
                 raw = raw*gain.unsqueeze(-1)
-                if hyper and hyper['rotation']:
-                    raw = rotate_channels(raw, hyper['rotation'])
-                if hyper and hyper['channel_gain']:
+                if aug and aug['rotation']:
+                    raw = rotate_channels(raw, aug['rotation'])
+                if aug and aug['channel_gain']:
                     # Per-electrode contact variation on top of the global gain.
-                    raw = raw*torch.exp(torch.randn(len(ix), raw.shape[1], 1, device=device)*hyper['channel_gain'])
+                    raw = raw*torch.exp(torch.randn(len(ix), raw.shape[1], 1, device=device)*aug['channel_gain'])
                 batch = (raw-tmean)/tstd
-                if hyper and hyper['noise']:
-                    batch = batch+torch.randn_like(batch)*hyper['noise']
+                if aug and aug['noise']:
+                    batch = batch+torch.randn_like(batch)*aug['noise']
             else:
                 logged = batch*tstd+tmean
                 values = torch.expm1(logged).clamp_min(0).reshape(len(ix), -1, 40)
@@ -190,8 +219,8 @@ def fit_classifier(train, validation, spec, architecture, config, seed, weak_bag
                 # Counts remain metadata, never point-event pseudo labels.
                 bag_index = int(torch.randint(len(bags), (1,)))
                 bag = bags[bag_index]
-                if hyper and hyper['rotation']:
-                    bag = (rotate_channels(bag*tstd+tmean, hyper['rotation'])-tmean)/tstd
+                if aug and aug['rotation']:
+                    bag = (rotate_channels(bag*tstd+tmean, aug['rotation'])-tmean)/tstd
                 logits = model(bag)
                 event_index = labels.index(spec['event_class'])
                 background_index = labels.index(spec['background'])
