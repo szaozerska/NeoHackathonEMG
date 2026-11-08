@@ -1,7 +1,9 @@
 using System.IO;
+using System.Linq;
 using SpellGame.Game;
 using TMPro;
 using UnityEditor;
+using UnityEditor.Animations;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.TextCore.LowLevel;
@@ -22,6 +24,9 @@ namespace SpellGame.Editor
         private const string InfiniteVoidFolder = "Assets/SpellGame/InfiniteVoid";
         private const string CameraRigPrefabPath = "Packages/com.meta.xr.sdk.core/Prefabs/OVRCameraRig.prefab";
         private const string UnlitShaderName = "Universal Render Pipeline/Unlit";
+        private const string WizardModelPath = "Assets/SpellGame/Characters/Wizard/Wizard.fbx";
+        private const string WizardTexturePath = "Assets/SpellGame/Characters/Wizard/Wizard_Texture.png";
+        private const string WizardControllerPath = "Assets/SpellGame/Characters/Wizard/Wizard.controller";
         private const string MomentsFolder = "Assets/SpellGame/Moments";
         private const string FontPath = "Assets/SpellGame/Fonts/ChakraPetch-BoldItalic.ttf";
         private const string FontAssetPath = "Assets/SpellGame/Fonts/ChakraPetch-BoldItalic SDF.asset";
@@ -52,7 +57,7 @@ namespace SpellGame.Editor
             CreateMatchMenu(client, rig, aligner);
             CreateEndGameView(client, rig);
             CreateMatchMoments(client, rig);
-            CreateAiAvatarView(client);
+            CreateAiWizardView(client);
             CreateSpellAudio(client);
             CreateHitCallouts(client);
             CreateInfiniteVoidView(client, trackingSpace.Find("CenterEyeAnchor"));
@@ -423,17 +428,64 @@ namespace SpellGame.Editor
             return material;
         }
 
-        private static void CreateAiAvatarView(GameClient client)
+        /// <summary>
+        /// The AI's wizard model (Characters/Wizard, converted from Quaternius's glTF): generic rig, the looping clips
+        /// marked as loops, an Animator Controller with one state per <see cref="AiWizardView.States"/> clip, and an
+        /// unlit textured material, all regenerated here so nothing is wired by hand.
+        /// </summary>
+        private static void CreateAiWizardView(GameClient client)
         {
-            var view = new GameObject("AI Avatar").AddComponent<AiAvatarView>();
+            var importer = (ModelImporter)AssetImporter.GetAtPath(WizardModelPath)
+                ?? throw new System.InvalidOperationException($"[SpellGame] {WizardModelPath} not found.");
+            importer.animationType = ModelImporterAnimationType.Generic;
+            importer.materialImportMode = ModelImporterMaterialImportMode.None;
+            importer.importCameras = false;
+            importer.importLights = false;
+            var clips = importer.defaultClipAnimations;
+            foreach (var clip in clips)
+                clip.loopTime = AiWizardView.LoopingStates.Any(state => IsClip(clip.name, state));
+            importer.clipAnimations = clips;
+            importer.SaveAndReimport();
+
+            if (AssetDatabase.LoadAssetAtPath<AnimatorController>(WizardControllerPath) != null)
+                AssetDatabase.DeleteAsset(WizardControllerPath);
+            var controller = AnimatorController.CreateAnimatorControllerAtPath(WizardControllerPath);
+            var stateMachine = controller.layers[0].stateMachine;
+            var modelClips = AssetDatabase.LoadAllAssetsAtPath(WizardModelPath).OfType<AnimationClip>()
+                .Where(c => !c.name.StartsWith("__preview__")).ToArray();
+            foreach (var state in AiWizardView.States)
+            {
+                var clip = modelClips.FirstOrDefault(c => IsClip(c.name, state));
+                if (clip == null)
+                {
+                    Debug.LogWarning($"[SpellGame] Wizard clip '{state}' not found in {WizardModelPath}.");
+                    continue;
+                }
+                var animatorState = stateMachine.AddState(state);
+                animatorState.motion = clip;
+                if (state == AiWizardView.Idle)
+                    stateMachine.defaultState = animatorState;
+            }
+            AssetDatabase.SaveAssets();
+
+            var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(WizardTexturePath);
+            var body = UnlitMaterial("WizardBody", Color.white);
+            body.SetTexture("_BaseMap", texture);
+            body.mainTexture = texture;
+            EditorUtility.SetDirty(body);
+
+            var view = new GameObject("AI Wizard").AddComponent<AiWizardView>();
             var serializedView = new SerializedObject(view);
             serializedView.FindProperty("gameClient").objectReferenceValue = client;
-            serializedView.FindProperty("robeMaterial").objectReferenceValue = UnlitMaterial("MageRobe", new Color(0.22f, 0.1f, 0.42f));
-            serializedView.FindProperty("trimMaterial").objectReferenceValue = UnlitMaterial("MageTrim", new Color(0.95f, 0.72f, 0.25f));
-            serializedView.FindProperty("shadowMaterial").objectReferenceValue = UnlitMaterial("MageShadow", new Color(0.04f, 0.02f, 0.08f));
+            serializedView.FindProperty("wizardModel").objectReferenceValue = AssetDatabase.LoadAssetAtPath<GameObject>(WizardModelPath);
+            serializedView.FindProperty("animatorController").objectReferenceValue = controller;
+            serializedView.FindProperty("bodyMaterial").objectReferenceValue = body;
             serializedView.FindProperty("glowMaterial").objectReferenceValue = UnlitMaterial("MageGlow", new Color(0.35f, 1f, 0.95f));
             serializedView.ApplyModifiedPropertiesWithoutUndo();
         }
+
+        /// <summary>FBX take names look like <c>CharacterArmature|Idle</c>; match the segment exactly (Idle ≠ Idle_Attacking).</summary>
+        private static bool IsClip(string clipName, string state) => clipName.Split('|').Contains(state);
 
         private static void CreateShieldView(GameClient client)
         {
