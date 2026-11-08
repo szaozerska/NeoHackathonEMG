@@ -361,9 +361,9 @@ The first message on every TCP connection:
 - The server gives each joining headset the lowest free player ID: `P1`, `P2`, and so on. Each headset shows its own ID. A relaunched app gets its old ID back (matched by `device.id`; a connection left over from the previous launch is dropped), and IDs nobody uses any more are reused, so restarting for testing doesn't make the numbers climb.
 - **Pairing a Neural Band with a headset** uses **pairing mode** (the "Pair Neural Bands" screen):
   - Triggered from the game server's monitor (`p`), a headset (hold X+Y on the left controller for 3 s), or by any other connected client (headset or classifier) sending `pair_start`.
-  - The server sends `pair_start`, then `pair_prompt` naming the first headset without a band (in join order): that player pinches their fingers.
-  - The next unpaired classifier to report a `pinch` (using the band's built-in decoded `gesture` events, so no trained model is needed) is paired with the prompted player. The server then prompts the next headset without a band, and so on.
-  - If the prompted headset disconnects, the server moves on to the next one. Pairing mode ends once every connected headset has a band; a headset that joins later needs pairing mode started again.
+  - The server sends `pair_start`, then `pair_prompt` naming the first headset (in join order), whether or not it already has a band (the controller band counts as one): that player pinches their fingers.
+  - The next unpaired classifier to report a `pinch` (using the band's built-in decoded `gesture` events, so no trained model is needed) is paired with the prompted player, replacing the band it had (which stays connected but unpaired). The server then prompts the next headset, and so on.
+  - If the prompted headset disconnects, the server moves on to the next one. Pairing mode ends once every connected headset has been prompted and paired; a headset that joins later needs pairing mode started again.
   - A `pinch` outside pairing mode is ignored.
 - Classifier clients connect **unpaired** and receive their player ID from the server once paired. A classifier that reconnects with its `player_id` in `hello` pairs straight back to that player.
 

@@ -221,16 +221,19 @@ class GameServer:
         log.info("%s connected as a classifier, waiting for pairing mode", conn.peer)
 
     def start_pairing(self) -> None:
-        """Pairing mode (§5): prompts each headset without a band, in join order, to pinch; the next pinch pairs."""
+        """Pairing mode (§5): prompts every headset, in join order, to pinch; the next pinch pairs, replacing any band
+        (such as the controller band) the headset already has."""
         log.info("pairing mode started")
         self._send_to_everyone([p.PairStart()])
+        self.prompted_player_id = None
         self._prompt_next_player()
 
     def _prompt_next_player(self) -> None:
-        waiting = [slot for slot in self.players.values() if slot.vr is not None and slot.classifier is None]
+        previous = self.players[self.prompted_player_id].join_order if self.prompted_player_id else 0
+        waiting = [slot for slot in self.players.values() if slot.vr is not None and slot.join_order > previous]
         if not waiting:
             self.prompted_player_id = None
-            log.info("pairing mode finished: every headset has a band")
+            log.info("pairing mode finished: every headset was prompted")
             return
         slot = min(waiting, key=lambda s: s.join_order)
         self.prompted_player_id = slot.player_id
@@ -244,6 +247,9 @@ class GameServer:
         self._prompt_next_player()
 
     def _pair(self, conn: ClientConnection, slot: PlayerSlot) -> None:
+        if slot.classifier is not None:
+            log.info("%s band %s replaced by %s", slot.player_id, slot.classifier.peer, conn.peer)
+            slot.classifier.player_id = None
         slot.classifier = conn
         slot.input.band_paired = True
         conn.player_id = slot.player_id

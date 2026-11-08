@@ -279,6 +279,30 @@ def test_pairing_mode_moves_on_when_the_prompted_headset_leaves_and_ends_when_al
     run(scenario())
 
 
+def test_pairing_mode_prompts_a_headset_that_already_has_a_band_and_the_pinching_band_replaces_it():
+    async def scenario():
+        server = GameServer(host="127.0.0.1", port=0, beacon_address=None)
+        await server.start()
+        try:
+            vr = await Connection.open("127.0.0.1", server.port)
+            await vr.handshake(p.Role.VR)
+            controller_band = await Connection.open("127.0.0.1", server.port)
+            await controller_band.handshake(p.Role.CLASSIFIER, player_id="P1")
+            await until(controller_band, lambda m: isinstance(m, p.Paired))
+            band = await Connection.open("127.0.0.1", server.port)
+            await band.handshake(p.Role.CLASSIFIER)
+
+            server.start_pairing()
+            await pinch_when_prompted(band, "P1")
+            classifiers = [conn for conn in server.connections if conn.role == p.Role.CLASSIFIER]
+            assert [conn.player_id for conn in classifiers].count("P1") == 1
+            assert server.prompted_player_id is None
+        finally:
+            await server.stop()
+
+    run(scenario())
+
+
 def test_first_headset_hosts_the_anchor_and_both_report_aligned_to_it():
     async def scenario():
         server = GameServer(host="127.0.0.1", port=0, beacon_address=None, spot_distance=4.0)
