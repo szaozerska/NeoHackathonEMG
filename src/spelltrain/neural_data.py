@@ -162,7 +162,7 @@ def add_reviewed_examples(dataset, path, config):
     validate_dataset(dataset)
 
 
-def add_guided_capture(dataset, directory):
+def add_guided_capture(dataset, directory, hold_negatives=False):
     """Count-confirmed positives become MIL bags, never guessed snap windows.
 
     All new guided clips fit only; fresh evaluation must remain separate. A
@@ -192,7 +192,7 @@ def add_guided_capture(dataset, directory):
             if feature['start'] < trial['start']+.15 or feature['t'] > trial['end']-.15:
                 continue
             kind = 'snap' if trial['kind'] in ('snap', 'negative') else 'state'
-            if feature['kind'] != kind:
+            if feature['kind'] != kind and not (hold_negatives and kind == 'state'):
                 continue
             rows.append({**feature, 'end': feature['t'], 'part': 'train', 'group': group, 'trial': group,
                          'session': directory.name, 'wearing_session': manifest['wearing_session'],
@@ -205,11 +205,41 @@ def add_guided_capture(dataset, directory):
                 'part': 'train', 'positive': True, 'label_source': 'participant_confirmed_count',
                 'instruction': trial['instruction']})
         else:
-            label = 'negative' if trial['kind'] in ('snap', 'negative') else trial['kind']
             for row in rows:
-                row['label'] = label; row['hand_state' if kind == 'state' else 'snap_label'] = label
+                # A confirmed hold contains no snap, so its snap windows are negatives too.
+                label = 'negative' if row['kind'] == 'snap' else trial['kind']
+                row['label'] = label; row['hand_state' if row['kind'] == 'state' else 'snap_label'] = label
                 row['expected_events'] = []
-            dataset['tasks'][kind].extend(rows)
+                dataset['tasks'].setdefault(row['kind'], []).append(row)
     dataset['sources'].append({'directory': str(directory.resolve()), 'supervision': 'weak_participant_confirmed',
                               'hashes': manifest['source_hashes'], 'wearing_session': manifest['wearing_session']})
     validate_dataset(dataset)
+
+
+def guided_only_dataset(directories):
+    """Train from guided captures alone, without the historical reference review.
+
+    Whole captures are the split unit: for every held kind with two or more
+    captures the newest one validates. Snap count bags stay training-only, so
+    snap validation measures false events on held-out holds, not recall.
+    """
+    directories = sorted(Path(d) for d in directories)
+    if not directories:
+        raise ValueError('No guided captures given')
+    signal = read_json(directories[0]/'metadata.json')['model']['signal']
+    dataset = {'schema': 1, 'signal': signal, 'tasks': {'state': [], 'snap': []}, 'sources': [],
+               'evaluation_role': 'guided_capture_holdout_same_wearing_sessions'}
+    kinds = {}
+    for directory in directories:
+        add_guided_capture(dataset, directory, hold_negatives=True)
+        trial_kinds = {t['kind'] for t in read_json(directory/'guided-trials.json') if t['confirmed']}
+        if len(trial_kinds) == 1 and not trial_kinds & {'snap', 'negative'}:
+            kinds.setdefault(trial_kinds.pop(), []).append(directory.name)
+    held_out = {names[-1] for names in kinds.values() if len(names) > 1}
+    for rows in dataset['tasks'].values():
+        for row in rows:
+            if row['session'] in held_out:
+                row['part'] = 'validation'
+    dataset['validation_captures'] = sorted(held_out)
+    validate_dataset(dataset)
+    return dataset
