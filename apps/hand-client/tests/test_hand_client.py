@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import itertools
 import logging
 
 from spellgame import protocol as p
@@ -22,11 +23,22 @@ async def until(conn: Connection, predicate, timeout=5.0):
     return await asyncio.wait_for(wait(), timeout)
 
 
+async def pair_by_pinching(vr: Connection, kinesis: fk.FakeKinesis) -> None:
+    """Starts pairing mode from the headset, then pinches on the band until the hand-client is connected and pairs."""
+    vr.send(p.PairStart())
+    await until(vr, lambda m: isinstance(m, p.PairPrompt))
+    for sequence in itertools.count(1000):
+        kinesis.send(fk.gesture(sequence, "index", "tap", at_s=float(sequence)))
+        with contextlib.suppress(TimeoutError):
+            await until(vr, lambda m: isinstance(m, p.Paired), timeout=0.2)
+            return
+
+
 def test_band_gestures_reach_the_headset_and_emg_is_logged(caplog):
     caplog.set_level(logging.INFO)
-    events = [fk.hello("right"), fk.emg_configuration()]
+    events = [fk.emg_configuration()]
     events += [fk.emg(sequence) for sequence in range(1, 200)]
-    events += [fk.gesture(1, "index", "tap", "singleTap", at_s=5.0), fk.gesture(2, "index", "tap", at_s=5.05)]
+    events += [fk.gesture(1, "index", "tap", "singleTap", at_s=5000.0), fk.gesture(2, "index", "tap", at_s=5000.05)]
 
     async def scenario():
         server = GameServer(host="127.0.0.1", port=0, beacon_address=None)
@@ -34,11 +46,11 @@ def test_band_gestures_reach_the_headset_and_emg_is_logged(caplog):
         try:
             vr = await Connection.open("127.0.0.1", server.port)
             assert (await vr.handshake(p.Role.VR)).player_id == "P1"
-            with fk.FakeKinesis([]) as kinesis:
+            with fk.FakeKinesis([fk.hello("right")]) as kinesis:
                 client = asyncio.create_task(
                     run_hand_client(kinesis.url, ("127.0.0.1", server.port), EmgLogger(report_every_s=0.0))
                 )
-                await until(vr, lambda m: isinstance(m, p.Paired))
+                await pair_by_pinching(vr, kinesis)
                 kinesis.send(*events)
                 gesture = await until(vr, lambda m: isinstance(m, p.Gesture))
                 client.cancel()
@@ -61,7 +73,7 @@ def test_server_haptics_reach_kinesis_with_the_feed_token():
             await vr.handshake(p.Role.VR)
             with fk.FakeKinesis([fk.hello("right")]) as kinesis:
                 client = asyncio.create_task(run_hand_client(kinesis.url, ("127.0.0.1", server.port), EmgLogger()))
-                await until(vr, lambda m: isinstance(m, p.Paired))
+                await pair_by_pinching(vr, kinesis)
                 band = server.players["P1"].classifier
                 assert band is not None
                 band.send(p.Haptic(duration_ms=120))

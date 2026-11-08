@@ -2,7 +2,7 @@
 
 The game server from [architecture.md](../../architecture.md) §2.3. Python 3.11+ and `asyncio`.
 
-- TCP on 9000: `hello` handshake, join-order band pairing (§5), and a 30 Hz tick that broadcasts `pose`, `state` and events.
+- TCP on 9000: `hello` handshake, pairing mode for bands (§5), and a 30 Hz tick that broadcasts `pose`, `state` and events.
 - A paired band's `gesture` messages (its built-in decoded taps, swipes and pinches) are relayed straight to every headset.
 - UDP discovery beacon `SPELLGAME <port>` on 47777 (§4.1).
 - Game logic in `spellgame/game_state.py`, a pure `GameState.step(inputs, dt)` with no networking. Fireball is implemented (§9); sword and shield are next.
@@ -22,19 +22,22 @@ uv run python -m spellgame                 # --port, --tick-hz, --no-beacon, --n
 ```
 
 The server opens a live monitor (Textual): connected headsets and hand clients side by side, each with its player ID,
-address, the device it reported in `hello`, and its most recent incoming packets; the log runs underneath. `q` quits.
+address, the device it reported in `hello`, and its most recent incoming packets; the log runs underneath. `p` starts pairing mode, `q` quits.
 `--no-tui` logs to stderr instead.
 
 Without a headset or a band, the fake clients stand in for them (each finds the server via the beacon, or pass `--host`):
 
 ```bash
 uv run python -m spellgame.tools.fake_vr --position 0,0 --facing 0 --throw-every 2   # P1, throws every 2 s
-uv run python -m spellgame.tools.fake_band --snap-every 2                            # P1's band, snaps every 2 s
 uv run python -m spellgame.tools.fake_vr --position 0,3 --facing 180                 # P2, stands 3 m away
+uv run python -m spellgame.tools.fake_band --pinch-on-prompt --snap-every 2          # a band, snaps every 2 s
 ```
 
-Start them in that order so join-order pairing gives the band to P1. Without `--snap-every`, `fake_band` reads gestures
-from stdin: `s` snap, `f` fist, `p` open palm, `n` none. `fake_vr` prints the `spell`, `damage` and `impact` events it receives.
+Bands connect unpaired. Press `p` in the server's monitor (or have any client send `pair_start`) to start pairing mode:
+the server prompts each headset without a band in join order, and the next band to pinch pairs with the prompted player.
+The monitor shows who is being prompted. `--pinch-on-prompt` makes `fake_band` pinch on every prompt until it's
+paired. Without `--snap-every`, `fake_band` reads gestures from stdin: `s` snap, `f` fist, `p` open palm, `n` none,
+`i` pinch. `fake_vr` prints the `spell`, `damage` and `impact` events it receives.
 
 ## Test
 

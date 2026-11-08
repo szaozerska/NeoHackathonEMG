@@ -22,7 +22,7 @@ uv run python -m handclient                                  # prompts for the K
 uv run python -m handclient --kinesis-url 'URL' --host 10.0.0.5   # no prompts
 ```
 
-Pairing with a headset follows the server's join order (§5): join with the headset first.
+The client connects unpaired. To pair, start pairing mode on the server (`p` in its monitor): when the server prompts your headset's player, pinch your index or middle finger to your thumb.
 
 ## What it does
 

@@ -54,14 +54,22 @@ def _recent_packets(conn: ClientConnection) -> Table:
     return table
 
 
-def render_client(conn: ClientConnection) -> Panel:
-    return Panel(Group(_metadata(conn), _recent_packets(conn)), title=conn.player_id or "unpaired", title_align="left")
+def render_client(conn: ClientConnection, prompted: bool) -> Panel:
+    body = Group(_metadata(conn), _recent_packets(conn))
+    title = conn.player_id or "unpaired"
+    if not prompted:
+        return Panel(body, title=title, title_align="left")
+    return Panel(body, title=f"{title} · pinch now", title_align="left", border_style="bold yellow")
 
 
-def render_clients(connections: list[ClientConnection]) -> RenderableType:
+def render_clients(connections: list[ClientConnection], prompted_player_id: str | None) -> RenderableType:
     if not connections:
         return Text("none connected", style="dim italic")
-    return Group(*(render_client(conn) for conn in connections))
+    return Group(*(render_client(conn, _is_prompted(conn, prompted_player_id)) for conn in connections))
+
+
+def _is_prompted(conn: ClientConnection, prompted_player_id: str | None) -> bool:
+    return prompted_player_id is not None and conn.player_id == prompted_player_id
 
 
 class ClientList(Static):
@@ -74,7 +82,17 @@ class ClientList(Static):
         connections = sorted(
             (conn for conn in self._server.connections if conn.role == self._role), key=lambda c: c.connected_at
         )
-        self.update(render_clients(connections))
+        self.update(render_clients(connections, self._server.prompted_player_id))
+
+
+class PairingBanner(Static):
+    def __init__(self, server: GameServer) -> None:
+        super().__init__(id="pairing")
+        self._server = server
+
+    def show_latest(self) -> None:
+        self.display = self._server.prompted_player_id is not None
+        self.update(f"PAIRING MODE · {self._server.prompted_player_id}, pinch your fingers")
 
 
 class LogPaneHandler(logging.Handler):
@@ -91,22 +109,25 @@ class ServerMonitor(App[None]):
 
     TITLE = "spellgame server"
     CSS = """
+    #pairing { background: $warning; color: $background; text-style: bold; padding: 0 1; display: none; }
     #clients { height: 3fr; }
     .column { width: 1fr; border: round $primary; }
     #log { height: 1fr; border: round $secondary; }
     """
-    BINDINGS = [("q", "quit", "Quit")]
+    BINDINGS = [("p", "start_pairing", "Pairing mode"), ("q", "quit", "Quit")]
 
     def __init__(self, server: GameServer) -> None:
         super().__init__()
         self._server = server
         self._lists = [ClientList(server, p.Role.VR), ClientList(server, p.Role.CLASSIFIER)]
+        self._pairing_banner = PairingBanner(server)
         self._log_pane = RichLog(id="log", max_lines=2000)
         self._log_handler = LogPaneHandler(self._log_pane)
         self._log_handler.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
 
     def compose(self) -> ComposeResult:
         yield Header()
+        yield self._pairing_banner
         with Horizontal(id="clients"):
             for client_list, title in zip(self._lists, ("Headsets (VR)", "Hand clients"), strict=True):
                 column = VerticalScroll(client_list, classes="column")
@@ -126,6 +147,11 @@ class ServerMonitor(App[None]):
         await self._server.stop()
         logging.getLogger().removeHandler(self._log_handler)
 
+    def action_start_pairing(self) -> None:
+        self._server.start_pairing()
+        self._show_latest()
+
     def _show_latest(self) -> None:
+        self._pairing_banner.show_latest()
         for client_list in self._lists:
             client_list.show_latest()

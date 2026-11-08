@@ -85,8 +85,9 @@ class GameServer:
         self.beacon_address = beacon_address
         self.game = GameState(tuning=tuning or Tuning())
         self.players: dict[str, PlayerSlot] = {}
-        self.unpaired_classifiers: list[ClientConnection] = []
         self.connections: set[ClientConnection] = set()
+        self.prompted_player_id: str | None = None
+        """The player told to pinch while pairing mode (§5) runs; None outside pairing mode."""
         self._server: asyncio.Server | None = None
         self._tasks: list[asyncio.Task[None]] = []
         self._joins = 0
@@ -167,7 +168,6 @@ class GameServer:
         log.info("%s joined as %s (headset)", conn.peer, slot.player_id)
         if slot.classifier is not None:
             conn.send(p.Paired(player_id=slot.player_id))
-        self._pair_waiting_classifiers()
 
     def _join_classifier(self, conn: ClientConnection, requested_id: str | None) -> None:
         conn.send(p.Welcome(player_id=None))
@@ -175,17 +175,30 @@ class GameServer:
         if slot is not None and slot.classifier is None:
             self._pair(conn, slot)
             return
-        self.unpaired_classifiers.append(conn)
-        log.info("%s connected as a classifier, waiting to pair", conn.peer)
-        self._pair_waiting_classifiers()
+        log.info("%s connected as a classifier, waiting for pairing mode", conn.peer)
 
-    def _pair_waiting_classifiers(self) -> None:
-        """Join-order pairing (§5): each waiting classifier gets the most recently joined headset without a band."""
-        while self.unpaired_classifiers:
-            candidates = [s for s in self.players.values() if s.vr is not None and s.classifier is None]
-            if not candidates:
-                return
-            self._pair(self.unpaired_classifiers.pop(0), max(candidates, key=lambda s: s.join_order))
+    def start_pairing(self) -> None:
+        """Pairing mode (§5): prompts each headset without a band, in join order, to pinch; the next pinch pairs."""
+        log.info("pairing mode started")
+        self._send_to_everyone([p.PairStart()])
+        self._prompt_next_player()
+
+    def _prompt_next_player(self) -> None:
+        waiting = [slot for slot in self.players.values() if slot.vr is not None and slot.classifier is None]
+        if not waiting:
+            self.prompted_player_id = None
+            log.info("pairing mode finished: every headset has a band")
+            return
+        slot = min(waiting, key=lambda s: s.join_order)
+        self.prompted_player_id = slot.player_id
+        self._send_to_everyone([p.PairPrompt(player_id=slot.player_id)])
+        log.info("pairing: %s, pinch your fingers", slot.player_id)
+
+    def _on_pinch(self, conn: ClientConnection) -> None:
+        if self.prompted_player_id is None:
+            return
+        self._pair(conn, self.players[self.prompted_player_id])
+        self._prompt_next_player()
 
     def _pair(self, conn: ClientConnection, slot: PlayerSlot) -> None:
         slot.classifier = conn
@@ -197,8 +210,6 @@ class GameServer:
         log.info("%s paired with %s (band)", conn.peer, slot.player_id)
 
     def _leave(self, conn: ClientConnection) -> None:
-        if conn in self.unpaired_classifiers:
-            self.unpaired_classifiers.remove(conn)
         slot = self.players.get(conn.player_id) if conn.player_id else None
         if slot is None:
             return
@@ -206,14 +217,21 @@ class GameServer:
             slot.vr = None
             slot.input.connected = False
             log.info("%s headset disconnected", slot.player_id)
+            if slot.player_id == self.prompted_player_id:
+                self._prompt_next_player()
         elif slot.classifier is conn:
             slot.classifier = None
             slot.input.band_paired = False
             slot.input.sign = p.Sign.NONE
             log.info("%s band disconnected", slot.player_id)
-            self._pair_waiting_classifiers()
 
     def _on_message(self, conn: ClientConnection, message: p.Message) -> None:
+        if isinstance(message, p.PairStart):
+            self.start_pairing()
+            return
+        if isinstance(message, p.Pinch) and conn.role == p.Role.CLASSIFIER and conn.player_id is None:
+            self._on_pinch(conn)
+            return
         slot = self.players.get(conn.player_id) if conn.player_id else None
         if slot is None:
             return
@@ -261,6 +279,13 @@ class GameServer:
         slot = self.players.get(player_id)
         if slot is not None and slot.classifier is not None:
             slot.classifier.send(p.Haptic(duration_ms=duration_ms))
+
+    def _send_to_everyone(self, messages: list[p.Message]) -> None:
+        """Every headset and every classifier, paired or not."""
+        payload = b"".join(p.encode_line(message) for message in messages)
+        for conn in self.connections:
+            if conn.role is not None:
+                conn.send_line(payload)
 
     def _broadcast(self, messages: list[p.Message]) -> None:
         payload = b"".join(p.encode_line(message) for message in messages)

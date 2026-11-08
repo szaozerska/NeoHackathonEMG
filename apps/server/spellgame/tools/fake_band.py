@@ -1,8 +1,9 @@
 """Fake Neural Band client: sends already-recognized gestures as `sign` messages, like the hand-sign client will.
 
-Type a gesture and press Enter: `s` = snap, `f` = fist, `p` = open palm, `n` = none. Or script it:
+Type a gesture and press Enter: `s` = snap, `f` = fist, `p` = open palm, `n` = none, `i` = pinch (pairs it while the
+server's pairing mode prompts a player). Or script it:
 
-    python -m spellgame.tools.fake_band --snap-every 3
+    python -m spellgame.tools.fake_band --pinch-on-prompt --snap-every 3
 """
 
 from __future__ import annotations
@@ -22,6 +23,7 @@ log = logging.getLogger("fake_band")
 SNAP_HOLD_S = 0.15
 HEARTBEAT_S = 0.1
 KEYS = {"s": p.Sign.SNAP, "f": p.Sign.FIST, "p": p.Sign.OPEN_PALM, "n": p.Sign.NONE}
+PINCH_KEY = "i"
 
 
 class Band:
@@ -43,6 +45,10 @@ class Band:
             self.held = sign
         self.send()
 
+    def pinch(self) -> None:
+        if self.player_id is None:
+            self.conn.send(p.Pinch(t=time.monotonic(), hand=self.hand))
+
     def send(self) -> None:
         if self.player_id is None:
             return
@@ -61,6 +67,9 @@ async def run(args: argparse.Namespace) -> None:
             if isinstance(message, p.Paired):
                 band.player_id = message.player_id
                 log.info("paired with %s", message.player_id)
+            elif isinstance(message, p.PairPrompt) and args.pinch_on_prompt and band.player_id is None:
+                log.info("pinch (pairing prompts %s)", message.player_id)
+                band.pinch()
 
     async def heartbeat() -> None:
         last = band.current
@@ -80,7 +89,12 @@ async def run(args: argparse.Namespace) -> None:
     async def keyboard() -> None:
         loop = asyncio.get_running_loop()
         while line := await loop.run_in_executor(None, sys.stdin.readline):
-            sign = KEYS.get(line.strip().lower()[:1])
+            key = line.strip().lower()[:1]
+            if key == PINCH_KEY:
+                log.info("pinch")
+                band.pinch()
+                continue
+            sign = KEYS.get(key)
             if sign is not None:
                 log.info("gesture: %s", sign)
                 band.gesture(sign)
@@ -101,8 +115,9 @@ def main() -> None:
     parser.add_argument("--host", help="server IP; omit to use the discovery beacon")
     parser.add_argument("--port", type=int, default=p.GAME_PORT)
     parser.add_argument("--discovery-port", type=int, default=p.DISCOVERY_PORT)
-    parser.add_argument("--player-id", help="pair directly with this player instead of by join order")
+    parser.add_argument("--player-id", help="pair directly with this player instead of through pairing mode")
     parser.add_argument("--hand", choices=[p.Hand.LEFT, p.Hand.RIGHT], default=p.Hand.RIGHT)
+    parser.add_argument("--pinch-on-prompt", action="store_true", help="pinch whenever pairing mode prompts a player")
     parser.add_argument("--snap-every", type=float, default=0.0, help="snap every N seconds instead of reading keys")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")

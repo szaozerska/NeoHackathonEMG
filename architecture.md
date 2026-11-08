@@ -151,23 +151,22 @@ The first message on every TCP connection:
 - Every player has one ID, shared by their VR client and their classification client.
 - The server uses this ID to link the two streams to one player.
 - The server assigns player IDs in the order the headsets join: `P1`, `P2`, and so on. Each headset shows its own ID.
-- **Pairing a Neural Band with a headset** uses one of two methods (which one is still open, §8):
-  1. **Join order:**
-     - Player 1 joins with their headset, then connects their band's classification client; then player 2 does the same, and so on.
-     - The server pairs each newly connected classifier with the most recently joined headset that has no band yet.
-  2. **"Pair Neural Bands" screen:**
-     - Triggered from the game server or a Quest controller.
-     - The server prompts player 1 to pinch their fingers, then player 2, and so on.
-     - The first classifier to report a pinch (using the band's built-in decoded `gesture` events, so no trained model is needed) is paired with the player currently being prompted.
-- With either method, classifier clients connect **unpaired** and receive their player ID from the server once paired.
+- **Pairing a Neural Band with a headset** uses **pairing mode** (the "Pair Neural Bands" screen):
+  - Triggered from the game server's monitor (`p`), or by any connected client (headset or classifier) sending `pair_start`.
+  - The server sends `pair_start`, then `pair_prompt` naming the first headset without a band (in join order): that player pinches their fingers.
+  - The next unpaired classifier to report a `pinch` (using the band's built-in decoded `gesture` events, so no trained model is needed) is paired with the prompted player. The server then prompts the next headset without a band, and so on.
+  - If the prompted headset disconnects, the server moves on to the next one. Pairing mode ends once every connected headset has a band; a headset that joins later needs pairing mode started again.
+  - A `pinch` outside pairing mode is ignored.
+- Classifier clients connect **unpaired** and receive their player ID from the server once paired. A classifier that reconnects with its `player_id` in `hello` pairs straight back to that player.
 
 ## 6. Message types (default schema)
 
 | Type | Direction | Fields |
 |---|---|---|
 | `hello` / `welcome` / `error` | client ↔ server | see §4.2. `hello` may carry an optional `player_id`: a VR client reclaims its ID after a reconnect; a classifier pairs directly with that player. It may also carry `device: {name, model?, id?}`, shown in the server's monitor |
-| `pinch` | classifier → server | `t`, `hand` (sent during the pairing screen) |
-| `pair_start` / `pair_prompt` / `paired` | server → VR and classifier | `pair_prompt`: `player_id` currently being prompted; `paired`: `player_id` |
+| `pinch` | classifier → server | `t`, `hand` (sent while unpaired; acted on only during pairing mode, §5) |
+| `pair_start` | any client → server, server → VR and classifier | starts pairing mode (§5); the server echoes it to every client when pairing mode starts |
+| `pair_prompt` / `paired` | server → VR and classifier | `pair_prompt`: `player_id` currently being prompted (sent to every client); `paired`: `player_id` (sent to every headset and to the newly paired classifier) |
 | `pose` | VR → server, server → VR | `player_id`, `t`, `joints{head, chest, hips, l/r_shoulder, l/r_elbow, l/r_wrist, l/r_hand, l/r_knee, l/r_ankle, l/r_foot}` each `{pos:[x,y,z], rot:[w,x,y,z], vel?:[x,y,z]}`. `hips` is needed for the sword draw; legs come from full-body tracking (estimated by the Quest runtime) and are for debugging and display only; `vel` (optional, measured on the headset) gives cleaner hand speed than the server's finite difference |
 | `sign` | classifier → server | `player_id`, `t`, `hand` (`left`/`right`, the hand wearing the band), `sign` (`fist`, `open_palm`, `snap` or `none`), `confidence`. `snap` is momentary: the server acts on the transition into it |
 | `wrist` *(optional)* | classifier → server | `player_id`, `t`, `hand`, `rot:[w,x,y,z]` |
@@ -191,7 +190,6 @@ Timestamps (`t`) are sender-local and used only for ordering within one stream. 
 
 - The hand sign vocabulary, and the spell grammar (which signs, sequences, and charge rules make which spells).
 - What EMG detects that the Quest's own hand tracking can't (occlusion, grip tension, charge intensity). This decides whether EMG is the primary input or a fallback.
-- Which band-to-headset pairing method to use: join order, or the pinch-to-pair screen (§5).
 - Server tick rate and pose send rate.
 - Whether the optional `wrist` stream is needed at all.
 - How much geometry spells need. This decides between the Python server and a headless Unity server (§2.3).

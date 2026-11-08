@@ -27,6 +27,12 @@ async def until(conn: Connection, predicate, timeout=3.0):
     return await asyncio.wait_for(wait(), timeout)
 
 
+async def pinch_when_prompted(band: Connection, player_id: str) -> None:
+    await until(band, lambda m: isinstance(m, p.PairPrompt) and m.player_id == player_id)
+    band.send(p.Pinch(t=0.0, hand="right"))
+    assert (await until(band, lambda m: isinstance(m, p.Paired))).player_id == player_id
+
+
 def run(coro):
     asyncio.run(asyncio.wait_for(coro, 15))
 
@@ -73,7 +79,8 @@ def test_band_gesture_is_relayed_to_every_headset_with_the_bands_player_id():
             await vr1.handshake(p.Role.VR)
             band1 = await Connection.open("127.0.0.1", server.port)
             await band1.handshake(p.Role.CLASSIFIER)
-            await until(band1, lambda m: isinstance(m, p.Paired))
+            server.start_pairing()
+            await pinch_when_prompted(band1, "P1")
             vr2 = await Connection.open("127.0.0.1", server.port)
             await vr2.handshake(p.Role.VR)
 
@@ -98,7 +105,8 @@ def test_server_records_each_clients_device_and_received_packets():
             await vr.handshake(p.Role.VR, device=p.DeviceInfo(name="Quest 3", id="q3"))
             band = await Connection.open("127.0.0.1", server.port)
             await band.handshake(p.Role.CLASSIFIER)
-            await until(band, lambda m: isinstance(m, p.Paired))
+            server.start_pairing()
+            await pinch_when_prompted(band, "P1")
             vr.send(standing_pose(None, 1.0))
             await until(vr, lambda m: isinstance(m, p.Pose))
 
@@ -108,6 +116,7 @@ def test_server_records_each_clients_device_and_received_packets():
             assert by_role[p.Role.CLASSIFIER].player_id == "P1"
             assert [type(r.message) for r in by_role[p.Role.VR].recent_packets] == [p.Hello, p.Pose]
             assert by_role[p.Role.VR].packets_received == 2
+            assert [type(r.message) for r in by_role[p.Role.CLASSIFIER].recent_packets] == [p.Hello, p.Pinch]
 
             await band.close()
             await until(vr, lambda m: isinstance(m, p.State) and not m.players[0].band_paired)
@@ -133,22 +142,27 @@ def test_rejects_connection_without_hello():
     run(scenario())
 
 
-def test_two_players_pair_by_join_order_and_fireball_deals_damage():
+def test_headset_starts_pairing_mode_bands_pair_by_pinch_and_fireball_deals_damage():
     async def scenario():
         server = GameServer(host="127.0.0.1", port=0, tick_hz=60, beacon_address=None)
         await server.start()
         try:
             vr1 = await Connection.open("127.0.0.1", server.port)
             assert (await vr1.handshake(p.Role.VR)).player_id == "P1"
-            band1 = await Connection.open("127.0.0.1", server.port)
-            assert (await band1.handshake(p.Role.CLASSIFIER)).player_id is None
-            assert (await until(band1, lambda m: isinstance(m, p.Paired))).player_id == "P1"
-
             vr2 = await Connection.open("127.0.0.1", server.port)
             assert (await vr2.handshake(p.Role.VR)).player_id == "P2"
+            band1 = await Connection.open("127.0.0.1", server.port)
+            assert (await band1.handshake(p.Role.CLASSIFIER)).player_id is None
             band2 = await Connection.open("127.0.0.1", server.port)
             await band2.handshake(p.Role.CLASSIFIER)
-            assert (await until(band2, lambda m: isinstance(m, p.Paired))).player_id == "P2"
+
+            vr2.send(p.PairStart())
+            await until(vr1, lambda m: isinstance(m, p.PairStart))
+            assert (await until(vr1, lambda m: isinstance(m, p.PairPrompt))).player_id == "P1"
+            await pinch_when_prompted(band2, "P1")
+            await pinch_when_prompted(band1, "P2")
+            assert server.prompted_player_id is None
+            band1, band2 = band2, band1
 
             loop = asyncio.get_running_loop()
             start = loop.time()
@@ -204,7 +218,8 @@ def test_headset_reconnect_reclaims_player_id_and_band():
             await vr.handshake(p.Role.VR)
             band = await Connection.open("127.0.0.1", server.port)
             await band.handshake(p.Role.CLASSIFIER)
-            await until(band, lambda m: isinstance(m, p.Paired))
+            server.start_pairing()
+            await pinch_when_prompted(band, "P1")
             await vr.close()
             await asyncio.sleep(0.1)
             assert server.game.players["P1"].connected is False
@@ -214,6 +229,50 @@ def test_headset_reconnect_reclaims_player_id_and_band():
             assert (await until(vr, lambda m: isinstance(m, p.Paired))).player_id == "P1"
             await vr.close()
             await band.close()
+        finally:
+            await server.stop()
+
+    run(scenario())
+
+
+def test_bands_stay_unpaired_until_pairing_mode_and_a_pinch_outside_it_is_ignored():
+    async def scenario():
+        server = GameServer(host="127.0.0.1", port=0, beacon_address=None)
+        await server.start()
+        try:
+            vr = await Connection.open("127.0.0.1", server.port)
+            await vr.handshake(p.Role.VR)
+            band = await Connection.open("127.0.0.1", server.port)
+            await band.handshake(p.Role.CLASSIFIER)
+            band.send(p.Pinch(t=0.0, hand="right"))
+            state = await until(vr, lambda m: isinstance(m, p.State) and m.tick > 5)
+            assert not state.players[0].band_paired
+            assert server.players["P1"].classifier is None
+            assert server.prompted_player_id is None
+        finally:
+            await server.stop()
+
+    run(scenario())
+
+
+def test_pairing_mode_moves_on_when_the_prompted_headset_leaves_and_ends_when_all_are_paired():
+    async def scenario():
+        server = GameServer(host="127.0.0.1", port=0, beacon_address=None)
+        await server.start()
+        try:
+            vr1 = await Connection.open("127.0.0.1", server.port)
+            await vr1.handshake(p.Role.VR)
+            vr2 = await Connection.open("127.0.0.1", server.port)
+            await vr2.handshake(p.Role.VR)
+            band = await Connection.open("127.0.0.1", server.port)
+            await band.handshake(p.Role.CLASSIFIER)
+
+            server.start_pairing()
+            assert server.prompted_player_id == "P1"
+            await vr1.close()
+            await pinch_when_prompted(band, "P2")
+            assert server.prompted_player_id is None
+            assert server.players["P2"].classifier is not None
         finally:
             await server.stop()
 
