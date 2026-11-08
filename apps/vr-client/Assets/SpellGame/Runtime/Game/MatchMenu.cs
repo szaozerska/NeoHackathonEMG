@@ -89,9 +89,6 @@ namespace SpellGame.Game
         private string _pendingMode = MatchMode.Solo;
         private bool _pendingSwordOnly;
 
-        /// <summary>The menu hides while this player's grip calibration prompts run, until this time.</summary>
-        private float _gripCalibrationUntil;
-        private const float GripStallSeconds = 3f;
         private MatchSnapshot _match = new();
         private StateMessage _state;
         private string _lastPhase;
@@ -129,7 +126,6 @@ namespace SpellGame.Game
 
         /// <summary>The connection screen covers every other screen until the server has welcomed this headset.</summary>
         private View ShownView => gameClient.Connection != ConnectionState.Connected ? View.Connection
-            : Time.unscaledTime < _gripCalibrationUntil ? View.None
             : _view == View.Results && Time.unscaledTime < _resultsAt ? View.None
             : _view;
 
@@ -199,7 +195,6 @@ namespace SpellGame.Game
         {
             gameClient.StateReceived += OnState;
             gameClient.ConnectionChanged += OnConnectionChanged;
-            gameClient.CalibrationReceived += OnGripCalibration;
             UiStyle.ThemeChanged += ApplyTheme;
         }
 
@@ -207,7 +202,6 @@ namespace SpellGame.Game
         {
             gameClient.StateReceived -= OnState;
             gameClient.ConnectionChanged -= OnConnectionChanged;
-            gameClient.CalibrationReceived -= OnGripCalibration;
             UiStyle.ThemeChanged -= ApplyTheme;
         }
 
@@ -221,14 +215,6 @@ namespace SpellGame.Game
             _match = new MatchSnapshot();
             _lastPhase = null;
             _view = View.Mode;
-        }
-
-        private void OnGripCalibration(CalibrationStatusMessage status)
-        {
-            if (status.PlayerId != Me)
-                return;
-            var running = status.Phase is CalibrationPhase.Rest or CalibrationPhase.Squeeze or CalibrationPhase.Palm;
-            _gripCalibrationUntil = running ? Time.unscaledTime + GripStallSeconds : 0f;
         }
 
         private void OnState(StateMessage state)
@@ -398,10 +384,8 @@ namespace SpellGame.Game
                     break;
                 case View.Settings:
                     Layout(panel, "SETTINGS",
-                        "Menu style changes menus and buttons only; spells look the same.\n" +
-                        "Calibrate grip (optional, 8 s): relax, fist, then palm out.\nWithout it, grip strength counts as normal.",
+                        "Menu style changes menus and buttons only; spells look the same.",
                         ($"Menu style: {MenuColoursName}", Kind.Primary, NextMenuColours),
-                        ("Calibrate grip", Kind.Secondary, () => gameClient.Send(new CalibrateMessage())),
                         ("Back", Kind.Secondary, () => _view = View.Mode));
                     break;
                 case View.Duration:

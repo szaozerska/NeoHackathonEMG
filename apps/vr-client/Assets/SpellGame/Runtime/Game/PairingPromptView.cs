@@ -7,8 +7,7 @@ namespace SpellGame.Game
     /// <summary>
     /// While pairing mode (architecture.md §5) prompts the local player, shows "Pinch to pair your band" a metre ahead,
     /// just below eye level (not head-locked). It goes away when anyone is paired or another player is prompted, or the
-    /// headset loses the server. A pairing is followed straight away by the grip calibration's own prompt
-    /// (<see cref="GripCalibrationView"/>), so there's no separate confirmation here.
+    /// headset loses the server.
     /// </summary>
     public sealed class PairingPromptView : MonoBehaviour
     {

@@ -29,13 +29,10 @@ class ServerLink:
         host: str,
         port: int,
         on_haptic: Callable[[int], None],
-        on_calibrate: Callable[[], None] = lambda: None,
     ) -> None:
         self._host = host
         self._port = port
         self._on_haptic = on_haptic
-        self._on_calibrate = on_calibrate
-        """Starts the grip calibration when the player asks for it from the headset menu (`Calibrate`)."""
         self._conn: Connection | None = None
         self.player_id: str | None = None
 
@@ -116,8 +113,6 @@ class ServerLink:
             case p.Paired(player_id=player_id):
                 self.player_id = player_id
                 log.info("band paired with %s", player_id)
-            case p.Calibrate():
-                self._on_calibrate()
             case p.Haptic(duration_ms=duration_ms):
                 self._on_haptic(duration_ms)
             case p.Error(message=text):

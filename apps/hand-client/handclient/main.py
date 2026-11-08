@@ -105,7 +105,7 @@ async def run_hand_client(kinesis_url: str, server: Server, classifier: EmgClass
             post(event)
 
     tension = TensionTracker()
-    link = ServerLink(*server, on_haptic=haptic_durations_ms.put, on_calibrate=tension.request_calibration)
+    link = ServerLink(*server, on_haptic=haptic_durations_ms.put)
     feed = KinesisFeed(kinesis_url, on_feed_event)
     worker = ClassifierWorker(emg_batches, classifier, post, tension)
     async with asyncio.TaskGroup() as tasks:

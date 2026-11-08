@@ -64,7 +64,6 @@ namespace SpellGame.Editor
             CreateAiWizardView(client);
             CreateSpellAudio(client);
             CreateHitCallouts(client);
-            CreateGripCalibrationView(client);
             CreateInfiniteVoidView(client, trackingSpace.Find("CenterEyeAnchor"));
 
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -372,14 +371,6 @@ namespace SpellGame.Editor
         private static void CreatePairingPromptView(GameClient client)
         {
             var view = new GameObject("Pairing Prompt").AddComponent<PairingPromptView>();
-            var serializedView = new SerializedObject(view);
-            serializedView.FindProperty("gameClient").objectReferenceValue = client;
-            serializedView.ApplyModifiedPropertiesWithoutUndo();
-        }
-
-        private static void CreateGripCalibrationView(GameClient client)
-        {
-            var view = new GameObject("Grip Calibration").AddComponent<GripCalibrationView>();
             var serializedView = new SerializedObject(view);
             serializedView.FindProperty("gameClient").objectReferenceValue = client;
             serializedView.ApplyModifiedPropertiesWithoutUndo();

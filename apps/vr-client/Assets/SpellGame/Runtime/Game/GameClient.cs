@@ -55,7 +55,6 @@ namespace SpellGame.Game
         public event Action<StateMessage> StateReceived;
         public event Action<SpaceMessage> SpaceReceived;
         public event Action<DomainExpansionMessage> DomainExpansionReceived;
-        public event Action<CalibrationStatusMessage> CalibrationReceived;
         public event Action<PairPromptMessage> PairPromptReceived;
         public event Action<PairedMessage> PairedReceived;
         public event Action<ConnectionState> ConnectionChanged;
@@ -262,9 +261,6 @@ namespace SpellGame.Game
                     break;
                 case ImpactMessage impact:
                     ImpactReceived?.Invoke(impact);
-                    break;
-                case CalibrationStatusMessage calibration:
-                    CalibrationReceived?.Invoke(calibration);
                     break;
                 case StateMessage state:
                     _aligned.Clear();
