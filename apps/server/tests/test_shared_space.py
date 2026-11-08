@@ -73,3 +73,12 @@ def test_center_calibration_counts_as_aligned_and_fake_headsets_report_it_once()
     fake = FakeAlignment(p.AlignMethod.CENTER)
     assert fake.replies(space.message_for(1), "P1") == [p.Aligned(method=p.AlignMethod.CENTER)]
     assert fake.replies(space.message_for(1), "P1") == []
+
+
+def test_marker_calibration_counts_as_aligned():
+    space = SharedSpace()
+    assert space.mark_aligned("P1", p.AlignMethod.MARKER, None)
+    assert space.mark_aligned("P2", p.AlignMethod.MARKER, None)
+    assert not space.mixed_methods()
+    fake = FakeAlignment(p.AlignMethod.MARKER)
+    assert fake.replies(space.message_for(2), "P2") == [p.Aligned(method=p.AlignMethod.MARKER)]

@@ -107,6 +107,7 @@ namespace SpellGame.Protocol
         public const string Anchor = "anchor";
         public const string FloorSpots = "floor_spots";
         public const string Center = "center";
+        public const string Marker = "marker";
     }
 
     /// <summary>Server → VR: the shared room frame. Sent on join and whenever the host or anchor changes.</summary>

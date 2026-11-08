@@ -167,7 +167,10 @@ Both headsets share one physical room, so every pose, projectile and hit has to 
 - **The server coordinates it:**
   - It picks the **anchor host**: the first connected headset. The host keeps the role until it disconnects; then the next headset in join order takes over.
   - It sends each headset a `space` message on join and whenever the host or anchor changes. The message has the Meta group UUID, the host, the current anchor (if any) and that player's floor spot.
-- **Center calibration (default).** Needs no internet and no measuring. Anchors are off unless `useSharedAnchors` is set on `SharedSpaceAligner`.
+- **Floor marker (default).** Print `docs/center-marker.png` (a QR code encoding `SPELLGAME-CENTER`) and tape it flat in the middle of the room, with its arrow pointing to P2's side.
+  - After **I'm ready**, each player looks down at the marker. MRUK tracks the QR code (this needs the spatial data permission). Once it has been tracked for 1.5 s, its averaged center becomes the origin (its height is the floor) and its top becomes +z. The headset then sends `aligned` with `method: marker`. Nothing to press.
+  - The server keeps players ready but holds the countdown until both fighters are aligned. A recenter or `space_reset` clears the alignment, and the headset re-locks as soon as it sees the marker again.
+- **Center calibration (fallback where QR tracking is unavailable).** Needs no internet and no measuring. Anchors are off unless `useSharedAnchors` is set on `SharedSpaceAligner`.
   - Both players meet in the middle of the room facing each other, touch their right controller tips together (each pointing at the other) and click the left thumbstick. They don't have to click at the same moment.
   - Each headset averages its right controller's tip over 0.3 s. The tip, dropped to the floor, becomes the origin; the controller's horizontal pointing direction becomes the player's `spot_yaw` (P1 +z, P2 -z). The headset then sends `aligned` with `method: center`.
   - The versus ready screen shows these steps, and **I'm ready!** stays unavailable until the headset is calibrated. Clicking again recalibrates; a system recenter clears it.

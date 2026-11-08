@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.meta.xr.mrutilitykit": "207.0.1",
     "com.meta.xr.sdk.core": "207.0.1",
     "com.meta.xr.sdk.movement": "https://github.com/oculus-samples/Unity-Movement.git#77274f138974087ba2909bab2723fc6ff851338b",
     "com.unity.ide.rider": "3.1.0",
