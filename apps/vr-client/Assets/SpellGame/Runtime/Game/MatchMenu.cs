@@ -67,6 +67,7 @@ namespace SpellGame.Game
         private sealed class Panel
         {
             public Transform Root;
+            public TextMesh Footer;
             public string Key;
             public readonly List<Button> Buttons = new();
             public Vector3 Target;
@@ -81,6 +82,10 @@ namespace SpellGame.Game
         private MatchSnapshot _match = new();
         private StateMessage _state;
         private string _lastPhase;
+        private int _stateVersion;
+        private int _keyStateVersion = -1;
+        private View _keyView;
+        private string _key;
 
         private Button _hovered;
         private float _hoverStart;
@@ -145,6 +150,7 @@ namespace SpellGame.Game
         private void OnState(StateMessage state)
         {
             _state = state;
+            _stateVersion++;
             _match = state.Match ?? new MatchSnapshot();
             if (_match.Phase == _lastPhase)
                 return;
@@ -214,10 +220,17 @@ namespace SpellGame.Game
 
         private void UpdatePanel()
         {
-            var key = PanelKey();
+            if (_view != _keyView || _stateVersion != _keyStateVersion || _key == null)
+            {
+                _key = PanelKey();
+                _keyView = _view;
+                _keyStateVersion = _stateVersion;
+            }
+            var key = _key;
             if (_panel != null && _panel.Key == key)
             {
                 FollowView(_panel);
+                UpdateFooter(_panel);
                 return;
             }
 
@@ -234,6 +247,14 @@ namespace SpellGame.Game
             _panel.Root.position = _panel.Target;
             _panel.Placed = true;
             FaceViewer(_panel.Root);
+            UpdateFooter(_panel);
+        }
+
+        /// <summary>Connection, pairing and HP status from <see cref="GameClient"/>, in small text under the panel.</summary>
+        private void UpdateFooter(Panel panel)
+        {
+            if (panel.Footer != null && panel.Footer.text != gameClient.StatusText)
+                panel.Footer.text = gameClient.StatusText;
         }
 
         /// <summary>Changes whenever what the current screen shows changes, so the panel is rebuilt only then.</summary>
@@ -393,6 +414,8 @@ namespace SpellGame.Game
 
             var back = CreateQuad("Panel", panel.Root, _panelMaterial);
             back.localScale = new Vector3(panelWidth, height, 1f);
+            panel.Footer = CreateText("Status", panel.Root, "", new Vector3(0f, -height * 0.5f - 0.012f, -0.003f), 0.0055f, new Color(0.75f, 0.8f, 0.9f), FontStyle.Normal);
+            panel.Footer.anchor = TextAnchor.UpperCenter;
 
             var y = height * 0.5f - pad;
             CreateText("Title", panel.Root, title, new Vector3(0f, y - titleHeight * 0.45f, -0.003f), 0.011f, AccentText, FontStyle.Bold);

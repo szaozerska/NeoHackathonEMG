@@ -17,6 +17,7 @@ namespace SpellGame.Game
     {
         [SerializeField] private OVRSkeleton bodySkeleton;
         [SerializeField] private DebugSkeletonsView debugSkeletons;
+        [Tooltip("Optional head-locked debug label; the match menu shows the same status under its panel.")]
         [SerializeField] private TextMesh statusLabel;
 
         [Header("Server")]
@@ -47,6 +48,9 @@ namespace SpellGame.Game
         public event Action<SpaceMessage> SpaceReceived;
 
         public string PlayerId => _playerId;
+
+        /// <summary>Connection, pairing, room-alignment and HP status lines.</summary>
+        public string StatusText { get; private set; } = "";
 
         /// <summary>Asks the server to start pairing mode (architecture.md §5).</summary>
         public void StartPairing() => Send(new PairStartMessage());
@@ -241,7 +245,9 @@ namespace SpellGame.Game
                 lines.Add(_spaceStatus);
             if (!string.IsNullOrEmpty(_hpStatus))
                 lines.Add(_hpStatus);
-            statusLabel.text = string.Join("\n", lines);
+            StatusText = string.Join("\n", lines);
+            if (statusLabel != null)
+                statusLabel.text = StatusText;
         }
     }
 }
