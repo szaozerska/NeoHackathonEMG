@@ -1,47 +1,78 @@
+using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering;
+using Object = UnityEngine.Object;
 
 namespace SpellGame.Game
 {
     /// <summary>
-    /// Shared look for the world-space UI ("Opal", Smash Ultimate style): slanted, milky-white half-transparent crystal
-    /// cards with two flat facets and a white rim, heavy italic Chakra Petch type in white with a dark-ink outline, ink
-    /// text on the cards, and P1 red / P2 blue only for player names and markers. All colours live in the palette below.
+    /// Shared look of every in-room screen, read from the active <see cref="UiTheme"/> (<see cref="Theme"/>): crystal
+    /// cards (two flat facets, a rim, optional slant / corner cut), crisp TextMeshPro text in white with a dark-ink
+    /// outline, and P1 red / P2 blue only for player names and markers. Set <see cref="Theme"/> to switch themes;
+    /// <see cref="ThemeChanged"/> fires so menus and banners rebuild.
     /// </summary>
     public static class UiStyle
     {
-        // ---------------------------------------------------------------- palette (every UI colour is here)
+        // ---------------------------------------------------------------- active theme
 
-        /// <summary>The one tint: the pastel shimmer in the lower facet and on selected cards. Change it to re-tint the UI.</summary>
-        public static readonly Color Accent = new(0.86f, 0.8f, 1f);
-        /// <summary>Milky crystal body (alpha set per style).</summary>
-        public static readonly Color Opal = new(0.97f, 0.97f, 1f);
-        public static readonly Color Rim = Color.white;
-        /// <summary>Dark ink #2a2f45: text outlines, drop shadows, text on cards, the selected-card outline.</summary>
-        public static readonly Color Ink = new(0.165f, 0.184f, 0.271f);
-        public static readonly Color Text = Color.white;
-        public static readonly Color TextDim = new(0.9f, 0.91f, 0.96f);
-        public static readonly Color P1 = new(1f, 0.25f, 0.25f);
-        public static readonly Color P2 = new(0.25f, 0.5f, 1f);
-        public static readonly Color Pointer = Color.white;
-        public static readonly Color Ash = new(0.35f, 0.35f, 0.4f);
-        public static readonly Color[] Confetti = { Color.white, Accent, Opal };
+        /// <summary>Fired after <see cref="Theme"/> changes.</summary>
+        public static event Action ThemeChanged;
 
-        /// <summary>tan 12°: the slant of every card and button.</summary>
-        public const float Skew = 0.2126f;
+        /// <summary>The active theme; defaults to <see cref="UiTheme.ResourceName"/> from Resources.</summary>
+        public static UiTheme Theme
+        {
+            get
+            {
+                if (_theme != null)
+                    return _theme;
+                _theme = UiTheme.Load(UiTheme.ResourceName);
+                if (_theme == null && !_warned)
+                {
+                    _warned = true;
+                    Debug.LogError($"[SpellGame] UI theme '{UiTheme.ResourceName}' not found in Resources; run SpellGame → Rebuild Main Scene.");
+                }
+                return _theme;
+            }
+            set
+            {
+                if (value == _theme)
+                    return;
+                _theme = value;
+                // Labels still using the old materials keep them until restyled (Restyle) or rebuilt.
+                TextMaterials.Clear();
+                ThemeChanged?.Invoke();
+            }
+        }
 
-        /// <summary>P1 red, P2 blue, anyone else white (white text always has the ink outline).</summary>
+        private static readonly UiPalette FallbackPalette = UiPalette.SmokyOpal;
+
+        public static UiPalette Palette => Theme != null ? Theme.Palette : FallbackPalette;
+        public static UiShape Shape => Theme != null ? Theme.Shape : UiShape.Rectangles;
+        public static UiSounds Sounds => Theme != null ? Theme.Sounds : default;
+
+        // ---------------------------------------------------------------- palette (from the theme)
+
+        public static Color Accent => Palette.Accent;
+        public static Color Fill => Palette.Fill;
+        public static Color Rim => Palette.Rim;
+        public static Color Ink => Palette.Ink;
+        public static Color Text => Palette.Text;
+        public static Color TextDim => Palette.TextDim;
+        public static Color P1 => Palette.P1;
+        public static Color P2 => Palette.P2;
+        public static Color Pointer => Palette.Pointer;
+        public static Color Ash => Palette.Ash;
+        public static Color[] Confetti => Palette.Confetti is { Length: > 0 } c ? c : FallbackPalette.Confetti;
+
+        /// <summary>P1 red, P2 blue, anyone else in the text colour.</summary>
         public static Color PlayerColor(string playerId) => playerId switch
         {
             "P1" => P1,
             "P2" => P2,
             _ => Text,
         };
-
-        /// <summary>Like <see cref="PlayerColor"/> but ink for others, for names inside ink body text on a card.</summary>
-        public static Color PlayerInk(string playerId) => playerId is "P1" or "P2" ? PlayerColor(playerId) : Ink;
 
         public static string Hex(Color color) => "#" + ColorUtility.ToHtmlStringRGB(color);
 
@@ -52,74 +83,114 @@ namespace SpellGame.Game
         /// <summary>Parameters of the <c>SpellGame/UI/CrystalPanel</c> shader. Lengths in metres.</summary>
         public struct CrystalStyle
         {
-            public Color Fill;        // opal body, alpha = opacity
-            public Color Rim;         // bright inner rim
+            public Color Fill;        // body, alpha = opacity
+            public Color FacetLight;  // top-right facet plane
+            public Color FacetDark;   // bottom-left facet plane
+            public Color Rim;
             public Color Outline;     // ink outline outside the rim (alpha 0 = none)
-            public Color Shimmer;     // tint of the lower facet (alpha = strength)
-            public Color Shadow;      // hard drop shadow under the card (alpha 0 = none)
+            public Color Shadow;      // hard drop shadow (alpha 0 = none)
             public float Skew;        // tan of the slant
+            public float CornerCut;
             public float RimWidth;
             public float OutlineWidth;
-            public float Facet;       // strength of the two facet planes
+            public float Facets;      // facet strength
             public float ShadowDrop;
         }
 
-        /// <summary>Title cards ("SPELL DUEL", "GAME!") and text panels.</summary>
-        public static CrystalStyle Panel => new()
+        private static CrystalStyle Base(float rimScale = 1f, float facets = 1f, float shadow = 0.35f)
         {
-            Fill = WithAlpha(Opal, 0.72f), Rim = Rim, Outline = Color.clear, Shimmer = WithAlpha(Accent, 0.6f),
-            Shadow = WithAlpha(Ink, 0.35f), Skew = Skew, RimWidth = 0.004f, OutlineWidth = 0f, Facet = 1f, ShadowDrop = 0.008f,
-        };
+            var palette = Palette;
+            var shape = Shape;
+            return new CrystalStyle
+            {
+                Fill = palette.Fill,
+                FacetLight = palette.FacetLight,
+                FacetDark = palette.FacetDark,
+                Rim = palette.Rim,
+                Outline = Color.clear,
+                Shadow = WithAlpha(palette.Ink, shadow),
+                Skew = shape.Skew,
+                CornerCut = shape.CornerCut,
+                RimWidth = shape.RimWidth * rimScale,
+                OutlineWidth = 0f,
+                Facets = shape.Facets * facets,
+                ShadowDrop = shape.ShadowDrop,
+            };
+        }
+
+        /// <summary>Title banners ("SPELL DUEL", "GAME!") and text panels.</summary>
+        public static CrystalStyle Panel
+        {
+            get
+            {
+                var style = Base(1.3f);
+                style.ShadowDrop *= 1.5f;
+                return style;
+            }
+        }
 
         /// <summary>Result cards and body text.</summary>
-        public static CrystalStyle Card => new()
-        {
-            Fill = WithAlpha(Opal, 0.64f), Rim = Rim, Outline = Color.clear, Shimmer = WithAlpha(Accent, 0.5f),
-            Shadow = WithAlpha(Ink, 0.3f), Skew = Skew, RimWidth = 0.003f, OutlineWidth = 0f, Facet = 1f, ShadowDrop = 0.006f,
-        };
+        public static CrystalStyle Card => Base();
 
-        /// <summary>Selected / primary button: brighter opal with an ink outline.</summary>
-        public static CrystalStyle Primary => new()
+        /// <summary>Primary / selected button: the darker crystal with an ink outline.</summary>
+        public static CrystalStyle Primary
         {
-            Fill = WithAlpha(Color.Lerp(Opal, Accent, 0.3f), 0.85f), Rim = Rim, Outline = Ink, Shimmer = WithAlpha(Accent, 0.7f),
-            Shadow = WithAlpha(Ink, 0.3f), Skew = Skew, RimWidth = 0.0025f, OutlineWidth = 0.004f, Facet = 1f, ShadowDrop = 0.005f,
-        };
+            get
+            {
+                var style = Base();
+                style.Fill = WithAlpha(Color.Lerp(style.Fill, style.FacetDark, 0.6f), Mathf.Max(style.Fill.a, 0.8f));
+                style.Outline = Ink;
+                style.OutlineWidth = Shape.OutlineWidth;
+                return style;
+            }
+        }
 
-        /// <summary>Secondary button: plain translucent white card.</summary>
-        public static CrystalStyle Secondary => new()
+        /// <summary>Secondary button: lighter, plainer crystal.</summary>
+        public static CrystalStyle Secondary
         {
-            Fill = WithAlpha(Opal, 0.55f), Rim = Rim, Outline = Color.clear, Shimmer = WithAlpha(Accent, 0.25f),
-            Shadow = WithAlpha(Ink, 0.25f), Skew = Skew, RimWidth = 0.0025f, OutlineWidth = 0f, Facet = 0.6f, ShadowDrop = 0.005f,
-        };
+            get
+            {
+                var style = Base(0.8f, 0.6f, 0.25f);
+                style.Fill = WithAlpha(style.FacetLight, style.FacetLight.a * 0.85f);
+                return style;
+            }
+        }
 
         /// <summary>Small always-on badges (match timer).</summary>
-        public static CrystalStyle Hud => new()
-        {
-            Fill = WithAlpha(Opal, 0.75f), Rim = Rim, Outline = Color.clear, Shimmer = WithAlpha(Accent, 0.5f),
-            Shadow = WithAlpha(Ink, 0.3f), Skew = Skew, RimWidth = 0.003f, OutlineWidth = 0f, Facet = 1f, ShadowDrop = 0.004f,
-        };
+        public static CrystalStyle Hud => Base(1f, 1f, 0.3f);
 
-        /// <summary>Award tags on result cards: solid white with ink text.</summary>
-        public static CrystalStyle Badge => new()
+        /// <summary>Award tags on result cards: dark crystal, thin rim.</summary>
+        public static CrystalStyle Badge
         {
-            Fill = WithAlpha(Color.white, 0.95f), Rim = Rim, Outline = Color.clear, Shimmer = Color.clear,
-            Shadow = Color.clear, Skew = Skew, RimWidth = 0f, OutlineWidth = 0f, Facet = 0f, ShadowDrop = 0f,
-        };
+            get
+            {
+                var style = Base(0.5f, 0f, 0f);
+                style.Fill = WithAlpha(style.FacetDark, 0.9f);
+                style.ShadowDrop = 0f;
+                return style;
+            }
+        }
 
-        /// <summary>Dwell progress bar.</summary>
-        public static CrystalStyle Bar => new()
+        /// <summary>Dwell progress bar: a solid rim-coloured line.</summary>
+        public static CrystalStyle Bar
         {
-            Fill = WithAlpha(Ink, 0.9f), Rim = Color.clear, Outline = Color.clear, Shimmer = Color.clear,
-            Shadow = Color.clear, Skew = Skew, RimWidth = 0f, OutlineWidth = 0f, Facet = 0f, ShadowDrop = 0f,
-        };
+            get
+            {
+                var style = Base(0f, 0f, 0f);
+                style.Fill = WithAlpha(Rim, 0.95f);
+                style.CornerCut = 0f;
+                style.ShadowDrop = 0f;
+                return style;
+            }
+        }
 
-        /// <summary>Pointer on it: brighter, more shimmer, a thicker ink outline.</summary>
+        /// <summary>Pointer on it: tinted toward the accent, thicker rim, ink outline.</summary>
         public static CrystalStyle Hovered(CrystalStyle style)
         {
-            style.Fill = WithAlpha(Color.Lerp(style.Fill, Accent, 0.3f), Mathf.Max(style.Fill.a, 0.85f));
-            style.Shimmer = WithAlpha(Accent, Mathf.Max(style.Shimmer.a, 0.8f));
+            style.Fill = WithAlpha(Color.Lerp(style.Fill, Accent, 0.25f), Mathf.Max(style.Fill.a, 0.8f));
+            style.RimWidth *= 1.6f;
             style.Outline = Ink;
-            style.OutlineWidth = Mathf.Max(style.OutlineWidth, 0.0055f);
+            style.OutlineWidth = Mathf.Max(style.OutlineWidth, Shape.OutlineWidth * 1.3f);
             return style;
         }
 
@@ -127,9 +198,10 @@ namespace SpellGame.Game
         public static CrystalStyle Pulsing(CrystalStyle style, float amount)
         {
             amount = Mathf.Clamp01(amount);
-            style.Fill = Color.Lerp(style.Fill, WithAlpha(Color.Lerp(Opal, Accent, 0.4f), 0.88f), amount);
+            style.Fill = Color.Lerp(style.Fill, WithAlpha(Color.Lerp(style.Fill, Accent, 0.35f), Mathf.Max(style.Fill.a, 0.8f)), amount);
+            style.RimWidth *= 1f + amount;
             style.Outline = WithAlpha(Ink, Mathf.Max(style.Outline.a, amount));
-            style.OutlineWidth = Mathf.Lerp(style.OutlineWidth, 0.006f, amount);
+            style.OutlineWidth = Mathf.Lerp(style.OutlineWidth, Shape.OutlineWidth * 1.5f, amount);
             return style;
         }
 
@@ -137,12 +209,14 @@ namespace SpellGame.Game
         public sealed class Crystal
         {
             private static readonly int FillId = Shader.PropertyToID("_FillColor");
+            private static readonly int FacetLightId = Shader.PropertyToID("_FacetLightColor");
+            private static readonly int FacetDarkId = Shader.PropertyToID("_FacetDarkColor");
             private static readonly int RimId = Shader.PropertyToID("_RimColor");
             private static readonly int OutlineId = Shader.PropertyToID("_OutlineColor");
-            private static readonly int ShimmerId = Shader.PropertyToID("_ShimmerColor");
             private static readonly int ShadowId = Shader.PropertyToID("_ShadowColor");
             private static readonly int RectId = Shader.PropertyToID("_Rect");
             private static readonly int FacetId = Shader.PropertyToID("_Facet");
+            private static readonly int CornerCutId = Shader.PropertyToID("_CornerCut");
 
             public Transform Transform { get; }
             public Material Material { get; }
@@ -160,7 +234,7 @@ namespace SpellGame.Game
 
             public void Resize(Vector2 size) => Apply(Style, size);
 
-            /// <summary><paramref name="size"/> is the card at mid height; the slant adds |skew| × height to the quad.</summary>
+            /// <summary><paramref name="size"/> is the card at mid height; a slant adds |skew| × height to the quad.</summary>
             public void Apply(CrystalStyle style, Vector2 size)
             {
                 Style = style;
@@ -172,12 +246,14 @@ namespace SpellGame.Game
                 if (Material == null)
                     return;
                 Material.SetColor(FillId, style.Fill);
+                Material.SetColor(FacetLightId, style.FacetLight);
+                Material.SetColor(FacetDarkId, style.FacetDark);
                 Material.SetColor(RimId, style.Rim);
                 Material.SetColor(OutlineId, style.Outline);
-                Material.SetColor(ShimmerId, style.Shimmer);
                 Material.SetColor(ShadowId, style.Shadow);
                 Material.SetVector(RectId, new Vector4(w, h, style.Skew, margin));
-                Material.SetVector(FacetId, new Vector4(style.RimWidth, style.OutlineWidth, style.Facet, style.ShadowDrop));
+                Material.SetVector(FacetId, new Vector4(style.RimWidth, style.OutlineWidth, style.Facets, style.ShadowDrop));
+                Material.SetFloat(CornerCutId, style.CornerCut);
             }
         }
 
@@ -207,11 +283,10 @@ namespace SpellGame.Game
         // ---------------------------------------------------------------- text
 
         /// <summary>
-        /// How a label is drawn. <see cref="Outlined"/>: thick ink outline (white or player-coloured text, readable on
-        /// the cards and in a bright room). <see cref="Title"/>: outline plus a hard ink drop shadow. <see cref="Ink"/>:
-        /// plain dark-ink text for stats and button labels on the white cards.
+        /// How a label is drawn. <see cref="Outlined"/>: thick ink outline, readable on the cards and in a bright room.
+        /// <see cref="Title"/>: outline plus a hard ink drop shadow.
         /// </summary>
-        public enum Look { Outlined, Title, Ink }
+        public enum Look { Outlined, Title }
 
         public const int SortPanel = 10;
         public const int SortSurface = 11;
@@ -230,13 +305,7 @@ namespace SpellGame.Game
             go.transform.SetParent(parent, false);
             go.transform.localPosition = localPosition;
             var label = go.AddComponent<TextMeshPro>();
-            var theme = Theme;
-            var font = theme != null ? (display ? theme.DisplayFont : theme.BodyFont) : null;
-            if (font != null)
-            {
-                label.font = font;
-                label.fontSharedMaterial = TextMaterial(display, look);
-            }
+            Restyle(label, display, look);
             label.fontSize = size * 10f;
             label.rectTransform.sizeDelta = new Vector2(width, size * 1.5f);
             label.alignment = alignment;
@@ -250,6 +319,17 @@ namespace SpellGame.Game
             label.renderer.shadowCastingMode = ShadowCastingMode.Off;
             label.renderer.receiveShadows = false;
             return label;
+        }
+
+        /// <summary>Gives a long-lived label the active theme's font and material (e.g. on <see cref="ThemeChanged"/>).</summary>
+        public static void Restyle(TextMeshPro label, bool display, Look look = Look.Outlined)
+        {
+            var theme = Theme;
+            var font = theme != null ? (display ? theme.DisplayFont : theme.BodyFont) : null;
+            if (font == null)
+                return;
+            label.font = font;
+            label.fontSharedMaterial = TextMaterial(display, look);
         }
 
         /// <summary>Height in metres <paramref name="label"/> needs for its current text (lines × line height).</summary>
@@ -271,6 +351,7 @@ namespace SpellGame.Game
 
         // ---------------------------------------------------------------- resources
 
+        private static readonly int OutlineColorId = Shader.PropertyToID("_OutlineColor");
         private static readonly int OutlineWidthId = Shader.PropertyToID("_OutlineWidth");
         private static readonly int UnderlayColorId = Shader.PropertyToID("_UnderlayColor");
         private static readonly int FaceDilateId = Shader.PropertyToID("_FaceDilate");
@@ -279,22 +360,6 @@ namespace SpellGame.Game
         private static bool _warned;
         private static Mesh _quadMesh;
         private static readonly Dictionary<(bool Display, Look Look), Material> TextMaterials = new();
-
-        public static UiTheme Theme
-        {
-            get
-            {
-                if (_theme != null)
-                    return _theme;
-                _theme = Resources.Load<UiTheme>(UiTheme.ResourceName);
-                if (_theme == null && !_warned)
-                {
-                    _warned = true;
-                    Debug.LogError($"[SpellGame] UI theme '{UiTheme.ResourceName}' not found in Resources; run SpellGame → Rebuild Main Scene.");
-                }
-                return _theme;
-            }
-        }
 
         private static Material CrystalSource
         {
@@ -317,8 +382,9 @@ namespace SpellGame.Game
             if (source == null)
                 source = (display ? theme.DisplayFont : theme.BodyFont).material;
             var material = new Material(source) { name = $"{source.name} {look}" };
-            material.SetFloat(OutlineWidthId, look == Look.Ink ? 0f : look == Look.Title ? 0.26f : 0.22f);
-            material.SetFloat(FaceDilateId, look == Look.Ink ? 0.05f : 0.1f);
+            material.SetColor(OutlineColorId, Ink);
+            material.SetFloat(OutlineWidthId, look == Look.Title ? 0.26f : display ? 0.22f : 0.2f);
+            material.SetFloat(FaceDilateId, 0.1f);
             material.SetColor(UnderlayColorId, look == Look.Title ? Ink : Color.clear);
             TextMaterials[key] = material;
             return material;

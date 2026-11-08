@@ -47,8 +47,8 @@ namespace SpellGame.Editor
             var serializedTheme = new SerializedObject(theme);
             serializedTheme.FindProperty("displayFont").objectReferenceValue = display;
             serializedTheme.FindProperty("bodyFont").objectReferenceValue = body;
-            serializedTheme.FindProperty("displayMaterial").objectReferenceValue = TextMaterial(display);
-            serializedTheme.FindProperty("bodyMaterial").objectReferenceValue = TextMaterial(body);
+            serializedTheme.FindProperty("displayMaterial").objectReferenceValue = TextMaterial(display, theme.Palette.Ink);
+            serializedTheme.FindProperty("bodyMaterial").objectReferenceValue = TextMaterial(body, theme.Palette.Ink);
             serializedTheme.FindProperty("crystal").objectReferenceValue = CrystalMaterial();
             serializedTheme.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(theme);
@@ -141,7 +141,7 @@ namespace SpellGame.Editor
         /// The font's material with OUTLINE_ON + UNDERLAY_ON (a dark outline and a soft shadow, so text reads against a
         /// bright room). As a saved asset it also keeps those shader variants in the build; UiStyle recolours copies.
         /// </summary>
-        private static Material TextMaterial(TMP_FontAsset font)
+        private static Material TextMaterial(TMP_FontAsset font, Color ink)
         {
             var path = $"{MaterialFolder}/{font.name} Text.mat";
             var material = AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -149,14 +149,14 @@ namespace SpellGame.Editor
             {
                 Directory.CreateDirectory(MaterialFolder);
                 material = new Material(font.material) { name = $"{font.name} Text" };
-                ApplyTextDefaults(material);
+                ApplyTextDefaults(material, ink);
                 AssetDatabase.CreateAsset(material, path);
             }
             else if (material.shader != font.material.shader || material.mainTexture != font.atlasTexture)
             {
                 material.shader = font.material.shader;
                 material.CopyPropertiesFromMaterial(font.material);
-                ApplyTextDefaults(material);
+                ApplyTextDefaults(material, ink);
             }
             material.EnableKeyword("OUTLINE_ON");
             material.EnableKeyword("UNDERLAY_ON");
@@ -164,12 +164,12 @@ namespace SpellGame.Editor
             return material;
         }
 
-        private static void ApplyTextDefaults(Material material)
+        private static void ApplyTextDefaults(Material material, Color ink)
         {
             material.SetFloat("_FaceDilate", 0.1f);
-            material.SetColor("_OutlineColor", UiStyle.Ink);
+            material.SetColor("_OutlineColor", ink);
             material.SetFloat("_OutlineWidth", 0.22f);
-            material.SetColor("_UnderlayColor", UiStyle.Ink);
+            material.SetColor("_UnderlayColor", ink);
             material.SetFloat("_UnderlayOffsetX", 0.7f);
             material.SetFloat("_UnderlayOffsetY", -0.7f);
             material.SetFloat("_UnderlayDilate", 0.25f);
