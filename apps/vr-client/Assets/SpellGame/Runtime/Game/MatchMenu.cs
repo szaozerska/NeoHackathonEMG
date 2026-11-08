@@ -54,7 +54,7 @@ namespace SpellGame.Game
 
         private enum Kind { Primary, Secondary }
 
-        private enum View { None, Connection, Mode, Duration, Controls, Ready, Pause, Results }
+        private enum View { None, Connection, Mode, Duration, Controls, Ready, Pause, Results, Settings }
 
         private sealed class Button
         {
@@ -80,6 +80,10 @@ namespace SpellGame.Game
         private View _view = View.Mode;
         private View _controlsReturn = View.Mode;
         private bool _seenControls;
+
+        private const string MenuColoursPref = "SpellGame.MenuColours";
+        private UiTheme[] _menuThemes;
+        private int _menuColours;
         private string _pendingMode = MatchMode.Solo;
         private MatchSnapshot _match = new();
         private StateMessage _state;
@@ -129,6 +133,7 @@ namespace SpellGame.Game
             _audio.spatialBlend = 0f;
             CreatePointer();
             CreateTimerBadge();
+            LoadMenuColours();
             ApplyTheme();
         }
 
@@ -143,6 +148,33 @@ namespace SpellGame.Game
             UiStyle.Restyle(_timerText, true);
             _themeVersion++;
         }
+
+        /// <summary>The menu colours picked in Settings last time (default Smoky Opal, the theme asset's own palette).</summary>
+        private void LoadMenuColours()
+        {
+            var baseTheme = UiStyle.Theme;
+            if (baseTheme == null)
+                return;
+            _menuThemes = new UiTheme[UiPalette.Presets.Length];
+            _menuThemes[0] = baseTheme;
+            _menuColours = Mathf.Clamp(PlayerPrefs.GetInt(MenuColoursPref, 0), 0, _menuThemes.Length - 1);
+            UiStyle.Theme = MenuTheme(_menuColours);
+        }
+
+        private void NextMenuColours()
+        {
+            if (_menuThemes == null)
+                return;
+            _menuColours = (_menuColours + 1) % _menuThemes.Length;
+            PlayerPrefs.SetInt(MenuColoursPref, _menuColours);
+            PlayerPrefs.Save();
+            UiStyle.Theme = MenuTheme(_menuColours);
+        }
+
+        private UiTheme MenuTheme(int index) =>
+            _menuThemes[index] ??= _menuThemes[0].WithPalette(UiPalette.Presets[index].Name, UiPalette.Presets[index].Palette);
+
+        private string MenuColoursName => UiPalette.Presets[_menuThemes == null ? 0 : _menuColours].Name;
 
         private void OnEnable()
         {
@@ -186,7 +218,7 @@ namespace SpellGame.Game
             switch (to)
             {
                 case MatchPhase.Lobby:
-                    if (_view is not (View.Duration or View.Controls))
+                    if (_view is not (View.Duration or View.Controls or View.Settings))
                         _view = View.Mode;
                     break;
                 case MatchPhase.Ready:
@@ -312,7 +344,13 @@ namespace SpellGame.Game
                     Layout(panel, "SPELL DUEL", "Choose your match",
                         ("1 Player  ·  vs AI", Kind.Primary, () => PickMode(MatchMode.Solo)),
                         ("2 Players", Kind.Primary, () => PickMode(MatchMode.Versus)),
-                        ("How to cast", Kind.Secondary, () => ShowControls(View.Mode)));
+                        ("How to cast", Kind.Secondary, () => ShowControls(View.Mode)),
+                        ("Settings", Kind.Secondary, () => _view = View.Settings));
+                    break;
+                case View.Settings:
+                    Layout(panel, "SETTINGS", "Menu colours change menus and buttons only; spells look the same.",
+                        ($"Menu colours: {MenuColoursName}", Kind.Primary, NextMenuColours),
+                        ("Back", Kind.Secondary, () => _view = View.Mode));
                     break;
                 case View.Duration:
                     Layout(panel, _pendingMode == MatchMode.Solo ? "1 PLAYER  ·  vs AI" : "2 PLAYERS", "How long?",
