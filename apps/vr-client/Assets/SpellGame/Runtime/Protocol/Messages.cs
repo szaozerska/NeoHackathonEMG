@@ -24,6 +24,7 @@ namespace SpellGame.Protocol
         public const string Fist = "fist";
         public const string OpenPalm = "open_palm";
         public const string Snap = "snap";
+        public const string InfiniteVoid = "infinite_void";
     }
 
     public static class HandSide

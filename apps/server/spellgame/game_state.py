@@ -100,6 +100,8 @@ class Tuning:
     """Infinite Void: how long the streaks take to reach the targets."""
     domain_stun_s: float = 5.0
     """After the streaks land, targets can't attack for this long."""
+    domain_void_hold_s: float = 2.0
+    """Holding the band's Infinite Void sign this long expands the domain; brief misreads of the sign do nothing."""
 
 
 @dataclass
@@ -194,6 +196,9 @@ class PlayerState:
     shield_boost: float = 0.0
     stunned_until: float = 0.0
     """Caught in an opponent's domain: no spells until then."""
+    void_since: float | None = None
+    """When the current unbroken Infinite Void hold started; each hold expands the domain at most once."""
+    void_cast: bool = False
 
     @property
     def alive(self) -> bool:
@@ -313,11 +318,22 @@ class GameState:
                     player.hands[hand].add(player_input.pose.t, joint)
         if stunned:
             return []
-        if player_input.domain_expanded:
+        if player_input.domain_expanded or self._void_held(player):
             return self._expand_domain(player)
         if player_input.snapped:
             return self._on_snap(player)
         return []
+
+    def _void_held(self, player: PlayerState) -> bool:
+        if player.sign != p.Sign.INFINITE_VOID:
+            player.void_since = None
+            return False
+        if player.void_since is None:
+            player.void_since, player.void_cast = self.time, False
+        if player.void_cast or self.time - player.void_since < self.tuning.domain_void_hold_s:
+            return False
+        player.void_cast = True
+        return True
 
     def _expand_domain(self, caster: PlayerState) -> list[p.Message]:
         """Infinite Void: every opponent is stunned from now until the streaks land plus `domain_stun_s`."""

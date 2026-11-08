@@ -22,7 +22,7 @@ log = logging.getLogger("fake_band")
 
 SNAP_HOLD_S = 0.15
 HEARTBEAT_S = 0.1
-KEYS = {"s": p.Sign.SNAP, "f": p.Sign.FIST, "p": p.Sign.OPEN_PALM, "n": p.Sign.NONE}
+KEYS = {"s": p.Sign.SNAP, "f": p.Sign.FIST, "p": p.Sign.OPEN_PALM, "v": p.Sign.INFINITE_VOID, "n": p.Sign.NONE}
 PINCH_KEY = "i"
 
 

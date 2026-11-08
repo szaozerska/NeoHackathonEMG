@@ -44,7 +44,7 @@
 
     <!-- domain row -->
     <rect x="70" y="610" width="150" height="70" rx="8" fill="#fff" stroke="#fff"/>
-    <text x="88" y="640" font-weight="700" fill="#111">HOLD B</text><text x="88" y="662" fill="#444">controller</text>
+    <text x="88" y="640" font-weight="700" fill="#111">VOID 2 s</text><text x="88" y="662" fill="#444">band · or hold B</text>
     <rect x="250" y="610" width="190" height="70" rx="8" fill="#fff"/>
     <text x="266" y="640" font-weight="700" fill="#111">Domain expansion</text><text x="266" y="662" fill="#444">Infinite Void</text>
     <rect x="470" y="610" width="400" height="70" rx="8" fill="#fff"/>

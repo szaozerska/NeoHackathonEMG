@@ -74,8 +74,8 @@ class EmgLogger:
         self._channel_sums = np.zeros(EMG_CHANNELS, dtype=np.int64)
 
 
-NEURAL_SIGNS = {"open": p.Sign.OPEN_PALM, "fist": p.Sign.FIST}
-"""Neural hand states the game has signs for; everything else (relaxed, unsure, Infinite Void) is reported as none."""
+NEURAL_SIGNS = {"open": p.Sign.OPEN_PALM, "fist": p.Sign.FIST, "infinite_void": p.Sign.INFINITE_VOID}
+"""Neural hand states the game has signs for; everything else (relaxed, unsure) is reported as none."""
 
 
 class NeuralSignClassifier:
