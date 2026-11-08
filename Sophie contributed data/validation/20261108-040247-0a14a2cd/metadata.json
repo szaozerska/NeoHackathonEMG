@@ -1,0 +1,132 @@
+{
+  "schema": 1,
+  "kind": "micah_emg_intent_contribution",
+  "id": "20261108-040247-0a14a2cd",
+  "started_host_uptime": 598314.899579541,
+  "created_utc": "2026-11-08T12:02:47Z",
+  "model": {
+    "signal": {
+      "sample_rate": 2048,
+      "channels": 8,
+      "state_window": 410,
+      "state_hop": 102,
+      "snap_window": 256,
+      "snap_hop": 32,
+      "notch": true,
+      "noise_threshold": 3.0,
+      "warmup_samples": 512
+    },
+    "version": "no-model",
+    "inference_enabled": false
+  },
+  "recording_complete": true,
+  "online_learning": false,
+  "dataset_role": "untouched_guided_count_check",
+  "label_policy": "Participant action/effort selection and immediate Space boundaries. Each interval preserves its own static/dynamic condition. No physical onsets verified.",
+  "time_basis": "capture_t is host monotonic seconds relative to Record; sensor timestamps/sequence remain original",
+  "pre_roll_seconds": 2.0,
+  "recording_profile": "micah_emg",
+  "wearing_session": "SOFI-wearing-01silverreflectivelinefacingcenterrighthand",
+  "target_hand": "Right",
+  "collection_protocol": "reserved-static-dynamic-validation-v1",
+  "camera_policy": "disabled",
+  "orientation_policy": "continuous measured wrist quaternion; no discrete angle requirement; no absolute palm-angle claim",
+  "contributor": "Sophie",
+  "requested_capture_mode": "emg_only",
+  "test_condition": "mixed",
+  "collection_variant": "validation",
+  "input_modalities": [
+    "emg"
+  ],
+  "recorded_context": [
+    "available_gyro",
+    "available_orientation",
+    "available_band_events"
+  ],
+  "classification_policy": "participant_motion_selection_only_no_model_predictions",
+  "timing_policy": "Native band microseconds, Kinesis receipt uptime, Python receipt uptime and browser alignment all retained. Arrival delay and forearm angles are estimates in the documented Kinesis frame.",
+  "postprocessing_required": true,
+  "cleanup_applied": false,
+  "browser_clock_alignment_at_start": {
+    "host_offset_seconds": 596920.356060125,
+    "uncertainty_seconds": 0.001099999964253584,
+    "client_sync_t": 1394.539699999988,
+    "round_trip_seconds": 0.002199999928507168
+  },
+  "motion_context_available_at_start": true,
+  "host_monotonic_clock": "mach_absolute_time()",
+  "sensor_timing_at_start": {
+    "clock_epoch": 6,
+    "delivered_sensor_hz": {
+      "emg": 128.0,
+      "gyro": 127.99804655285864,
+      "orientation": 127.99621171687753
+    },
+    "host_delivery_hz": {
+      "emg": 132.05846965206612,
+      "gyro": 132.24297307220615,
+      "orientation": 128.6660555176584
+    },
+    "arrival_delay_excess_estimate_seconds": 0.04454497352708131,
+    "kinesis_to_python_seconds": 0.008619333268143237,
+    "forearm": {
+      "forearm_elevation_degrees": -8.643327266962338,
+      "forearm_compass_degrees": -64.85279685328209,
+      "hand": "right",
+      "host_uptime": 598314.8864899167,
+      "compass_is_absolute_north": false,
+      "convention": "Kinesis ForearmAim: wxyz, world +z up, right forearm +body-y; left sign reversed"
+    },
+    "absolute_radio_latency_known": false,
+    "emg_timestamp_policy": "native batch timestamp preserved; 16 samples at 2048 Hz, within-batch timestamp convention has not been hardware calibrated"
+  },
+  "do_not_train": true,
+  "do_not_tune_thresholds": true,
+  "evaluation_status": "reserved_unscored",
+  "model_frozen_reference": null,
+  "classification_modalities": [
+    "emg"
+  ],
+  "sensor_timing_at_stop": {
+    "clock_epoch": 6,
+    "delivered_sensor_hz": {
+      "emg": 128.0,
+      "gyro": 128.00020310776748,
+      "orientation": 128.00020310776748
+    },
+    "host_delivery_hz": {
+      "emg": 126.96786250188813,
+      "gyro": 127.78406394333547,
+      "orientation": 127.14519201550532
+    },
+    "arrival_delay_excess_estimate_seconds": 0.11482223158236593,
+    "kinesis_to_python_seconds": 0.0011243332410231233,
+    "forearm": {
+      "forearm_elevation_degrees": 55.42549779431255,
+      "forearm_compass_degrees": 14.45522182225328,
+      "hand": "right",
+      "host_uptime": 599139.2236719168,
+      "compass_is_absolute_north": false,
+      "convention": "Kinesis ForearmAim: wxyz, world +z up, right forearm +body-y; left sign reversed"
+    },
+    "absolute_radio_latency_known": false,
+    "emg_timestamp_policy": "native batch timestamp preserved; 16 samples at 2048 Hz, within-batch timestamp convention has not been hardware calibrated"
+  },
+  "stopped_host_uptime": 599139.28147075,
+  "duration_seconds": 824.3818912090501,
+  "stop_reason": "user_stop",
+  "counts": {
+    "emg": 105578,
+    "band_orientation": 104933,
+    "band_gyro": 105300,
+    "stream_reset": 43,
+    "clock_sync": 27,
+    "participant_interaction": 642,
+    "motion_selection": 14,
+    "intent_toggle": 602
+  },
+  "correction_count": 0,
+  "sequence_discontinuities": 42,
+  "last_emg_capture_t": 824.3252167090541,
+  "publication_attribution_source": "Explicit user confirmation; original collector default retained in original/metadata.json"
+}

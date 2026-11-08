@@ -1,0 +1,100 @@
+[
+  {
+    "capture_t": 64.20731033408083,
+    "motion": "snap",
+    "effort": null,
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 229.32224087510258,
+    "motion": "shield_hold",
+    "effort": "medium",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 238.12386820907705,
+    "motion": "shield_hold",
+    "effort": "low",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 331.6292195840506,
+    "motion": "shield_hold",
+    "effort": "medium",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 439.30265154200606,
+    "motion": "shield_hold",
+    "effort": "high",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 530.8298134590732,
+    "motion": "shield_hold",
+    "effort": "medium",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 546.6894097500481,
+    "motion": "sword_hold",
+    "effort": "medium",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 550.9654840420699,
+    "motion": "sword_hold",
+    "effort": "low",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 565.7543157091131,
+    "motion": "sword_hold",
+    "effort": "low",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 580.5241899590474,
+    "motion": "sword_hold",
+    "effort": "low",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 634.2918283340987,
+    "motion": "sword_hold",
+    "effort": "medium",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 687.024910334032,
+    "motion": "sword_hold",
+    "effort": "high",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 715.3165803340962,
+    "motion": "sword_hold",
+    "effort": "high",
+    "source": "participant_selection",
+    "performed_verified": false
+  },
+  {
+    "capture_t": 756.9898150420049,
+    "motion": "animation_gesture",
+    "effort": null,
+    "source": "participant_selection",
+    "performed_verified": false
+  }
+]

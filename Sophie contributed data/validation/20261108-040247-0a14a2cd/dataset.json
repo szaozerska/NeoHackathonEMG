@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "session_id": "20261108-040247-0a14a2cd",
+  "title": "Sophie's validation data",
+  "contributor": "Sophie",
+  "dataset_role": "untouched_guided_count_check",
+  "purpose": "validation",
+  "do_not_train": true,
+  "do_not_tune_thresholds": true,
+  "evaluation_status": "reserved_unscored",
+  "collector_test_condition": "mixed",
+  "recorded_interval_conditions": {
+    "dynamic": 603
+  },
+  "wearing_session": "SOFI-wearing-01silverreflectivelinefacingcenterrighthand",
+  "duration_seconds": 824.3818912090501,
+  "intended_seconds": 346.65703666664194,
+  "non_intended_seconds": 477.72485454240814,
+  "intended_intervals": 301,
+  "non_intended_intervals": 302,
+  "canonical_metadata": "metadata.json",
+  "canonical_labels": "truth-values.json",
+  "original_labels": "original/truth-values.json",
+  "raw_archive": "original/streams.jsonl.gz",
+  "optional_recorded_context": {
+    "band_orientation": 104933,
+    "band_gyro": 105300
+  },
+  "action_intervals_changed": false,
+  "physiological_event_times_verified": false,
+  "camera_used": false,
+  "model_predictions_used_as_labels": false,
+  "automatic_model_training_performed": false,
+  "attribution_note": "Original capture headers used the generic Micah default. Sophie is the confirmed contributor; only canonical contributor headers are corrected."
+}

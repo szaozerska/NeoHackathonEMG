@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "wearing_session": "SOFI-wearing-01silverreflectivelinefacingcenterrighthand",
+  "supervision": "untrimmed_participant_intervals_requires_postprocessing",
+  "postprocessing_required": true,
+  "source_hashes": {
+    "streams.jsonl": "c6ea0805939e56201c3faceb2d15d5645a17e9ddf45b6dd66c3927add2b9f5c3",
+    "metadata.json": "15ca239238ebff218fcd2f8a6cd6360de45c91009e4f879f035eca30179119c5",
+    "guided-trials.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "intent-gate-trials.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "intent-trials.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "failure-flags.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "collection-plan.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "intent-toggle-markers.json": "745463c9a604d6415424be986f4c44db60697cc039a06260229c80f815f9848e",
+    "interaction-exclusions.json": "5964ab69e9617e1b680145129c163c988e0edc40824aee0affe039170281864d",
+    "intent-gate-intervals.json": "7aee5f1ecf594753a7c731acfdbc328a5d4b7f9385070bb1c48cf77e92ac8528",
+    "motion-selections.json": "1a5cc9fefc4ea32a90f5d0602683cc0773179c4387691f6c3f8fae248620b1e1",
+    "truth-values.json": "bb7a9da21cfd37e6ea7c90bf07ece855f7a12a7d6f831ac7401b4d74d6989cd9",
+    "signal-coverage.json": "3652f4aa81e9060f363275a97ad54473c57e092176f630ceb3bc10907689ceba",
+    "condition-markers.json": "465a782986d494525719f489a8b76e693f030345f8f76a8a533aafe5ba99e8e5",
+    "gyro-report.json": "63b33d2a2b117fe84158a9e4ff497518507976c76143dbb41a469800761b7cf5"
+  },
+  "open_hold_and_transitions_require_review": true
+}

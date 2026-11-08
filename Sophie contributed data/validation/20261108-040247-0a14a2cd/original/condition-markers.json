@@ -1,0 +1,9 @@
+{
+  "markers": [
+    {
+      "capture_t": 0.0,
+      "test_condition": "dynamic",
+      "source": "participant_selection_at_start"
+    }
+  ]
+}

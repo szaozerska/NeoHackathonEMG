@@ -1,0 +1,25 @@
+{
+  "samples": 105300,
+  "min_xyz": [
+    -24961.0,
+    -32746.0,
+    -31232.0
+  ],
+  "max_xyz": [
+    13011.0,
+    32743.0,
+    18505.0
+  ],
+  "first_capture_t": 0.05915800074581057,
+  "last_capture_t": 824.3119181257207,
+  "last_native_timestamp_us": 5461641727,
+  "positive_intervals": 105299,
+  "native_positive_span_seconds": 824.2656310000037,
+  "timestamp_discontinuities": 0,
+  "available": true,
+  "measured_native_hz": 127.74886643308257,
+  "used_for_classification": false,
+  "required_for_collection": false,
+  "units": "raw gyro counts; physical calibration unverified",
+  "note": "Optional context only. Original timestamped XYZ events remain in streams.jsonl when received. Zero samples means unavailable, not zero movement."
+}

@@ -15,3 +15,7 @@ their unchanged labels, source checksums and lossless raw-stream compression.
 ## TRASHED — DO NOT USE
 
 Session [`20261108-033319-04f674dd`](20261108-033319-04f674dd/DO_NOT_USE.md) was explicitly trashed by Micah because the setup was not correct. Exclude every part from training, validation, evaluation, analysis and non-intended/negative baselines. Only the rejection notice is published; original data remain local for audit.
+
+## Sophie’s validation recording
+
+The completed session `20261108-040247-0a14a2cd` belongs to Sophie and is published under [Sophie contributed data / validation](../../Sophie%20contributed%20data/validation/20261108-040247-0a14a2cd/README.md), with original labels and explicit reserved-evaluation restrictions.
