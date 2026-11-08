@@ -370,7 +370,7 @@ namespace SpellGame.Game
             {
                 View.Connection => $"connection|{gameClient.Connection}|{gameClient.ServerEndpoint}",
                 View.Duration => $"duration|{_pendingMode}|{_pendingSwordOnly}",
-                View.Ready => $"ready|{Me}|{_match.Mode}|{_match.SwordOnly}|{_match.DurationS}|{string.Join(",", _match.Fighters)}|{string.Join(",", _match.Ready)}|{string.Join(",", AlignedFighters())}",
+                View.Ready => $"ready|{Me}|{_match.Mode}|{_match.SwordOnly}|{_match.DurationS}|{string.Join(",", _match.Fighters)}|{string.Join(",", _match.Ready)}|{string.Join(",", AlignedFighters())}|{spaceAligner != null && spaceAligner.UseTouch}",
                 View.Pause => $"pause|{IsFighter}|{_match.PausedBy}|{Mathf.CeilToInt(_match.ResumeIn)}|{string.Join(",", _match.RestartVotes ?? new List<string>())}|{PausesLeft(Me)}",
                 View.Results => $"results|{IsFighter}",
                 _ => view.ToString(),
@@ -474,7 +474,7 @@ namespace SpellGame.Game
                 lines.Add($"<color={UiStyle.Hex(UiStyle.PlayerColor(fighter))}><b>{name}</b></color>   {ready}{(aligned ? "" : "  ·  not calibrated")}");
             }
             var versusFighter = _match.Mode == MatchMode.Versus && IsFighter;
-            var marker = spaceAligner == null || spaceAligner.MarkerAvailable;
+            var marker = spaceAligner == null || !spaceAligner.UseTouch;
             if (versusFighter && !AlignedFighters().Contains(Me))
             {
                 if (!_match.Ready.Contains(Me))
@@ -484,14 +484,13 @@ namespace SpellGame.Game
                               "1. Walk to the QR marker on the floor in the middle\n" +
                               "2. Stand next to it and look straight down at it\n" +
                               "3. Hold still until a cyan ring appears on it\n" +
-                              "No marker? Touch right controller tips in the middle\n" +
-                              "(each pointing at the other), click the LEFT thumbstick.");
+                              "Not found in ~12 s? This switches to the controllers.");
                 else
-                    lines.Add($"\n{spaceAligner?.MarkerProblem}" +
-                              "\n<b>CALIBRATE THE ROOM</b> (both players)\n" +
+                    lines.Add($"\n{spaceAligner?.TouchReason}" +
+                              "\n<b>CALIBRATE WITH THE CONTROLLERS</b> (BOTH players)\n" +
                               "1. Meet in the middle of the room, facing each other\n" +
-                              "2. Touch your right controller tips together,\n    each pointing at the other person\n" +
-                              "3. Click the LEFT thumbstick and hold still a moment\n" +
+                              "2. Touch your RIGHT controller tips together,\n    each pointing at the other person\n" +
+                              "3. Each click the LEFT thumbstick and hold still a moment\n" +
                               "4. Walk back to your side");
             }
             else if (versusFighter)

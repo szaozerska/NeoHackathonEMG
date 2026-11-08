@@ -39,6 +39,9 @@ namespace SpellGame.Game
         [Tooltip("Seconds the marker must stay tracked; its pose is averaged over that time.")]
         [SerializeField] private float markerLockSeconds = 1.5f;
 
+        [Tooltip("Seconds of calibrating without a marker lock before the screen switches to touching controller tips.")]
+        [SerializeField] private float markerTimeoutSeconds = 12f;
+
         [Tooltip("Degrees added to the marker's direction, should its top not point the way the printed arrow does.")]
         [SerializeField] private float markerYawOffset;
 
@@ -85,11 +88,15 @@ namespace SpellGame.Game
         private string _mode;
         private float _trackerWaitSince = -1f;
         private bool _qrSeen;
+        private float _lookingSince = -1f;
+        private bool _readyToCalibrate;
+        private bool _inSharedFrame;
+        private bool _opponentTouched;
         private LineRenderer[] _ring;
         private int _ringShows;
 
         private const string TouchPrompt =
-            "Calibrate: meet in the middle, touch right controller tips, click the left stick";
+            "BOTH players: meet in the middle, touch RIGHT controller tips (each pointing at the other), then each click the LEFT stick";
         private const string MarkerPrompt = "Calibrate: stand next to the QR marker and look straight down at it";
 
         /// <summary>Whether this headset can calibrate on the floor marker (else players touch controller tips).</summary>
@@ -102,7 +109,22 @@ namespace SpellGame.Game
             : _trackerWaitSince >= 0f && Time.time - _trackerWaitSince > 5f ? "The QR tracker didn't start: restart the app"
             : null;
 
-        private string CalibratePrompt => MarkerAvailable ? MarkerPrompt : $"{MarkerProblem}.\n{TouchPrompt}";
+        private string CalibratePrompt => UseTouch ? $"{TouchReason}\n{TouchPrompt}" : MarkerPrompt;
+
+        /// <summary>
+        /// Calibrate by touching controller tips instead of the marker: no QR tracking, no marker lock after
+        /// <see cref="markerTimeoutSeconds"/> of trying, or the other player already calibrated that way (the two
+        /// methods don't give exactly the same frame, so both must use the same one).
+        /// </summary>
+        public bool UseTouch =>
+            !MarkerAvailable || _opponentTouched ||
+            (_lookingSince >= 0f && Time.time - _lookingSince > markerTimeoutSeconds && _markerSamples == 0);
+
+        /// <summary>Why <see cref="UseTouch"/>, for the prompts.</summary>
+        public string TouchReason =>
+            MarkerProblem != null ? $"{MarkerProblem}." :
+            _opponentTouched ? "The other player calibrated with the controllers, so you do too." :
+            "The QR code wasn't found: use the controllers instead.";
 
         /// <summary>Asks for the spatial data permission QR tracking needs, if it's missing (e.g. from I'm ready).</summary>
         public void RequestMarkerPermission()
@@ -129,6 +151,18 @@ namespace SpellGame.Game
         {
             _phase = state.Match?.Phase ?? MatchPhase.Lobby;
             _mode = state.Match?.Mode;
+            var me = gameClient.PlayerId;
+            _readyToCalibrate = _mode == MatchMode.Versus && _phase == MatchPhase.Ready &&
+                                state.Match != null && state.Match.Ready.Contains(me);
+            _inSharedFrame = false;
+            _opponentTouched = false;
+            foreach (var player in state.Players)
+            {
+                if (player.PlayerId == me)
+                    _inSharedFrame = player.Aligned;
+                else if (player.AlignMethod == AlignMethod.Center && state.Match != null && state.Match.Fighters.Contains(player.PlayerId))
+                    _opponentTouched = true;
+            }
         }
 
         // OVRManager.display is created in OVRManager.Awake, so subscribe once every Awake has run.
@@ -221,9 +255,15 @@ namespace SpellGame.Game
             if (OVRInput.GetDown(OVRInput.Button.PrimaryThumbstick, OVRInput.Controller.RTouch))
                 gameClient.Send(new SpaceResetMessage());
 
-            if (_markerWasAvailable != MarkerAvailable)
+            var calibrating = _readyToCalibrate && !_inSharedFrame;
+            if (!calibrating)
+                _lookingSince = -1f;
+            else if (_lookingSince < 0f)
+                _lookingSince = Time.time;
+
+            if (_markerWasAvailable != !UseTouch)
             {
-                _markerWasAvailable = MarkerAvailable;
+                _markerWasAvailable = !UseTouch;
                 if (!IsAligned(_space))
                     SetStatus(CalibratePrompt);
             }
@@ -253,9 +293,12 @@ namespace SpellGame.Game
         private void UpdateHint()
         {
             var head = cameraRig.centerEyeAnchor;
-            var calibrating = _mode == MatchMode.Versus && _phase == MatchPhase.Ready && !IsAligned(_space);
+            var calibrating = _readyToCalibrate && !_inSharedFrame;
             var text = _status;
-            if (calibrating && MarkerAvailable && _markerSamples == 0 && (_marker == null || !_marker.IsTracked))
+            if (calibrating && UseTouch && !_calibrating)
+                text = $"<b>CALIBRATE WITH THE CONTROLLERS</b>\n<size=70%>{TouchReason}\n" +
+                       "Both players: meet in the middle, touch RIGHT controller tips,\neach pointing at the other, then each click the LEFT stick</size>";
+            else if (calibrating && _markerSamples == 0 && (_marker == null || !_marker.IsTracked))
                 text = _qrSeen
                     ? "QR code lost: keep it in view, about 1 m away"
                     : "Looking for the QR code…\n<size=70%>Stand next to it and look straight down; it needs good light</size>";
@@ -292,7 +335,7 @@ namespace SpellGame.Game
         /// </summary>
         private void UpdateMarker()
         {
-            if (IsAligned(_space) || _calibrating || _marker == null || !_marker.IsTracked)
+            if (IsAligned(_space) || _calibrating || _opponentTouched || _marker == null || !_marker.IsTracked)
             {
                 if (_markerSamples > 0 && !IsAligned(_space) && !_calibrating)
                 {

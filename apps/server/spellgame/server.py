@@ -398,7 +398,7 @@ class GameServer:
     def tick(self) -> None:
         inputs: dict[str, PlayerInput] = {}
         for slot in self.players.values():
-            slot.input.aligned = slot.player_id in self.space.aligned
+            slot.input.aligned = slot.player_id in self.space.in_frame()
             inputs[slot.player_id] = (
                 self.match.restrict(slot.input)
                 if self.match.can_cast(slot.player_id)
@@ -423,6 +423,8 @@ class GameServer:
         if self.ai is not None and (ai_pose := inputs[self.ai.player_id].pose) is not None:
             outgoing.append(ai_pose)
         state = self.game.snapshot()
+        for player in state.players:
+            player.align_method = self.space.aligned.get(player.player_id)
         if paused:
             for projectile in state.projectiles:
                 projectile.vel = [0.0, 0.0, 0.0]
@@ -438,7 +440,7 @@ class GameServer:
     def _step_match(self) -> None:
         headsets = [slot.player_id for slot in sorted(self.players.values(), key=lambda s: s.join_order) if slot.vr]
         before = self.match.phase
-        self.match.step(self.game, headsets, self.dt, set(self.space.aligned))
+        self.match.step(self.game, headsets, self.dt, self.space.in_frame())
         after = self.match.phase
         if after == before:
             return
