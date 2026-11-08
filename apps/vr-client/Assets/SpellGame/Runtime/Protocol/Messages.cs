@@ -347,5 +347,86 @@ namespace SpellGame.Protocol
         public int Tick { get; set; }
         public List<PlayerSnapshot> Players { get; set; } = new();
         public List<ProjectileSnapshot> Projectiles { get; set; } = new();
+
+        /// <summary>The match flow (architecture.md §5.2); null from servers without it.</summary>
+        public MatchSnapshot Match { get; set; }
+    }
+
+    public static class MatchPhase
+    {
+        public const string Lobby = "lobby";
+        public const string Ready = "ready";
+        public const string Countdown = "countdown";
+        public const string Playing = "playing";
+        public const string Ended = "ended";
+    }
+
+    public static class MatchMode
+    {
+        public const string Solo = "solo";
+        public const string Versus = "versus";
+    }
+
+    public static class MatchEndReason
+    {
+        public const string Ko = "ko";
+        public const string Time = "time";
+        public const string Quit = "quit";
+        public const string Disconnect = "disconnect";
+    }
+
+    public sealed class MatchSnapshot
+    {
+        public string Phase { get; set; } = MatchPhase.Lobby;
+        public string Mode { get; set; }
+        public float DurationS { get; set; }
+
+        /// <summary>Seconds of play left; the full duration until <c>playing</c>, 0 in sudden death.</summary>
+        public float TimeLeft { get; set; }
+
+        /// <summary>Seconds until <c>playing</c>, during <c>countdown</c>.</summary>
+        public float Countdown { get; set; }
+
+        public List<string> Fighters { get; set; } = new();
+        public List<string> Ready { get; set; } = new();
+        public bool SuddenDeath { get; set; }
+
+        /// <summary>Set when <c>ended</c>; null for a draw or a quit.</summary>
+        public string Winner { get; set; }
+
+        public string Reason { get; set; }
+        public string EndedBy { get; set; }
+
+        /// <summary>The AI opponent's player ID in a solo match.</summary>
+        public string AiId { get; set; }
+    }
+
+    /// <summary>VR → server: set up the next match and wait for ready.</summary>
+    public sealed class MatchSetupMessage : Message
+    {
+        public const string TypeName = "match_setup";
+        public override string Type => TypeName;
+        public string Mode { get; set; }
+        public float DurationS { get; set; }
+    }
+
+    public sealed class ReadyMessage : Message
+    {
+        public const string TypeName = "ready";
+        public override string Type => TypeName;
+        public bool Ready { get; set; } = true;
+    }
+
+    /// <summary>VR → server: end the running match, or leave the ready or results screen for the lobby.</summary>
+    public sealed class MatchQuitMessage : Message
+    {
+        public const string TypeName = "match_quit";
+        public override string Type => TypeName;
+    }
+
+    public sealed class RematchMessage : Message
+    {
+        public const string TypeName = "rematch";
+        public override string Type => TypeName;
     }
 }

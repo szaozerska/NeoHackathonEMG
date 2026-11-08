@@ -221,7 +221,7 @@ namespace SpellGame.Game
             foreach (var player in state.Players)
             {
                 if (player.PlayerId == _playerId)
-                    own = player.Hp > 0f ? $"HP {player.Hp:0}" : "YOU ARE DEAD (no respawn yet)";
+                    own = player.Hp > 0f ? $"HP {player.Hp:0}" : "YOU ARE DEAD";
                 else
                     others.Add(player.Hp > 0f ? $"{player.PlayerId} {player.Hp:0}" : $"{player.PlayerId} dead");
             }
