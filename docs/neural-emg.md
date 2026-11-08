@@ -82,7 +82,15 @@ int16) with `audio-timing.jsonl`. Each timing row gives a block's first frame an
 its host timing; the first sample's capture_t is
 `callback_capture_t - (stream_current_time - adc_time)`, the same clock as EMG
 `capture_t`. Audio is a label-timing reference for refining marks to the action
-transient. It is never a model input. Grant the terminal microphone access when
+transient. It is never a model input.
+`guided_only_dataset` does this refinement (`spelltrain/snap_onsets.py`): each
+mark moves to the sharpest isolated 2–8 kHz transient in the 0.8 s before it, and
+a trial is accepted only if every mark finds one (SNR ≥ 10, ≥ 3× any other peak
+>100 ms away) and the EMG burst lies within ±150 ms. Accepted trials give snap
+windows ending 50 ms before to 125 ms after the onset, negatives clear of a
+±0.3 s zone, and `expected_events`; the newest quarter validates snap recall.
+Rejected trials stay weak count bags. A held kind with a single capture
+validates on the last 20% of each clip. Grant the terminal microphone access when
 macOS asks; collection stops if the microphone delivers pure silence. Both audio
 files are hashed in `guided-manifest.json`.
 
