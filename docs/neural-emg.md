@@ -69,6 +69,23 @@ more than one second behind is disconnected and reconnects; the lost batches
 appear as sequence discontinuities in `metadata.json`. `band_source` records
 which path a capture used.
 
+During counted clips (`snap`, `negative` and `--event` gestures), press **space
+with the other hand right after every action**. Presses are accepted until one
+second after STOP, and the count prompt defaults to the number of presses. Each
+trial saves `action_marks` (capture_t seconds), `marks_match_count` and the
+press source; streams.jsonl also logs each press as an `action_mark` row. Marks
+include human reaction delay (roughly 200–300 ms, variable); they are
+participant reports, not verified onsets (`exact_event_times_verified` stays false).
+
+Every capture also records the default microphone to `audio.wav` (48 kHz mono
+int16) with `audio-timing.jsonl`. Each timing row gives a block's first frame and
+its host timing; the first sample's capture_t is
+`callback_capture_t - (stream_current_time - adc_time)`, the same clock as EMG
+`capture_t`. Audio is a label-timing reference for refining marks to the action
+transient. It is never a model input. Grant the terminal microphone access when
+macOS asks; collection stops if the microphone delivers pure silence. Both audio
+files are hashed in `guided-manifest.json`.
+
 Instructions balance **soft/firm × minimal/natural/exaggerated rotation**. Next
 collect matching controls using the same command with `--kind negative`:
 wrist rotation without snaps, larger wrist movements, finger touch/release,

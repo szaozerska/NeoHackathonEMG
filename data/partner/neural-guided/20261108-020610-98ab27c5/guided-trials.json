@@ -1,0 +1,342 @@
+[
+  {
+    "id": "snap-018",
+    "kind": "snap",
+    "instruction": "One comfortable FIRM snap with EXAGGERATED comfortable wrist rotation",
+    "intended_count": 1,
+    "start": 8.676894040996558,
+    "end": 11.681962957998621,
+    "confirmed": true,
+    "reported_count": 1,
+    "label_source": "participant_confirmation",
+    "exact_event_times_verified": false,
+    "action_marks": [
+      9.931405958006508
+    ],
+    "marks_match_count": true,
+    "action_mark_source": "participant_spacebar_after_action_includes_reaction_delay"
+  },
+  {
+    "id": "snap-016",
+    "kind": "snap",
+    "instruction": "One comfortable FIRM snap with your NATURAL wrist rotation",
+    "intended_count": 1,
+    "start": 24.112617958002375,
+    "end": 27.11775887499971,
+    "confirmed": true,
+    "reported_count": 1,
+    "label_source": "participant_confirmation",
+    "exact_event_times_verified": false,
+    "action_marks": [
+      25.027177708005183
+    ],
+    "marks_match_count": true,
+    "action_mark_source": "participant_spacebar_after_action_includes_reaction_delay"
+  },
+  {
+    "id": "snap-012",
+    "kind": "snap",
+    "instruction": "One comfortable FIRM snap with EXAGGERATED comfortable wrist rotation",
+    "intended_count": 1,
+    "start": 38.85420425000484,
+    "end": 41.85477379099757,
+    "confirmed": true,
+    "reported_count": 1,
+    "label_source": "participant_confirmation",
+    "exact_event_times_verified": false,
+    "action_marks": [
+      39.70308829100395
+    ],
+    "marks_match_count": true,
+    "action_mark_source": "participant_spacebar_after_action_includes_reaction_delay"
+  },
+  {
+    "id": "snap-019",
+    "kind": "snap",
+    "instruction": "One SOFT snap with MINIMAL wrist rotation",
+    "intended_count": 1,
+    "start": 51.88065520800592,
+    "end": 54.88570825000352,
+    "confirmed": true,
+    "reported_count": 1,
+    "label_source": "participant_confirmation",
+    "exact_event_times_verified": false,
+    "action_marks": [
+      52.57091633300297
+    ],
+    "marks_match_count": true,
+    "action_mark_source": "participant_spacebar_after_action_includes_reaction_delay"
+  },
+  {
+    "id": "snap-008",
+    "kind": "snap",
+    "instruction": "One comfortable FIRM snap with MINIMAL wrist rotation",
+    "intended_count": 1,
+    "start": 64.27588641599868,
+    "end": 67.28092425000796,
+    "confirmed": true,
+    "reported_count": 1,
+    "label_source": "participant_confirmation",
+    "exact_event_times_verified": false,
+    "action_marks": [
+      64.8906811659981
+    ],
+    "marks_match_count": true,
+    "action_mark_source": "participant_spacebar_after_action_includes_reaction_delay"
+  },
+  {
+    "id": "snap-007",
+    "kind": "snap",
+    "instruction": "One SOFT snap with MINIMAL wrist rotation",
+    "intended_count": 1,
+    "start": 75.49686729100358,
+    "end": 78.50191900000209,
+    "confirmed": true,
+    "reported_count": 1,
+    "label_source": "participant_confirmation",
+    "exact_event_times_verified": false,
+    "action_marks": [
+      76.77905179100344
+    ],
+    "marks_match_count": true,
+    "action_mark_source": "participant_spacebar_after_action_includes_reaction_delay"
+  },
+  {
+    "id": "snap-020",
+    "kind": "snap",
+    "instruction": "One comfortable FIRM snap with MINIMAL wrist rotation",
+    "intended_count": 1,
+    "start": 86.11226350000652,
+    "end": 89.11744079100026,
+    "confirmed": true,
+    "reported_count": 1,
+    "label_source": "participant_confirmation",
+    "exact_event_times_verified": false,
+    "action_marks": [
+      86.87989024999843
+    ],
+    "marks_match_count": true,
+    "action_mark_source": "participant_spacebar_after_action_includes_reaction_delay"
+  },
+  {
+    "id": "snap-004",
+    "kind": "snap",
+    "instruction": "One comfortable FIRM snap with your NATURAL wrist rotation",
+    "intended_count": 1,
+    "start": 99.44734825000342,
+    "end": 102.45239220799704,
+    "confirmed": true,
+    "reported_count": 1,
+    "label_source": "participant_confirmation",
+    "exact_event_times_verified": false,
+    "action_marks": [
+      100.71748283300258
+    ],
+    "marks_match_count": true,
+    "action_mark_source": "participant_spacebar_after_action_includes_reaction_delay"
+  },
+  {
+    "id": "snap-015",
+    "kind": "snap",
+    "instruction": "One SOFT snap with your NATURAL wrist rotation",
+    "intended_count": 1,
+    "start": 109.33626450000156,
+    "end": 112.3401366659964,
+    "confirmed": true,
+    "reported_count": 1,
+    "label_source": "participant_confirmation",
+    "exact_event_times_verified": false,
+    "action_marks": [
+      110.1878452910023
+    ],
+    "marks_match_count": true,
+    "action_mark_source": "participant_spacebar_after_action_includes_reaction_delay"
+  },
+  {
+    "id": "snap-001",
+    "kind": "snap",
+    "instruction": "One SOFT snap with MINIMAL wrist rotation",
+    "intended_count": 1,
+    "start": 120.37710325000808,
+    "end": 123.38215220799611,
+    "confirmed": true,
+    "reported_count": 1,
+    "label_source": "participant_confirmation",
+    "exact_event_times_verified": false,
+    "action_marks": [
+      121.02621954100323
+    ],
+    "marks_match_count": true,
+    "action_mark_source": "participant_spacebar_after_action_includes_reaction_delay"
+  },
+  {
+    "id": "snap-010",
+    "kind": "snap",
+    "instruction": "One comfortable FIRM snap with your NATURAL wrist rotation",
+    "intended_count": 1,
+    "start": 136.0435225830006,
+    "end": 139.04387179100013,
+    "confirmed": true,
+    "reported_count": 1,
+    "label_source": "participant_confirmation",
+    "exact_event_times_verified": false,
+    "action_marks": [
+      136.9151669999992
+    ],
+    "marks_match_count": true,
+    "action_mark_source": "participant_spacebar_after_action_includes_reaction_delay"
+  },
+  {
+    "id": "snap-006",
+    "kind": "snap",
+    "instruction": "One comfortable FIRM snap with EXAGGERATED comfortable wrist rotation",
+    "intended_count": 1,
+    "start": 149.2873061660066,
+    "end": 152.2889076249994,
+    "confirmed": true,
+    "reported_count": 1,
+    "label_source": "participant_confirmation",
+    "exact_event_times_verified": false,
+    "action_marks": [
+      150.48633970800438
+    ],
+    "marks_match_count": true,
+    "action_mark_source": "participant_spacebar_after_action_includes_reaction_delay"
+  },
+  {
+    "id": "snap-017",
+    "kind": "snap",
+    "instruction": "One SOFT snap with EXAGGERATED comfortable wrist rotation",
+    "intended_count": 1,
+    "start": 163.27446875000896,
+    "end": 166.27951758299605,
+    "confirmed": true,
+    "reported_count": 1,
+    "label_source": "participant_confirmation",
+    "exact_event_times_verified": false,
+    "action_marks": [
+      164.44816895799886
+    ],
+    "marks_match_count": true,
+    "action_mark_source": "participant_spacebar_after_action_includes_reaction_delay"
+  },
+  {
+    "id": "snap-009",
+    "kind": "snap",
+    "instruction": "One SOFT snap with your NATURAL wrist rotation",
+    "intended_count": 1,
+    "start": 176.13230425000074,
+    "end": 179.13751091599988,
+    "confirmed": true,
+    "reported_count": 1,
+    "label_source": "participant_confirmation",
+    "exact_event_times_verified": false,
+    "action_marks": [
+      176.8850460829999
+    ],
+    "marks_match_count": true,
+    "action_mark_source": "participant_spacebar_after_action_includes_reaction_delay"
+  },
+  {
+    "id": "snap-014",
+    "kind": "snap",
+    "instruction": "One comfortable FIRM snap with MINIMAL wrist rotation",
+    "intended_count": 1,
+    "start": 187.87154287500016,
+    "end": 190.872730957999,
+    "confirmed": true,
+    "reported_count": 1,
+    "label_source": "participant_confirmation",
+    "exact_event_times_verified": false,
+    "action_marks": [
+      188.5404333750048
+    ],
+    "marks_match_count": true,
+    "action_mark_source": "participant_spacebar_after_action_includes_reaction_delay"
+  },
+  {
+    "id": "snap-003",
+    "kind": "snap",
+    "instruction": "One SOFT snap with your NATURAL wrist rotation",
+    "intended_count": 1,
+    "start": 199.45112708299712,
+    "end": 202.45583000000624,
+    "confirmed": true,
+    "reported_count": 1,
+    "label_source": "participant_confirmation",
+    "exact_event_times_verified": false,
+    "action_marks": [
+      200.991100750005
+    ],
+    "marks_match_count": true,
+    "action_mark_source": "participant_spacebar_after_action_includes_reaction_delay"
+  },
+  {
+    "id": "snap-002",
+    "kind": "snap",
+    "instruction": "One comfortable FIRM snap with MINIMAL wrist rotation",
+    "intended_count": 1,
+    "start": 211.38699616600934,
+    "end": 214.3920484160044,
+    "confirmed": true,
+    "reported_count": 1,
+    "label_source": "participant_confirmation",
+    "exact_event_times_verified": false,
+    "action_marks": [
+      212.42028062499594
+    ],
+    "marks_match_count": true,
+    "action_mark_source": "participant_spacebar_after_action_includes_reaction_delay"
+  },
+  {
+    "id": "snap-013",
+    "kind": "snap",
+    "instruction": "One SOFT snap with MINIMAL wrist rotation",
+    "intended_count": 1,
+    "start": 226.1860955410084,
+    "end": 229.19114562500909,
+    "confirmed": true,
+    "reported_count": 1,
+    "label_source": "participant_confirmation",
+    "exact_event_times_verified": false,
+    "action_marks": [
+      226.92866370800766
+    ],
+    "marks_match_count": true,
+    "action_mark_source": "participant_spacebar_after_action_includes_reaction_delay"
+  },
+  {
+    "id": "snap-005",
+    "kind": "snap",
+    "instruction": "One SOFT snap with EXAGGERATED comfortable wrist rotation",
+    "intended_count": 1,
+    "start": 235.95235216600122,
+    "end": 238.95565775000432,
+    "confirmed": true,
+    "reported_count": 1,
+    "label_source": "participant_confirmation",
+    "exact_event_times_verified": false,
+    "action_marks": [
+      236.9314127079997
+    ],
+    "marks_match_count": true,
+    "action_mark_source": "participant_spacebar_after_action_includes_reaction_delay"
+  },
+  {
+    "id": "snap-011",
+    "kind": "snap",
+    "instruction": "One SOFT snap with EXAGGERATED comfortable wrist rotation",
+    "intended_count": 1,
+    "start": 248.28250149999803,
+    "end": 251.2875460829964,
+    "confirmed": true,
+    "reported_count": 1,
+    "label_source": "participant_confirmation",
+    "exact_event_times_verified": false,
+    "action_marks": [
+      249.03284216600878
+    ],
+    "marks_match_count": true,
+    "action_mark_source": "participant_spacebar_after_action_includes_reaction_delay"
+  }
+]
