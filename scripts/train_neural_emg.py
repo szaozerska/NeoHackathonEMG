@@ -28,6 +28,8 @@ def main():
     parser.add_argument('--dataset', help='Reuse a locally generated trusted neural-dataset.joblib')
     parser.add_argument('--guided-capture', action='append', default=[], help='EMG-only participant-confirmed training clips')
     parser.add_argument('--epochs', type=int)
+    parser.add_argument('--interval-capture', action='append', default=[],
+                        help='Space-held interval contribution (e.g. Micah contributed data/dynamic/<id>); with --guided-only')
     parser.add_argument('--guided-only', action='store_true',
                         help='Build the dataset from --guided-capture clips alone (no reference review); whole captures are held out')
     parser.add_argument('--skip-incomplete-tasks', action='store_true',
@@ -65,7 +67,7 @@ def main():
     if args.dataset:
         data = joblib.load(args.dataset)
     elif args.guided_only:
-        data = guided_only_dataset(guided); guided = []
+        data = guided_only_dataset(guided, args.interval_capture); guided = []
     else:
         data = build_dataset(args.reference_cache, args.reference_review, args.review)
     for path in args.examples:
@@ -107,7 +109,10 @@ def main():
             for seed in config['seeds']:
                 print(f'Training {task}: {architecture}, seed {seed}, {len(training)} fitting windows', flush=True)
                 weak_bags = data.get('weak_bags', {}).get(task, [])
-                _, checkpoint, _, training_report = fit_classifier(training, validation, spec, architecture, config, seed, weak_bags)
+                # Event heads choose their epoch by event F1; cross-entropy rewarded an untrained warm-up epoch.
+                chooser = (selection_rows, lambda p: select_threshold(selection_rows, p, spec)[1]) if 'event_class' in spec else None
+                _, checkpoint, _, training_report = fit_classifier(training, validation, spec, architecture, config, seed,
+                                                                   weak_bags, chooser)
                 predictor = NeuralClassifier(checkpoint)
                 p = predictor.predict_rows(selection_rows)
                 threshold, score, validation_report = select_threshold(selection_rows, p, spec)

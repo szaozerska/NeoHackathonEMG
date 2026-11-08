@@ -82,7 +82,24 @@ int16) with `audio-timing.jsonl`. Each timing row gives a block's first frame an
 its host timing; the first sample's capture_t is
 `callback_capture_t - (stream_current_time - adc_time)`, the same clock as EMG
 `capture_t`. Audio is a label-timing reference for refining marks to the action
-transient. It is never a model input. Grant the terminal microphone access when
+transient. It is never a model input.
+`guided_only_dataset` does this refinement (`spelltrain/snap_onsets.py`): each
+mark moves to the sharpest isolated 2–8 kHz transient in the 0.8 s before it, and
+a trial is accepted only if every mark finds one (SNR ≥ 10, ≥ 3× any other peak
+>100 ms away) and the EMG burst lies within ±150 ms. Accepted trials give snap
+windows ending 50 ms before to 125 ms after the onset, negatives clear of a
+±0.3 s zone, and `expected_events`; the newest quarter validates snap recall.
+Rejected trials stay weak count bags. A held kind with a single capture
+validates on the last 20% of each clip.
+
+`guided_only_dataset(..., interval_directories)` (`--interval-capture`, and the
+Modal sweep by default) also loads Micah's Space-interval contributions under
+`Micah contributed data/{static,dynamic}` (`add_interval_capture`): shield/sword
+holds become `open`/`fist`, non-intended time becomes `none` and snap negatives
+(0.3 s boundary margin, 1 s clear of published snap-like candidates), and snap
+intervals become count bags. Per class, the last 30% of intervals validate;
+validation snaps use the published reference peak as their expected event.
+Ambiguous windows near an event are replayed for event scoring but never fitted. Grant the terminal microphone access when
 macOS asks; collection stops if the microphone delivers pure silence. Both audio
 files are hashed in `guided-manifest.json`.
 

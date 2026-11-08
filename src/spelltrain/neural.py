@@ -13,7 +13,7 @@ from .evaluation import event_metrics
 
 
 LSTM_DEFAULTS = {'conv_channels': 128, 'kernel_width': 21, 'stride': 10, 'hidden': 128, 'layers': 2,
-                 'compression_range': 4., 'compression_midpoint': 4., 'rotation': 1,
+                 'compression_range': 4., 'compression_midpoint': 4., 'rotation': 1, 'channel_gain': .1, 'noise': .05,
                  'learning_rate': 5e-4, 'warmup_epochs': 5, 'warmup_start_factor': .001,
                  'lr_milestones': [25], 'lr_factor': .5, 'gradient_clip': .5}
 
@@ -30,6 +30,23 @@ class ReinhardCompression(nn.Module):
 
     def forward(self, x):
         return self.range*x/(self.midpoint+x.abs())
+
+
+class CausalBlock(nn.Module):
+    """Depthwise-separable dilated causal conv (left padding only), BatchNorm, GELU, residual."""
+    def __init__(self, width, dilation, dropout):
+        super().__init__()
+        self.pad = 2*dilation
+        self.depthwise = nn.Conv1d(width, width, 3, dilation=dilation, groups=width)
+        self.pointwise = nn.Conv1d(width, width, 1)
+        self.norm = nn.BatchNorm1d(width); self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x):
+        y = self.pointwise(self.depthwise(nn.functional.pad(x, (self.pad, 0))))
+        return x+self.dropout(nn.functional.gelu(self.norm(y)))
+
+
+TCN_AUGMENTATION = {'rotation': 1, 'channel_gain': .1, 'noise': .05}
 
 
 class EMGClassifier(nn.Module):
@@ -64,6 +81,13 @@ class EMGClassifier(nn.Module):
                 nn.AdaptiveAvgPool1d(4), nn.Flatten(),
                 nn.Linear(256, 64), nn.ReLU(), nn.Dropout(dropout))
             width = 64
+        elif architecture == 'tcn':
+            # Fallback to Meta's LSTM: causal dilated TCN on two streams (filtered EMG + 16 ms RMS envelope).
+            self.envelope = nn.AvgPool1d(32, stride=1)
+            self.stem = nn.Sequential(nn.Conv1d(2*input_shape[0], 64, 5, stride=4), nn.BatchNorm1d(64), nn.GELU())
+            self.blocks = nn.Sequential(*[CausalBlock(64, d, dropout) for d in (1, 2, 4, 8, 16)])
+            self.head = nn.Sequential(nn.Linear(128, 64), nn.GELU(), nn.Dropout(dropout))
+            width = 64
         else:
             raise ValueError('Unknown architecture: '+architecture)
         self.output = nn.Linear(width, classes)
@@ -74,6 +98,10 @@ class EMGClassifier(nn.Module):
             x, _ = self.lstm(self.post_conv_norm(x.transpose(1, 2)))
             # The window ends at its timestamp, so the last LSTM step has seen the whole (past-only) window.
             return self.output(self.post_lstm_norm(x[:, -1]))
+        if self.architecture == 'tcn':
+            envelope = self.envelope(nn.functional.pad(x*x, (31, 0))).clamp_min(1e-6).sqrt()
+            x = self.blocks(self.stem(nn.functional.pad(torch.cat([x, envelope], 1), (4, 0))))
+            return self.output(self.head(torch.cat([x.mean(-1), x[:, :, -1]], 1)))
         return self.output(self.encoder(x))
 
 
@@ -116,14 +144,19 @@ def rotate_channels(batch, max_shift):
     return batch.roll(shift, dims=1) if shift else batch
 
 
-def fit_classifier(train, validation, spec, architecture, config, seed, weak_bags=()):
-    """Only train fits normalization; only validation selects the epoch."""
+def fit_classifier(train, validation, spec, architecture, config, seed, weak_bags=(), selection=None):
+    """Only train fits normalization; only validation selects the epoch.
+
+    selection=(rows, score) picks the epoch by score(probabilities on rows), e.g. event F1,
+    after any warm-up, instead of weighted cross-entropy.
+    """
     torch.manual_seed(seed)
     x = input_array(train, architecture); vx = input_array(validation, architecture)
     bag_arrays = [input_array(b['rows'], architecture) for b in weak_bags]
     normalization_input = np.concatenate([x, *bag_arrays]) if bag_arrays else x
     mean, std = normalize_fit(normalization_input, architecture)
     bags = [torch.from_numpy((v-mean)/std) for v in bag_arrays]
+    sx = (input_array(selection[0], architecture)-mean)/std if selection else None
     if bags and 'event_class' not in spec:
         raise ValueError('Weak bags require an event head')
     x = (x-mean)/std; vx = (vx-mean)/std
@@ -137,6 +170,7 @@ def fit_classifier(train, validation, spec, architecture, config, seed, weak_bag
     w = torch.from_numpy(row_weights(train)).to(device); vw = torch.from_numpy(row_weights(validation)).to(device)
     y = y.to(device); vy = vy.to(device); bags = [b.to(device) for b in bags]
     hyper = lstm_settings(config) if architecture == 'lstm' else None
+    aug = hyper or (TCN_AUGMENTATION if architecture == 'tcn' else None)
     model = EMGClassifier(architecture, x.shape[1:], len(labels), config['dropout'], hyper).to(device)
     lr = hyper['learning_rate'] if hyper else config['learning_rate']
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=config['weight_decay'])
@@ -153,7 +187,8 @@ def fit_classifier(train, validation, spec, architecture, config, seed, weak_bag
     loss_fn = nn.CrossEntropyLoss(reduction='none')
     tx = torch.from_numpy(x).to(device); tvx = torch.from_numpy(vx).to(device)
     tmean = torch.from_numpy(mean).to(device); tstd = torch.from_numpy(std).to(device)
-    best_loss = float('inf'); best = None; stale = 0; history = []
+    best_loss = best_metric = float('inf'); best = None; stale = 0; history = []; scores = []
+    warmup = hyper['warmup_epochs'] if hyper else 0
     started = time.monotonic()
     for epoch in range(config['epochs']):
         model.train(); order = torch.randperm(len(x), device=device)
@@ -165,9 +200,14 @@ def fit_classifier(train, validation, spec, architecture, config, seed, weak_bag
             if architecture != 'fnn':
                 raw = batch*tstd+tmean
                 raw = raw*gain.unsqueeze(-1)
-                if hyper and hyper['rotation']:
-                    raw = rotate_channels(raw, hyper['rotation'])
+                if aug and aug['rotation']:
+                    raw = rotate_channels(raw, aug['rotation'])
+                if aug and aug['channel_gain']:
+                    # Per-electrode contact variation on top of the global gain.
+                    raw = raw*torch.exp(torch.randn(len(ix), raw.shape[1], 1, device=device)*aug['channel_gain'])
                 batch = (raw-tmean)/tstd
+                if aug and aug['noise']:
+                    batch = batch+torch.randn_like(batch)*aug['noise']
             else:
                 logged = batch*tstd+tmean
                 values = torch.expm1(logged).clamp_min(0).reshape(len(ix), -1, 40)
@@ -179,8 +219,8 @@ def fit_classifier(train, validation, spec, architecture, config, seed, weak_bag
                 # Counts remain metadata, never point-event pseudo labels.
                 bag_index = int(torch.randint(len(bags), (1,)))
                 bag = bags[bag_index]
-                if hyper and hyper['rotation']:
-                    bag = (rotate_channels(bag*tstd+tmean, hyper['rotation'])-tmean)/tstd
+                if aug and aug['rotation']:
+                    bag = (rotate_channels(bag*tstd+tmean, aug['rotation'])-tmean)/tstd
                 logits = model(bag)
                 event_index = labels.index(spec['event_class'])
                 background_index = labels.index(spec['background'])
@@ -196,8 +236,13 @@ def fit_classifier(train, validation, spec, architecture, config, seed, weak_bag
             losses = torch.cat([loss_fn(model(tvx[ix]), vy[ix]) for ix in torch.arange(len(vx)).split(512)])
             val_loss = float((losses*vw).sum()/vw.sum())
         history.append(val_loss)
-        if val_loss < best_loss-1e-5:
-            best_loss = val_loss; best = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+        metric = val_loss
+        if selection:
+            metric = -selection[1](probabilities(model, sx)) if epoch+1 > warmup or epoch+1 == config['epochs'] else float('inf')
+            scores.append(None if metric == float('inf') else -metric)
+        if metric < best_metric-1e-5 or (metric == best_metric and val_loss < best_loss):
+            best_metric = metric; best_loss = val_loss
+            best = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
             best_epoch = epoch+1; stale = 0
         else:
             stale += 1
@@ -210,7 +255,7 @@ def fit_classifier(train, validation, spec, architecture, config, seed, weak_bag
                   'best_epoch': best_epoch}
     return model, checkpoint, probabilities(model, vx), {
         'best_epoch': best_epoch, 'validation_weighted_cross_entropy': best_loss,
-        'validation_loss_history': history, 'seconds': time.monotonic()-started,
+        'validation_loss_history': history, 'selection_history': scores, 'seconds': time.monotonic()-started,
         'parameters': sum(p.numel() for p in model.parameters())}
 
 
@@ -292,7 +337,7 @@ def select_threshold(rows, p, spec):
     if 'event_class' in spec:
         scores = p[:, spec['classes'].index(spec['event_class'])]
         options = [event_scores(rows, scores, t, spec['event_class'], spec['background'])
-                   for t in (.5, .65, .75, .85, .9, .95, .98, .995)]
+                   for t in (.5, .65, .75, .85, .9, .95, .98, .995, .998, .999, .9995)]
         best = max(options, key=lambda m: (m['f1'], -m['fp'], m['threshold']))
         return best['threshold'], best['f1'], best
     options = [classification_metrics(rows, p, spec['classes'], t) for t in (0., .55, .65, .75, .85, .95)]

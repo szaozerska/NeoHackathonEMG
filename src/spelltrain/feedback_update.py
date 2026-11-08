@@ -17,13 +17,13 @@ from .gestures import state_evaluation
 from .dataset_policy import require_usable_capture
 
 
-def capture_features(directory, include_waveforms=False):
+def capture_features(directory, include_waveforms=False, signal=None):
     require_usable_capture(directory)
     directory=Path(directory);meta=read_json(directory/'metadata.json')
     if not meta.get('recording_complete'):raise ValueError('Finish the feedback recording first')
     rows=[r for r in json_lines(directory/'streams.jsonl') if r['kind']=='emg']
     offset=float(np.median([r['packet']['source_uptime']-meta['started_host_uptime']-r['packet']['source_t']/1e6 for r in rows]))
-    windows=SignalWindows(meta['model']['signal'], include_waveforms=include_waveforms);features=[];last=None;gaps=0
+    windows=SignalWindows({**meta['model']['signal'],**(signal or {})}, include_waveforms=include_waveforms);features=[];last=None;gaps=0
     for r in rows:
         packet=r['packet']
         if last is not None and packet['source_seq']!=last+1:windows.reset();gaps+=1

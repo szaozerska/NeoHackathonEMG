@@ -8,9 +8,11 @@ import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Protocol
 
 import numpy as np
+from spellgame import protocol as p
 
 from .kinesis_feed import EMG_CHANNELS, EMG_SAMPLES_PER_BATCH, EmgBatch
 from .tension import TensionItem, TensionTracker
@@ -70,6 +72,49 @@ class EmgLogger:
         self._batches = 0
         self._gaps = 0
         self._channel_sums = np.zeros(EMG_CHANNELS, dtype=np.int64)
+
+
+NEURAL_SIGNS = {"open": p.Sign.OPEN_PALM, "fist": p.Sign.FIST}
+"""Neural hand states the game has signs for; everything else (relaxed, unsure, Infinite Void) is reported as none."""
+
+
+class NeuralSignClassifier:
+    """Runs a trained `spelltrain` neural bundle (hand-state model + snap detector) on the live EMG stream.
+
+    A detected snap is reported as a momentary `snap`; the next hand-state reading follows it, so the server sees the
+    rising edge into `snap` once per detection. Held states are reported on change and re-sent every `heartbeat_s`.
+    """
+
+    def __init__(self, model_dir: str | Path, heartbeat_s: float = 1.0, predictor: object | None = None) -> None:
+        if predictor is None:
+            from spelltrain.neural import NeuralEMGPredictor
+
+            predictor = NeuralEMGPredictor(model_dir)
+        self._predictor = predictor
+        self._heartbeat_s = heartbeat_s
+        self._sign: str | None = None
+        self._sent_at = -float("inf")
+
+    def push(self, batch: EmgBatch) -> SignPrediction | None:
+        outputs = self._predictor.feed(  # type: ignore[attr-defined]
+            {"source_seq": batch.sequence, "source_t": batch.band_timestamp_us, "samples": batch.samples.astype(float)}
+        )
+        snap = next((o for o in outputs if o["kind"] == "neural_event"), None)
+        state = next((o for o in reversed(outputs) if o["kind"] == "neural_state"), None)
+        if snap is not None:
+            return self._report(batch.host_time_s, p.Sign.SNAP, snap["confidence"])
+        if state is None:
+            return None
+        sign = NEURAL_SIGNS.get(state["label"], p.Sign.NONE)
+        if sign != self._sign or batch.host_time_s - self._sent_at >= self._heartbeat_s:
+            return self._report(batch.host_time_s, sign, state["confidence"])
+        return None
+
+    def _report(self, t: float, sign: str, confidence: float) -> SignPrediction:
+        if sign != self._sign:
+            log.info("neural sign: %s (%.2f)", sign, confidence)
+        self._sign, self._sent_at = sign, t
+        return SignPrediction(t, sign, float(confidence))
 
 
 class ClassifierWorker:

@@ -1,0 +1,258 @@
+{
+  "schema": 1,
+  "task": "neural_emg_only",
+  "signal": {
+    "sample_rate": 2048,
+    "channels": 8,
+    "state_window": 820,
+    "state_hop": 102,
+    "snap_window": 328,
+    "snap_hop": 32,
+    "notch": true,
+    "noise_threshold": 3.0,
+    "warmup_samples": 512
+  },
+  "tasks": {
+    "state": {
+      "window_kind": "state",
+      "classes": [
+        "none",
+        "open",
+        "fist",
+        "infinite_void"
+      ],
+      "background": "none",
+      "checkpoint": "state-fnn-seed7-w820-328.pt",
+      "threshold": 0.0
+    },
+    "snap": {
+      "window_kind": "snap",
+      "classes": [
+        "negative",
+        "snap"
+      ],
+      "background": "negative",
+      "event_class": "snap",
+      "checkpoint": "snap-cnn-seed7-w820-328.pt",
+      "threshold": 0.9995
+    }
+  },
+  "spell_mapping": {
+    "open": "shield_candidate",
+    "fist": "sword",
+    "snap": "fireball_equip"
+  },
+  "automatically_activated": false,
+  "training_sources": [
+    {
+      "directory": "/__modal/volumes/vo-2dbdzwTN2ushFaXshshU2E/captures/20261108-005424-8e243c7b",
+      "supervision": "weak_participant_confirmed",
+      "hashes": {
+        "streams.jsonl": "a2e0960dabae3a718bd10b560b3db63f9f59726f6cc54656aa99ec480c9b95f2",
+        "metadata.json": "c557a8318d83a82a6a480f3383868387ae166f953c585c9e40a9a6ebf7c8069e",
+        "guided-trials.json": "d0bb31612eeb71dba92449ed6d7bacd3583b6217c6f8b9ca5a06cc4b9a00a7f7"
+      },
+      "wearing_session": "ken-wearing-01"
+    },
+    {
+      "directory": "/__modal/volumes/vo-2dbdzwTN2ushFaXshshU2E/captures/20261108-010417-80d8bb90",
+      "supervision": "weak_participant_confirmed",
+      "hashes": {
+        "streams.jsonl": "4cad72876f94cba6787243fffa65805b2716bedc7afcb411786bdf930758c378",
+        "metadata.json": "81a4750591d23be950038d8316a74700bb6845ee940886c4b6699eaaa5b9eaf5",
+        "guided-trials.json": "c47ad9921c131e30db04ebff43820a2fb839be5c0d60357c9e0d5b85d1566264"
+      },
+      "wearing_session": "ken-wearing-01"
+    },
+    {
+      "directory": "/__modal/volumes/vo-2dbdzwTN2ushFaXshshU2E/captures/20261108-010716-e8404bdb",
+      "supervision": "weak_participant_confirmed",
+      "hashes": {
+        "streams.jsonl": "266861f5e2f6f84729787913bc8727eb9cd6aedbbeb7c453814e99c0ce11fc49",
+        "metadata.json": "cc777517054b0d812066cc4e82d7dfb10280910af79f3f4d44ea8e4900b5e749",
+        "guided-trials.json": "be83aac1857621ddcf9a3f4c759a3240fda797198ab1b7802fa3d201d9c664fd"
+      },
+      "wearing_session": "ken-wearing-01"
+    },
+    {
+      "directory": "/__modal/volumes/vo-2dbdzwTN2ushFaXshshU2E/captures/20261108-010811-72009726",
+      "supervision": "weak_participant_confirmed",
+      "hashes": {
+        "streams.jsonl": "1692a663f65fef97118adc765aedce469468bfaf0a4bc508ef8c85b34fac1a8f",
+        "metadata.json": "583a0e681b0f5fe8bc3ea25e6d3269f5bccb295ba6845b3cec012bfbbb1b2d5d",
+        "guided-trials.json": "048bbbd9bec2d922d1a22606bfa016bc1ac40710eef1176a9a36de6c5ffb2bc0"
+      },
+      "wearing_session": "ken-wearing-01"
+    },
+    {
+      "directory": "/__modal/volumes/vo-2dbdzwTN2ushFaXshshU2E/captures/20261108-014842-fece0943",
+      "supervision": "weak_participant_confirmed",
+      "hashes": {
+        "streams.jsonl": "5d471d88f9b8711e07c4fedb97785bb9e88c485a2017c895cfd4055231b085de",
+        "metadata.json": "ad11e6b8fd3908132eaab7e1be930f10a48a760b0524e687820db400caa4c3c1",
+        "guided-trials.json": "fed3c9400b92116269c2c00127938ca48a9d13f9514224201508384814a57352"
+      },
+      "wearing_session": "ken-wearing-01"
+    },
+    {
+      "directory": "/__modal/volumes/vo-2dbdzwTN2ushFaXshshU2E/captures/20261108-015020-3130db91",
+      "supervision": "weak_participant_confirmed",
+      "hashes": {
+        "streams.jsonl": "9be128b8a88a4c5e5a6bb7cc2e02be461a931765e94fc3c43cda039abefaf64b",
+        "metadata.json": "cdb634e657e040b8d825fb74713bd5e8ad4e992e81feff6076bfad1620e60ccd",
+        "guided-trials.json": "beb6be5cf6f1f2a7a65773da1680b3f4970a34f66da845ff0aa1f7b71eb107f7"
+      },
+      "wearing_session": "ken-wearing-01"
+    },
+    {
+      "directory": "/__modal/volumes/vo-2dbdzwTN2ushFaXshshU2E/captures/20261108-015710-cbd10604",
+      "supervision": "weak_participant_confirmed",
+      "hashes": {
+        "streams.jsonl": "53f36116e11ccb3c2c3b7cd5a001da831febbcda6581a44203c05cfc0ddaf740",
+        "metadata.json": "921ce8714965a2b616bc2dacc4a27d7dc29fab1bd18bb20ea24fa11083c00431",
+        "guided-trials.json": "b13141f603e5e34df7236369e1849f95cd88760c5fd85d064a5d030cdf1526cc"
+      },
+      "wearing_session": "ken-wearing-01"
+    },
+    {
+      "directory": "/__modal/volumes/vo-2dbdzwTN2ushFaXshshU2E/captures/20261108-015901-677aa243",
+      "supervision": "weak_participant_confirmed",
+      "hashes": {
+        "streams.jsonl": "444d9c069427564584e2045ab5eefb96f7fc1aa59490bf065c3bd89538105c79",
+        "metadata.json": "92c879df246b00897a802dc1874d7b4a5e62550139cb5e4fd7b7309facb3159b",
+        "guided-trials.json": "af60a0b8a0da6289efdbfbca657e8b88e33e71805922e9bd4bdde112894cd0b5"
+      },
+      "wearing_session": "ken-wearing-01"
+    },
+    {
+      "directory": "/__modal/volumes/vo-2dbdzwTN2ushFaXshshU2E/captures/20261108-020610-98ab27c5",
+      "supervision": "weak_participant_confirmed",
+      "hashes": {
+        "streams.jsonl": "bbc9c338742503fc9c0160ea4b3da5a7d06ab017bbcba807566fd22a1c1672d8",
+        "metadata.json": "f7e799855d3b50d4063a59804e8db2278af4bb8e43f086338fa1eb13b1186b23",
+        "guided-trials.json": "938b8bdbe2ac084323f6de9e796e3fd12f6db387acfcef72bf96827bfeb20387",
+        "audio.wav": "3a629f43fd24fb8d27d0ca44426f1736c027db4ea66700a0a675225696302b82",
+        "audio-timing.jsonl": "d2ae212dc556241a6a51a65465cb53363a43f5711c4f8e49c898cee16ddaed3c"
+      },
+      "wearing_session": "ken-wearing-01"
+    },
+    {
+      "directory": "/__modal/volumes/vo-2dbdzwTN2ushFaXshshU2E/captures/20261108-021452-0b613541",
+      "supervision": "weak_participant_confirmed",
+      "hashes": {
+        "streams.jsonl": "4a21fe175b77b3137aa10e9e76be88d208b26cc9bee91368afbfc8ac0653729e",
+        "metadata.json": "dcaeebe5972c140e6b8e2e5b269a35b3edf1609bc47bc74d0d1f496d5c0680f4",
+        "guided-trials.json": "e15f3a728d805ef789e39b4653641e94a9df3317c8c1ade51dc9af2468942261",
+        "audio.wav": "dc2870e14cf76d6c8334a116eac0ced48c908206b8776510449e9b6f5e96f9c6",
+        "audio-timing.jsonl": "bd512ceeaf4964b2a7cf0659bf2d4dbf3829ba1074f18fe877f3665596d4db68"
+      },
+      "wearing_session": "ken-wearing-01"
+    },
+    {
+      "directory": "/__modal/volumes/vo-2dbdzwTN2ushFaXshshU2E/captures/20261108-021600-9c85be7a",
+      "supervision": "weak_participant_confirmed",
+      "hashes": {
+        "streams.jsonl": "1c0f8786fa4a8bd1075750e3089e125ed23c9e9472f869be93da06ca84b47e09",
+        "metadata.json": "e6818644e99a99912835f52b5d9a986a91c1a0a02e9b41ee43383239e7a69efa",
+        "guided-trials.json": "cb724f5206352f07b0d2dc2ad594662a09736cdeaf521cbf894a583016b69bf4",
+        "audio.wav": "e3c0904414249aa6376b0d928967151a5e4774f7b6ce5e386ce4dd16da59ac63",
+        "audio-timing.jsonl": "e79ecc7b9aa0cd67f6253d0baaea33f3257388ad4c356ff0e30d9c78d4e28938"
+      },
+      "wearing_session": "ken-wearing-01"
+    },
+    {
+      "directory": "/__modal/volumes/vo-2dbdzwTN2ushFaXshshU2E/captures/20261108-021643-33899fe6",
+      "supervision": "weak_participant_confirmed",
+      "hashes": {
+        "streams.jsonl": "3ce4d655bbb55db3069f7f2ea3ce8866ced2f8f4488bcd12c76aa5449385c361",
+        "metadata.json": "a7ba198ea2d628037de32e71df1c3cb78fec36d2c8ce9a0f4ffa111f3aa057e2",
+        "guided-trials.json": "d9039174ead54ea8fc540f77162a6440cdbc3b95240adee2db155ed2c5e20281",
+        "audio.wav": "3eff7d91a5cc9ad5bf23f7f2aec26b81da5dad3cab7146d638333fe9eeb0fe0d",
+        "audio-timing.jsonl": "a4d7cd95e211fc4dd43cf2011fb833cde642f20fc245ae81c9e92af94daecd02"
+      },
+      "wearing_session": "ken-wearing-01"
+    },
+    {
+      "directory": "/__modal/volumes/vo-2dbdzwTN2ushFaXshshU2E/captures/20261108-021758-85ac5725",
+      "supervision": "weak_participant_confirmed",
+      "hashes": {
+        "streams.jsonl": "5eca82f6dc85c627076024f0db91cd725994549f957f670c7151186c2aff440f",
+        "metadata.json": "dda1b3a946f25a2f5d8c5f9759022599f91cb1a4fca288b490717f733c8ee675",
+        "guided-trials.json": "a16a993f7d10c823d3f89a2c1b2db696fe4360f851b65366198cf84727992e7e",
+        "audio.wav": "386b016148d6799bb67e1bb916b7af91ff42554c61196ff4e16586d7cb3be13f",
+        "audio-timing.jsonl": "06e90e82091bacf0026b9e15b7311e1dacb1a94a32447773b9186a7c28f9c5ce"
+      },
+      "wearing_session": "ken-wearing-01"
+    },
+    {
+      "directory": "/__modal/volumes/vo-2dbdzwTN2ushFaXshshU2E/captures/20261108-021850-62753818",
+      "supervision": "weak_participant_confirmed",
+      "hashes": {
+        "streams.jsonl": "dfb4d08dbffec109a0d2a5b3dc6b12c974512c6199b1d7c28e4af91611b0d4d0",
+        "metadata.json": "03c67248da494a83aab715d66210f9d297a096860178d7cdcf17b676c886eee1",
+        "guided-trials.json": "492e53c0c6015e8297f0cb9bec75f70be6ae4f880f51e3e570fd09a6f1971629",
+        "audio.wav": "83386ad8bdac11873f205f559119bcf14c51ac6f5ea3870c084b7cc86d012d80",
+        "audio-timing.jsonl": "8bdaa5b2b298309341fec4d736f026d45051db85b3fe60e934c8c079358bfc63"
+      },
+      "wearing_session": "ken-wearing-01"
+    },
+    {
+      "directory": "/__modal/volumes/vo-2dbdzwTN2ushFaXshshU2E/captures/20261108-021931-c1c25970",
+      "supervision": "weak_participant_confirmed",
+      "hashes": {
+        "streams.jsonl": "13124ec9989646c06c003316abec89beeed091380fff4b727d25ff34e355a5bc",
+        "metadata.json": "3f962ec68d3b2eebc759c5f13ecf380f846174631f01f46a5fa7ba2a4505ee46",
+        "guided-trials.json": "234c6c752d59caa4915561f1570e1a97da50f87769b5bd46a6022a5ef82d0768",
+        "audio.wav": "76287f8207320b504ba7a11240fb9bfb50eb5ea6312acb826480a7edc0f5db45",
+        "audio-timing.jsonl": "214e97fbcabbd9939ed1d7f1da456ea901d19836b5970c9a78edaeffb8c1b33a"
+      },
+      "wearing_session": "ken-wearing-01"
+    },
+    {
+      "directory": "/__modal/volumes/vo-2dbdzwTN2ushFaXshshU2E/captures/20261108-022134-60c978cb",
+      "supervision": "weak_participant_confirmed",
+      "hashes": {
+        "streams.jsonl": "ecbc0d3101983eb123090028ddca7d3f23afb7f45210c4e3eb18ecd75bfc7dea",
+        "metadata.json": "ff6805b366cffbb5945316dec6c647bd11b7922e332301fca0c0e8efc379a2f7",
+        "guided-trials.json": "e8e87ae647213acbec7d628a7afebf24a7ab1213b8ee3d1ddef9127c8ce09966",
+        "audio.wav": "4afbc447974d1660a0eba1dc1c6854c36ab11ebfdd3e3f60b5b7dde09ebef45b",
+        "audio-timing.jsonl": "7be64ed0ca08df67916bca6873b36e78ded08a85b17d089da0a5da147f332d3a"
+      },
+      "wearing_session": "ken-wearing-01"
+    },
+    {
+      "directory": "/__modal/volumes/vo-2dbdzwTN2ushFaXshshU2E/interval/20261108-021414-fe4063d4",
+      "supervision": "weak_participant_spacebar_intervals",
+      "wearing_session": "micah-wearing-01",
+      "validation_after": 0.7,
+      "windows": {
+        "state": 1521,
+        "snap": 5228,
+        "bags": 0
+      }
+    },
+    {
+      "directory": "/__modal/volumes/vo-2dbdzwTN2ushFaXshshU2E/interval/20261108-011407-c127f0d5",
+      "supervision": "weak_participant_spacebar_intervals",
+      "wearing_session": "micah-wearing-01",
+      "validation_after": 0.7,
+      "windows": {
+        "state": 10747,
+        "snap": 43360,
+        "bags": 104
+      }
+    },
+    {
+      "directory": "/__modal/volumes/vo-2dbdzwTN2ushFaXshshU2E/interval/20261108-014551-cf745f65",
+      "supervision": "weak_participant_spacebar_intervals",
+      "wearing_session": "micah-wearing-01",
+      "validation_after": 0.7,
+      "windows": {
+        "state": 9871,
+        "snap": 33875,
+        "bags": 0
+      }
+    }
+  ],
+  "modal_sweep": "20261108-121847"
+}
