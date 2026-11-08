@@ -10,7 +10,9 @@ namespace SpellGame.Game
     /// <list type="bullet">
     /// <item>own HP: a bar above the wrist of the hand without the band, read by glancing at it like a watch;</item>
     /// <item>other players' HP: a bar floating above their head, above the player-ID marker;</item>
-    /// <item>taking damage: red bars flash at the edges of the view, stronger for big hits and low HP.</item>
+    /// <item>taking damage: bars flash at the edges of the view, stronger for big hits and low HP, on the side the hit came
+    /// from (top and bottom too for hits from behind) and coloured by what hit you: fireball orange, sword cyan; a softer
+    /// blue flash when your shield blocks something.</item>
     /// </list>
     /// </summary>
     public sealed class HealthView : MonoBehaviour
@@ -36,6 +38,10 @@ namespace SpellGame.Game
         [SerializeField] private float flashDuration = 0.35f;
         [SerializeField] private float flashDistance = 0.5f;
         [SerializeField] private float flashMaxThickness = 0.08f;
+        [SerializeField] private Color fireballFlash = new(1f, 0.42f, 0.05f);
+        [SerializeField] private Color swordFlash = new(0.25f, 0.85f, 1f);
+        [SerializeField] private Color blockFlash = new(0.3f, 0.45f, 1f);
+        [SerializeField, Range(0f, 1f)] private float blockFlashStrength = 0.35f;
 
         private sealed class Bar
         {
@@ -55,6 +61,7 @@ namespace SpellGame.Game
         private Transform[] _flashEdges;
         private float _flashStart = float.NegativeInfinity;
         private float _flashStrength;
+        private readonly float[] _flashWeights = { 1f, 1f, 1f, 1f };
 
         private static Mesh QuadMesh
         {
@@ -81,12 +88,14 @@ namespace SpellGame.Game
         {
             gameClient.StateReceived += OnState;
             gameClient.DamageReceived += OnDamage;
+            gameClient.ImpactReceived += OnImpact;
         }
 
         private void OnDisable()
         {
             gameClient.StateReceived -= OnState;
             gameClient.DamageReceived -= OnDamage;
+            gameClient.ImpactReceived -= OnImpact;
         }
 
         private void OnState(StateMessage state)
@@ -101,8 +110,48 @@ namespace SpellGame.Game
             if (damage.TargetId != gameClient.PlayerId)
                 return;
             var lowHp = 1f - Mathf.Clamp01(damage.HpAfter / maxHp);
-            _flashStrength = Mathf.Clamp01(0.4f + damage.Amount / 20f + 0.5f * lowHp);
+            var color = damage.Kind == SpellKind.Sword ? swordFlash : damage.Kind == SpellKind.Fireball ? fireballFlash : Color.red;
+            Flash(Mathf.Clamp01(0.4f + damage.Amount / 20f + 0.5f * lowHp), color, AttackerPosition(damage.SourceId, damage.Pos));
+        }
+
+        private void OnImpact(ImpactMessage impact)
+        {
+            if (impact.TargetId != gameClient.PlayerId || impact.Reason is not ("blocked" or "parried"))
+                return;
+            Flash(blockFlashStrength, blockFlash, AttackerPosition(impact.OwnerId, impact.Pos));
+        }
+
+        /// <summary>Where the hit came from: the attacker's head, else the hit point.</summary>
+        private Vector3? AttackerPosition(string attackerId, float[] hitPos)
+        {
+            if (attackerId != null && gameClient.TryGetJoints(attackerId, out var joints) && joints.Head != null)
+                return joints.Head.Position;
+            return hitPos is { Length: 3 } ? new Vector3(hitPos[0], hitPos[1], hitPos[2]) : null;
+        }
+
+        /// <summary>Edges: 0 top, 1 bottom, 2 left, 3 right. The side facing the attacker flashes hardest.</summary>
+        private void Flash(float strength, Color color, Vector3? from)
+        {
+            _flashStrength = strength;
             _flashStart = Time.time;
+            _flashMaterial.SetColor("_BaseColor", color);
+            for (var i = 0; i < _flashWeights.Length; i++)
+                _flashWeights[i] = 1f;
+            if (from == null || centerEye == null)
+                return;
+
+            var local = centerEye.InverseTransformPoint(from.Value);
+            local.y = 0f;
+            if (local.sqrMagnitude < 1e-4f)
+                return;
+            local.Normalize();
+            var side = Mathf.Clamp01(Mathf.Abs(local.x) * 1.5f);
+            var behind = Mathf.Clamp01(-local.z);
+            var near = 0.6f + 0.4f * side;
+            var far = Mathf.Max(0.6f * (1f - side), behind);
+            _flashWeights[2] = local.x < 0f ? near : far;
+            _flashWeights[3] = local.x < 0f ? far : near;
+            _flashWeights[0] = _flashWeights[1] = 0.3f + 0.7f * behind;
         }
 
         private void Update()
@@ -149,13 +198,14 @@ namespace SpellGame.Game
         {
             var t = (Time.time - _flashStart) / flashDuration;
             var active = t is >= 0f and < 1f;
-            var thickness = active ? flashMaxThickness * _flashStrength * (1f - t) : 0f;
+            var edgeThickness = active ? flashMaxThickness * _flashStrength * (1f - t) : 0f;
             for (var i = 0; i < _flashEdges.Length; i++)
             {
                 var edge = _flashEdges[i];
-                edge.gameObject.SetActive(active);
+                edge.gameObject.SetActive(active && _flashWeights[i] > 0.01f);
                 if (!active)
                     continue;
+                var thickness = edgeThickness * _flashWeights[i];
                 var horizontal = i < 2;
                 edge.localScale = horizontal ? new Vector3(1.2f, thickness, 1f) : new Vector3(thickness, 1.2f, 1f);
             }

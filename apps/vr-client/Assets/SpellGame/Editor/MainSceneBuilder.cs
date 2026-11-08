@@ -7,7 +7,7 @@ using UnityEngine;
 namespace SpellGame.Editor
 {
     /// <summary>
-    /// Regenerates the scene: passthrough OVRCameraRig + Movement SDK body tracking + debug skeletons + GameClient + shared-space aligner + spell views.
+    /// Regenerates the scene: passthrough OVRCameraRig + Movement SDK body tracking + debug skeletons + GameClient + shared-space aligner + spell views + match menus + AI avatar.
     /// Headless: <c>Unity -batchmode -quit -projectPath . -executeMethod SpellGame.Editor.MainSceneBuilder.Build</c>
     /// </summary>
     public static class MainSceneBuilder
@@ -37,6 +37,8 @@ namespace SpellGame.Editor
             CreateSwordView(client);
             CreateShieldView(client);
             CreateHealthView(client, trackingSpace.Find("CenterEyeAnchor"));
+            CreateMatchMenu(client, rig);
+            CreateAiAvatarView(client);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
@@ -269,6 +271,28 @@ namespace SpellGame.Editor
             serializedView.FindProperty("gameClient").objectReferenceValue = client;
             serializedView.FindProperty("centerEye").objectReferenceValue = centerEye;
             serializedView.FindProperty("baseMaterial").objectReferenceValue = UnlitMaterial("DebugSkeleton", new Color(0.2f, 1f, 0.4f));
+            serializedView.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void CreateMatchMenu(GameClient client, OVRCameraRig rig)
+        {
+            var menu = new GameObject("Match Menu").AddComponent<MatchMenu>();
+            var serializedMenu = new SerializedObject(menu);
+            serializedMenu.FindProperty("gameClient").objectReferenceValue = client;
+            serializedMenu.FindProperty("cameraRig").objectReferenceValue = rig;
+            serializedMenu.FindProperty("baseMaterial").objectReferenceValue = UnlitMaterial("DebugSkeleton", new Color(0.2f, 1f, 0.4f));
+            serializedMenu.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void CreateAiAvatarView(GameClient client)
+        {
+            var view = new GameObject("AI Avatar").AddComponent<AiAvatarView>();
+            var serializedView = new SerializedObject(view);
+            serializedView.FindProperty("gameClient").objectReferenceValue = client;
+            serializedView.FindProperty("robeMaterial").objectReferenceValue = UnlitMaterial("MageRobe", new Color(0.22f, 0.1f, 0.42f));
+            serializedView.FindProperty("trimMaterial").objectReferenceValue = UnlitMaterial("MageTrim", new Color(0.95f, 0.72f, 0.25f));
+            serializedView.FindProperty("shadowMaterial").objectReferenceValue = UnlitMaterial("MageShadow", new Color(0.04f, 0.02f, 0.08f));
+            serializedView.FindProperty("glowMaterial").objectReferenceValue = UnlitMaterial("MageGlow", new Color(0.35f, 1f, 0.95f));
             serializedView.ApplyModifiedPropertiesWithoutUndo();
         }
 

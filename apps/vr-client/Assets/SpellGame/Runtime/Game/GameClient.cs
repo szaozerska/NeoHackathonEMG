@@ -153,7 +153,8 @@ namespace SpellGame.Game
                     break;
                 case PoseMessage pose when pose.PlayerId != _playerId:
                     _remoteJoints[pose.PlayerId] = pose.Joints;
-                    debugSkeletons.Draw(pose.PlayerId, pose.Joints, withBody: true);
+                    if (pose.PlayerId != MatchMode.AiPlayerId)
+                        debugSkeletons.Draw(pose.PlayerId, pose.Joints, withBody: true);
                     break;
                 case SignMessage sign:
                     SignReceived?.Invoke(sign);
@@ -221,7 +222,7 @@ namespace SpellGame.Game
             foreach (var player in state.Players)
             {
                 if (player.PlayerId == _playerId)
-                    own = player.Hp > 0f ? $"HP {player.Hp:0}" : "YOU ARE DEAD (no respawn yet)";
+                    own = player.Hp > 0f ? $"HP {player.Hp:0}" : "YOU ARE DEAD";
                 else
                     others.Add(player.Hp > 0f ? $"{player.PlayerId} {player.Hp:0}" : $"{player.PlayerId} dead");
             }
