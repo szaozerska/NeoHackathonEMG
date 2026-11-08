@@ -1,4 +1,4 @@
-// The Infinite Void: slowly swirling black ink with faint violet veins, under a field of small twinkling stars.
+// The Infinite Void: slowly swirling black ink with faint, nearly grey veins, under a field of small twinkling stars.
 // Drawn on a sphere around the caster; the pattern follows the direction from the sphere's centre, so it keeps the same
 // angular size however large the sphere grows. _Color.a fades the whole layer (InfiniteVoidView); depth test per material.
 Shader "SpellGame/InfiniteVoid/Ink"
@@ -7,8 +7,8 @@ Shader "SpellGame/InfiniteVoid/Ink"
     {
         _Color ("Fade (alpha)", Color) = (1, 1, 1, 1)
         _DeepColor ("Deep Ink", Color) = (0.004, 0.002, 0.01, 1)
-        _InkColor ("Ink Swirl", Color) = (0.05, 0.02, 0.09, 1)
-        _VeinColor ("Vein", Color) = (0.25, 0.12, 0.45, 1)
+        _InkColor ("Ink Swirl", Color) = (0.022, 0.018, 0.03, 1)
+        _VeinColor ("Vein", Color) = (0.09, 0.07, 0.12, 1)
         _InkScale ("Ink Scale", Range(0.5, 10)) = 3
         _InkSpeed ("Ink Speed", Range(0, 1)) = 0.08
         _StarDensity ("Star Density", Range(10, 300)) = 90

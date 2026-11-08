@@ -35,7 +35,7 @@ Material:
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _DeepColor: {r: 0.004, g: 0.002, b: 0.01, a: 1}
-    - _InkColor: {r: 0.049999982, g: 0.02, b: 0.089999996, a: 1}
-    - _VeinColor: {r: 0.24999997, g: 0.11999995, b: 0.45, a: 1}
+    - _InkColor: {r: 0.022, g: 0.018, b: 0.03, a: 1}
+    - _VeinColor: {r: 0.09, g: 0.07, b: 0.12, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

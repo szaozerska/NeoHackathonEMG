@@ -914,12 +914,13 @@ MonoBehaviour:
   engulfSeconds: 0.6
   whiteoutInSeconds: 0.25
   fadeOutSeconds: 0.5
-  streaksPerSecond: 1800
+  streaksPerSecond: 3600
   streakTailSeconds: 0.4
-  tunnelRadius: 2.5
+  tunnelInnerRadius: 1.5
+  tunnelRadius: 7.5
   convergence: 0.35
   streakSpeed: {x: 18, y: 30}
-  streakWidth: {x: 0.004, y: 0.012}
+  streakWidth: {x: 0.012, y: 0.036}
   streakLifetime: {x: 0.12, y: 0.3}
   streakStretch: 0.06
   whiteStreakShare: 0.35

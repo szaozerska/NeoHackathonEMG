@@ -33,15 +33,17 @@ namespace SpellGame.Game
         [SerializeField] private float fadeOutSeconds = 0.5f;
 
         [Header("Streaks")]
-        [SerializeField, Min(1f)] private float streaksPerSecond = 1800f;
+        [SerializeField, Min(1f)] private float streaksPerSecond = 3600f;
         [Tooltip("Streaks keep coming this long after they reach the targets, then die out.")]
         [SerializeField] private float streakTailSeconds = 0.4f;
-        [Tooltip("Streaks start this far from the line between caster and target, so they fill the view.")]
-        [SerializeField] private float tunnelRadius = 2.5f;
+        [Tooltip("Streaks start between these distances from the line between caster and target: far enough to keep clear " +
+                 "of the players' heads, wide enough to fill the view.")]
+        [SerializeField] private float tunnelInnerRadius = 1.5f;
+        [SerializeField] private float tunnelRadius = 7.5f;
         [Tooltip("At the target the streaks are this share of their starting distance from the line.")]
         [SerializeField, Range(0f, 1f)] private float convergence = 0.35f;
         [SerializeField] private Vector2 streakSpeed = new(18f, 30f);
-        [SerializeField] private Vector2 streakWidth = new(0.004f, 0.012f);
+        [SerializeField] private Vector2 streakWidth = new(0.012f, 0.036f);
         [SerializeField] private Vector2 streakLifetime = new(0.12f, 0.3f);
         [Tooltip("Rendered length per m/s of speed.")]
         [SerializeField] private float streakStretch = 0.06f;
@@ -250,7 +252,7 @@ namespace SpellGame.Game
         {
             var axis = target - _domain.Origin;
             var distance = axis.magnitude;
-            var offset = RandomPerpendicular(axis) * (tunnelRadius * Mathf.Sqrt(Random.value));
+            var offset = RandomPerpendicular(axis) * RandomTunnelRadius();
             var direction = (axis + offset * (convergence - 1f)).normalized;
             var front = distance * travel;
             var along = Random.Range(-tunnelRadius, front);
@@ -266,6 +268,10 @@ namespace SpellGame.Game
                 applyShapeToPosition = false,
             }, 1);
         }
+
+        /// <summary>Uniform over the ring's area, so the outer streaks aren't sparser than the inner ones.</summary>
+        private float RandomTunnelRadius() =>
+            Mathf.Sqrt(Mathf.Lerp(tunnelInnerRadius * tunnelInnerRadius, tunnelRadius * tunnelRadius, Random.value));
 
         private static Vector3 RandomPerpendicular(Vector3 axis)
         {

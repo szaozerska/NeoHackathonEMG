@@ -172,7 +172,9 @@ class PlayerState:
     item_since: float = 0.0
     cooldown_until: float = 0.0
     held_fireball_velocity: np.ndarray = field(default_factory=lambda: np.zeros(3))
-    """The held fireball lags the hand by `Tuning.fireball_inertia_s`; this is its velocity, and the throw's."""
+    """The held fireball lags the hand by `Tuning.fireball_inertia_s`; this is its velocity."""
+    throw_velocity: np.ndarray | None = None
+    """The fastest forward velocity the held fireball reached at throw speed; it leaves at this once the hand slows."""
     draw_start: tuple[float, np.ndarray] | None = None
     """Time and hand position of the last fist sample in the pocket, while a draw is possible."""
     sword_tip: np.ndarray | None = None
@@ -326,6 +328,7 @@ class GameState:
         player.item = Item.FIREBALL
         player.item_since = self.time
         player.held_fireball_velocity = np.zeros(3)
+        player.throw_velocity = None
         return [self._spell_event(player, p.SpellState.CHARGING, None)]
 
     def _step_fireball(self, player: PlayerState, dt: float) -> list[p.Message]:
@@ -342,23 +345,31 @@ class GameState:
             events.append(self._spell_event(player, p.SpellState.CANCELLED, None))
             return events
 
-        if self._released_throw(player, dt):
-            events.append(self._throw_fireball(player, player.held_fireball_velocity))
+        if (throw_velocity := self._released_throw(player, dt)) is not None:
+            events.append(self._throw_fireball(player, throw_velocity))
         return events
 
-    def _released_throw(self, player: PlayerState, dt: float) -> bool:
-        """Drag the held fireball after the hand; it leaves once moving fast and forward and the hand slows below it."""
+    def _released_throw(self, player: PlayerState, dt: float) -> np.ndarray | None:
+        """Drag the held fireball after the hand. Once it has moved fast and forward, it leaves at its fastest such
+        velocity as soon as the hand slows below that. Remembering the peak matters: at the server's tick rate the hand
+        often slows below the fireball only on the tick after the fireball itself dropped under `throw_min_speed`."""
         tuning = self.tuning
         hand_velocity = player.band_hand_tracker.velocity()
         if hand_velocity is None or player.pose is None:
-            return False
+            return None
         follow = 1.0 - float(np.exp(-dt / tuning.fireball_inertia_s))
         held = player.held_fireball_velocity + (hand_velocity - player.held_fireball_velocity) * follow
         player.held_fireball_velocity = held
         held_speed = float(np.linalg.norm(held))
         forwardness = float(normalize(held) @ body_forward(player.pose.joints))
         fast_and_forward = held_speed >= tuning.throw_min_speed and forwardness >= tuning.throw_min_forward
-        return fast_and_forward and float(np.linalg.norm(hand_velocity)) < held_speed
+        if fast_and_forward and (player.throw_velocity is None or held_speed > float(np.linalg.norm(player.throw_velocity))):
+            player.throw_velocity = held
+        if player.throw_velocity is None:
+            return None
+        if float(np.linalg.norm(hand_velocity)) >= float(np.linalg.norm(player.throw_velocity)):
+            return None
+        return player.throw_velocity
 
     def _throw_fireball(self, player: PlayerState, velocity: np.ndarray) -> p.Spell:
         tuning = self.tuning

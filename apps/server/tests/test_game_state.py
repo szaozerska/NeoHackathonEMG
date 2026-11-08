@@ -171,6 +171,30 @@ def test_a_quick_overhand_throw_tracked_by_position_alone_releases():
     assert match.game.projectiles
 
 
+def test_a_throw_at_the_server_tick_rate_releases_even_when_the_hand_slows_after_the_fireball_peaked():
+    """At 30 Hz the hand often drops below the held fireball only on the tick after the fireball fell under
+    `throw_min_speed`; the fireball must still leave, at its peak velocity."""
+    dt = 1 / 30
+    game = GameState(tuning=Tuning(aim_assist_strength=0.0))
+    inputs = {"P1": PlayerInput(band_paired=True), "P2": PlayerInput(band_paired=True)}
+    duration, peak = 0.2, 5.0
+    t, elapsed = 0.0, -dt
+    events = []
+    while elapsed < duration + 0.4:
+        t += dt
+        swing = min(max(elapsed, 0.0), duration)
+        forward = peak * (swing / 2.0 - duration / (4.0 * np.pi) * np.sin(2.0 * np.pi * swing / duration))
+        inputs["P1"].pose = standing_pose("P1", t, (0.0, 0.0), 0.0, HAND_IDLE + np.array([0.0, 0.0, forward]))
+        inputs["P2"].pose = standing_pose("P2", t, (0.0, 3.0), 180.0)
+        inputs["P1"].snapped = elapsed < 0.0
+        events += game.step(inputs, dt)
+        elapsed += dt
+
+    casts = [e for e in events if isinstance(e, p.Spell) and e.state == p.SpellState.CAST]
+    assert len(casts) == 1
+    assert float(np.linalg.norm(game.projectiles[0].vel)) >= game.tuning.throw_min_speed
+
+
 def test_backswing_alone_does_not_throw():
     match = Match()
     match.step(snap=True)
