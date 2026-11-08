@@ -6,11 +6,10 @@ The hand-sign classification client from [architecture.md](../../architecture.md
 
 ```bash
 cd apps/hand-client
-python3 -m venv .venv
-.venv/bin/pip install -e ../server -e '.[dev]'
+uv sync
 ```
 
-It imports `spellgame.protocol`, `spellgame.client` and `spellgame.discovery` from `apps/server`, so messages can't drift.
+`uv sync` installs `apps/server` as an editable dependency. It imports `spellgame.protocol`, `spellgame.client` and `spellgame.discovery` from `apps/server`, so messages can't drift.
 
 ## Run
 
@@ -19,8 +18,8 @@ It imports `spellgame.protocol`, `spellgame.client` and `spellgame.discovery` fr
 3. Run the client, then pick a game server from the list (or type `IP[:port]`):
 
 ```bash
-.venv/bin/python -m handclient                                  # prompts for the Kinesis URL, then the server
-.venv/bin/python -m handclient --kinesis-url 'URL' --host 10.0.0.5   # no prompts
+uv run python -m handclient                                  # prompts for the Kinesis URL, then the server
+uv run python -m handclient --kinesis-url 'URL' --host 10.0.0.5   # no prompts
 ```
 
 Pairing with a headset follows the server's join order (§5): join with the headset first.
@@ -37,9 +36,9 @@ Pairing with a headset follows the server's join order (§5): join with the head
 ## Test
 
 ```bash
-.venv/bin/python -m pytest
-.venv/bin/ruff check . && .venv/bin/ruff format --check .
-MYPYPATH=../server .venv/bin/mypy -p handclient --check-untyped-defs
+uv run pytest
+uv run ruff check . && uv run ruff format --check .
+MYPYPATH=../server uv run mypy -p handclient --check-untyped-defs
 ```
 
 `tests/fake_kinesis.py` stands in for Kinesis's feed, so the tests need no band.

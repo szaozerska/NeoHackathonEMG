@@ -13,7 +13,7 @@ import logging
 import time
 
 from .. import protocol as p
-from ..client import Connection, resolve_server
+from ..client import Connection, resolve_server, this_machine
 from ..sim import THROW_DURATION_S, standing_pose, throw_hand_offset
 
 log = logging.getLogger("fake_vr")
@@ -24,7 +24,7 @@ _PRINTED_EVENTS = (p.Welcome, p.Paired, p.Spell, p.Damage, p.Impact, p.Error)
 async def run(args: argparse.Namespace) -> None:
     host, port = await resolve_server(args.host, args.port, args.discovery_port)
     conn = await Connection.open(host, port)
-    welcome = await conn.handshake(p.Role.VR, args.player_id)
+    welcome = await conn.handshake(p.Role.VR, args.player_id, this_machine("fake_vr"))
     player_id = welcome.player_id
     log.info("connected to %s:%d as %s", host, port, player_id)
 

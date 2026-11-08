@@ -8,7 +8,8 @@ Diagram: https://www.tldraw.com/f/j9TtJhe8cWZyB6hVz3jwV?d=v-977.-580.3038.1929.p
   - what flows between them (§3);
   - the transports, including TCP for game traffic and the UDP discovery beacon (§4, §4.1);
   - the server-authoritative model;
-  - the shared player ID (§5).
+  - the shared player ID (§5);
+  - Python tooling: `uv` for every Python package (§2).
   
   Any implementation must preserve these.
 - **Recommended, not binding:** the libraries and implementation choices in the **Stack** and **Data collection** items of §2.2 (classifier) and §2.3 (server). Swap them out if something else works better.
@@ -25,6 +26,8 @@ A multiplayer mixed-reality (passthrough AR) spell-casting game.
 There is one Quest, one Neural Band, and one classification Mac per player, plus one shared server Mac. Everything runs on one local network.
 
 ## 2. Components
+
+**Python tooling:** every Python package (the game server, the hand-sign client, and any tools) uses [`uv`](https://docs.astral.sh/uv/) as its package manager and for its environment. Declare dependencies in `pyproject.toml`, commit the `uv.lock`, and run things through uv (`uv sync`, `uv run …`, `uv add …`) instead of `pip` and hand-made `venv`s.
 
 ### 2.1 Meta Quest 3: AR client (Unity, passthrough; called the VR client / role `vr` in code and protocol)
 - **Inputs:**
@@ -162,7 +165,7 @@ The first message on every TCP connection:
 
 | Type | Direction | Fields |
 |---|---|---|
-| `hello` / `welcome` / `error` | client ↔ server | see §4.2. `hello` may carry an optional `player_id`: a VR client reclaims its ID after a reconnect; a classifier pairs directly with that player |
+| `hello` / `welcome` / `error` | client ↔ server | see §4.2. `hello` may carry an optional `player_id`: a VR client reclaims its ID after a reconnect; a classifier pairs directly with that player. It may also carry `device: {name, model?, id?}`, shown in the server's monitor |
 | `pinch` | classifier → server | `t`, `hand` (sent during the pairing screen) |
 | `pair_start` / `pair_prompt` / `paired` | server → VR and classifier | `pair_prompt`: `player_id` currently being prompted; `paired`: `player_id` |
 | `pose` | VR → server, server → VR | `player_id`, `t`, `joints{head, chest, hips, l/r_shoulder, l/r_elbow, l/r_wrist, l/r_hand, l/r_knee, l/r_ankle, l/r_foot}` each `{pos:[x,y,z], rot:[w,x,y,z], vel?:[x,y,z]}`. `hips` is needed for the sword draw; legs come from full-body tracking (estimated by the Quest runtime) and are for debugging and display only; `vel` (optional, measured on the headset) gives cleaner hand speed than the server's finite difference |

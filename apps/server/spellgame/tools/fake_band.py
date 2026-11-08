@@ -15,7 +15,7 @@ import sys
 import time
 
 from .. import protocol as p
-from ..client import Connection, resolve_server
+from ..client import Connection, resolve_server, this_machine
 
 log = logging.getLogger("fake_band")
 
@@ -52,7 +52,7 @@ class Band:
 async def run(args: argparse.Namespace) -> None:
     host, port = await resolve_server(args.host, args.port, args.discovery_port)
     conn = await Connection.open(host, port)
-    await conn.handshake(p.Role.CLASSIFIER, args.player_id)
+    await conn.handshake(p.Role.CLASSIFIER, args.player_id, this_machine("fake_band"))
     band = Band(conn, args.hand)
     log.info("connected to %s:%d, waiting to pair", host, port)
 

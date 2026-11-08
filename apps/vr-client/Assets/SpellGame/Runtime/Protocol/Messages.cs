@@ -40,11 +40,28 @@ namespace SpellGame.Protocol
         public const string Sheathed = "sheathed";
     }
 
+    public sealed class DeviceInfo
+    {
+        public string Name { get; set; }
+        public string Model { get; set; }
+
+        /// <summary>A stable unique identifier for this headset.</summary>
+        public string Id { get; set; }
+
+        public static DeviceInfo ThisDevice() => new()
+        {
+            Name = SystemInfo.deviceName,
+            Model = SystemInfo.deviceModel,
+            Id = SystemInfo.deviceUniqueIdentifier,
+        };
+    }
+
     public sealed class HelloMessage : Message
     {
         public const string TypeName = "hello";
         public override string Type => TypeName;
         public string Role { get; set; }
+        public DeviceInfo Device { get; set; }
 
         /// <summary>Optional: a classifier pairs directly with this player.</summary>
         public string PlayerId { get; set; }

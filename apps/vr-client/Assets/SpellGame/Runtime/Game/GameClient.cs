@@ -69,7 +69,7 @@ namespace SpellGame.Game
             SetStatus($"Connecting to {endpoint}…");
             _connection = await ServerConnection.ConnectAsync(endpoint, destroyCancellationToken);
             ServerEndpoint = endpoint;
-            _connection.Send(new HelloMessage { Role = ClientRole.Vr });
+            _connection.Send(new HelloMessage { Role = ClientRole.Vr, Device = DeviceInfo.ThisDevice() });
         }
 
         private const string LocalSkeletonId = "local";

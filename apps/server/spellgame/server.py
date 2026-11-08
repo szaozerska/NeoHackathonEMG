@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-import argparse
 import asyncio
 import contextlib
 import logging
 import socket
+import time
+from collections import deque
 from dataclasses import dataclass, field
 
 from . import protocol as p
@@ -18,6 +19,14 @@ log = logging.getLogger(__name__)
 
 HELLO_TIMEOUT_S = 10.0
 MAX_WRITE_BUFFER = 1 << 20
+RECENT_PACKETS_KEPT = 50
+
+
+@dataclass(frozen=True)
+class ReceivedPacket:
+    received_at: float
+    """Unix time."""
+    message: p.Message
 
 
 class ClientConnection:
@@ -25,8 +34,16 @@ class ClientConnection:
         self.reader = reader
         self.writer = writer
         self.peer = writer.get_extra_info("peername")
+        self.connected_at = time.time()
         self.role: str | None = None
         self.player_id: str | None = None
+        self.device: p.DeviceInfo | None = None
+        self.packets_received = 0
+        self.recent_packets: deque[ReceivedPacket] = deque(maxlen=RECENT_PACKETS_KEPT)
+
+    def record_received(self, message: p.Message) -> None:
+        self.packets_received += 1
+        self.recent_packets.append(ReceivedPacket(received_at=time.time(), message=message))
 
     def send(self, message: p.Message) -> None:
         self.send_line(p.encode_line(message))
@@ -69,6 +86,7 @@ class GameServer:
         self.game = GameState(tuning=tuning or Tuning())
         self.players: dict[str, PlayerSlot] = {}
         self.unpaired_classifiers: list[ClientConnection] = []
+        self.connections: set[ClientConnection] = set()
         self._server: asyncio.Server | None = None
         self._tasks: list[asyncio.Task[None]] = []
         self._joins = 0
@@ -89,17 +107,14 @@ class GameServer:
                 await task
         if self._server is not None:
             self._server.close()
-            for slot in self.players.values():
-                for conn in (slot.vr, slot.classifier):
-                    if conn is not None:
-                        conn.writer.close()
-            for conn in self.unpaired_classifiers:
+            for conn in self.connections:
                 conn.writer.close()
             await self._server.wait_closed()
 
     async def _handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         writer.get_extra_info("socket").setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         conn = ClientConnection(reader, writer)
+        self.connections.add(conn)
         try:
             hello = await self._read_hello(conn)
             if hello is None:
@@ -114,10 +129,12 @@ class GameServer:
                 except p.ProtocolError as exc:
                     log.warning("%s sent a bad message: %s", conn.peer, exc)
                     continue
+                conn.record_received(message)
                 self._on_message(conn, message)
         except (ConnectionError, asyncio.IncompleteReadError):
             pass
         finally:
+            self.connections.discard(conn)
             self._leave(conn)
             writer.close()
 
@@ -131,7 +148,9 @@ class GameServer:
         if not isinstance(message, p.Hello) or message.role not in (p.Role.VR, p.Role.CLASSIFIER):
             conn.send(p.Error(message='first message must be {"type":"hello","role":"vr"|"classifier"}'))
             return None
+        conn.record_received(message)
         conn.role = message.role
+        conn.device = message.device
         return message
 
     def _join_vr(self, conn: ClientConnection, requested_id: str | None) -> None:
@@ -248,37 +267,3 @@ class GameServer:
         for slot in self.players.values():
             if slot.vr is not None:
                 slot.vr.send_line(payload)
-
-
-async def _serve(args: argparse.Namespace) -> None:
-    server = GameServer(
-        host=args.host,
-        port=args.port,
-        tick_hz=args.tick_hz,
-        discovery_port=args.discovery_port,
-        beacon_address=None if args.no_beacon else args.beacon_address,
-    )
-    await server.start()
-    try:
-        await asyncio.Event().wait()
-    finally:
-        await server.stop()
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--host", default="0.0.0.0")
-    parser.add_argument("--port", type=int, default=p.GAME_PORT)
-    parser.add_argument("--tick-hz", type=float, default=30.0)
-    parser.add_argument("--discovery-port", type=int, default=p.DISCOVERY_PORT)
-    parser.add_argument("--beacon-address", default="255.255.255.255")
-    parser.add_argument("--no-beacon", action="store_true")
-    parser.add_argument("-v", "--verbose", action="store_true")
-    args = parser.parse_args()
-    logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format="%(asctime)s %(message)s")
-    with contextlib.suppress(KeyboardInterrupt):
-        asyncio.run(_serve(args))
-
-
-if __name__ == "__main__":
-    main()

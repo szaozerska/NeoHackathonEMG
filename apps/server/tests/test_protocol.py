@@ -47,3 +47,13 @@ def test_state_round_trip():
 def test_bad_messages_raise_protocol_error(line):
     with pytest.raises(p.ProtocolError):
         p.decode(line)
+
+
+def test_hello_round_trip_keeps_device_and_accepts_unity_nulls():
+    hello = p.Hello(role=p.Role.VR, device=p.DeviceInfo(name="Quest", model="Oculus Quest", id="abc"))
+    assert p.decode(p.encode(hello)) == hello
+
+    decoded = p.decode('{"type":"hello","role":"vr","device":{"name":"Quest","model":null,"id":null}}')
+    assert isinstance(decoded, p.Hello)
+    assert decoded.device == p.DeviceInfo(name="Quest")
+    assert p.decode('{"type":"hello","role":"classifier"}') == p.Hello(role=p.Role.CLASSIFIER)
