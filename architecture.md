@@ -150,7 +150,7 @@ The first message on every TCP connection:
 
 - Every player has one ID, shared by their VR client and their classification client.
 - The server uses this ID to link the two streams to one player.
-- The server assigns player IDs in the order the headsets join: `P1`, `P2`, and so on. Each headset shows its own ID.
+- The server gives each joining headset the lowest free player ID: `P1`, `P2`, and so on. Each headset shows its own ID. A relaunched app gets its old ID back (matched by `device.id`; a connection left over from the previous launch is dropped), and IDs nobody uses any more are reused, so restarting for testing doesn't make the numbers climb.
 - **Pairing a Neural Band with a headset** uses **pairing mode** (the "Pair Neural Bands" screen):
   - Triggered from the game server's monitor (`p`), a headset's B or Y button, or by any other connected client (headset or classifier) sending `pair_start`.
   - The server sends `pair_start`, then `pair_prompt` naming the first headset without a band (in join order): that player pinches their fingers.
