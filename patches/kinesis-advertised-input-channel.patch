@@ -1,0 +1,71 @@
+diff --git a/Sources/Kinesis/BandConnection.swift b/Sources/Kinesis/BandConnection.swift
+index 51eca14..f52dc2b 100644
+--- a/Sources/Kinesis/BandConnection.swift
++++ b/Sources/Kinesis/BandConnection.swift
+@@ -461,12 +461,19 @@ final class NativeBandConnection: NSObject, BandConnection,
+             log.error("Input channel read failed: \(native.domain, privacy: .public) \(native.code, privacy: .public)")
+             fail(Self.explainingPairing(error)); return
+         }
+-        guard characteristic.uuid == psmID, let bytes = characteristic.value, bytes == Data([255, 0]) else {
+-            fail(KinesisError(message: "Unsupported band input channel")); return
++        guard characteristic.uuid == psmID else { return }
++        guard let bytes = characteristic.value else {
++            fail(KinesisError(message: "Band returned no input channel; reconnect and retry")); return
+         }
+-        log.info("Opening native L2CAP channel")
++        let channel: UInt16
++        do {
++            let diagnostic = bytes.map { String(format: "%02x", $0) }.joined(separator: " ")
++            log.notice("Advertised input channel bytes: \(diagnostic, privacy: .public)")
++            channel = try BandInputChannel.decode(bytes)
++        } catch { fail(error); return }
++        log.notice("Opening advertised native L2CAP channel \(channel, privacy: .public)")
+         stage = "opening input channel"
+-        peripheral.openL2CAPChannel(255)
++        peripheral.openL2CAPChannel(channel)
+     }
+ 
+     func peripheral(_ peripheral: CBPeripheral, didOpen channel: CBL2CAPChannel?, error: Error?) {
+diff --git a/Sources/KinesisCore/InputChannel.swift b/Sources/KinesisCore/InputChannel.swift
+new file mode 100644
+index 0000000..0634bde
+--- /dev/null
++++ b/Sources/KinesisCore/InputChannel.swift
+@@ -0,0 +1,16 @@
++import Foundation
++
++/// PSM is supplied by the peer, little-endian, rather than fixed by app version.
++public enum BandInputChannel {
++    public static func decode(_ bytes: Data) throws -> UInt16 {
++        guard bytes.count == 2 else {
++            throw BandProtocolError("Band input channel has an unexpected length (\(bytes.count) bytes)")
++        }
++        let value = UInt16(bytes[bytes.startIndex]) | UInt16(bytes[bytes.startIndex + 1]) << 8
++        // LE credit-based SPSM values are nonzero and fit in one octet.
++        guard value > 0 && value <= 255 else {
++            throw BandProtocolError("Band advertised an invalid LE input channel (\(value)); reconnect and retry")
++        }
++        return value
++    }
++}
+diff --git a/Tests/KinesisCoreTests/InputChannelTests.swift b/Tests/KinesisCoreTests/InputChannelTests.swift
+new file mode 100644
+index 0000000..e1d19a3
+--- /dev/null
++++ b/Tests/KinesisCoreTests/InputChannelTests.swift
+@@ -0,0 +1,15 @@
++import Foundation
++import Testing
++@testable import KinesisCore
++
++@Test func inputChannelUsesAdvertisedLittleEndianPSM() throws {
++    #expect(try BandInputChannel.decode(Data([255, 0])) == 255)
++    #expect(try BandInputChannel.decode(Data([129, 0])) == 129)
++    #expect(try BandInputChannel.decode(Data([1, 0])) == 1)
++}
++
++@Test func inputChannelRejectsInvalidPayloads() {
++    for bytes: [UInt8] in [[], [255], [255, 0, 1], [0, 0], [0, 1]] {
++        #expect(throws: BandProtocolError.self) { try BandInputChannel.decode(Data(bytes)) }
++    }
++}

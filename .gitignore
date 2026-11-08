@@ -48,3 +48,13 @@ __pycache__/
 # SwiftPM
 .build/
 .swiftpm/
+
+# Local EMG bench environments, recordings and generated models
+/.setup/
+/.local/
+/data/
+/artifacts/
+/demo-output/
+*.joblib
+!/models/gestures-v4/model.joblib
+!/models/gestures-v6/model.joblib

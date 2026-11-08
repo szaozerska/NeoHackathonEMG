@@ -1,0 +1,211 @@
+"""Rebuild neural inputs from the existing source-checked review manifest.
+
+All source values stay local. Intent marks and automatic camera estimates are
+not labels. Historical test clips remain known development regression checks.
+"""
+from pathlib import Path
+import joblib
+import numpy as np
+from .common import read_json
+from .effort import effort_dataset, _hash
+from .retraining import prepare_records
+from .feedback_update import capture_features
+from .camera_retraining import reviewed_records
+
+
+def verify_files(directory, hashes):
+    for filename, digest in hashes.items():
+        if _hash(Path(directory) / filename) != digest:
+            raise ValueError('Reviewed source changed: ' + filename)
+
+
+def check_trial_coverage(raw, trial, metadata):
+    """A contiguous fragment cannot stand in for a full confirmed action clip."""
+    def timestamp(row):
+        uptime = row['packet'].get('source_uptime')
+        return uptime-metadata['started_host_uptime'] if uptime is not None else row['capture_t']
+    packets = [r for r in raw if trial['start']-.5 <= timestamp(r) <= trial['end']+.1]
+    seqs = [r['packet']['source_seq'] for r in packets]
+    if (len(seqs) < 10 or any(b != a+1 for a, b in zip(seqs, seqs[1:])) or
+            timestamp(packets[0]) > trial['start']+.1 or timestamp(packets[-1]) < trial['end']-.1):
+        raise ValueError('Guided trial has missing EMG; discard/re-record '+trial['id'])
+    return packets
+
+
+def build_dataset(reference_cache, reference_review, camera_reviews=()):
+    """Preserve reviewed clip/block splits while regenerating raw waveforms."""
+    cache = joblib.load(reference_cache)  # Locally produced, trusted cache only.
+    review = read_json(reference_review)
+    sources, records, quality = [], [], []
+    for source in cache['sources']:
+        directory = Path(source['directory'])
+        supplemental = read_json(directory/'metadata.json').get('training_profile') == 'supplemental'
+        label_file = 'supplemental-trials-v4.json' if supplemental else 'gesture-trials-v3.json'
+        verify_files(directory, {name: source[key] for name, key in (
+            ('streams.jsonl', 'streams_sha256'), ('metadata.json', 'metadata_sha256'),
+            (label_file, 'labels_sha256'))})
+        if supplemental:
+            if source['labels_sha256'] != review['source_labels_sha256']:
+                raise ValueError('Reference review label hash mismatch')
+            for trial in review['trials']:
+                verify_files(directory, {trial['reference_file']: trial['reference_sha256']})
+        kwargs = {'include_snap': True, 'alignment': 'source_uptime', 'include_waveforms': True,
+                  'signal': cache['signal']}
+        if supplemental:
+            from .supplemental import PROTOCOL, LABEL_FILE
+            kwargs.update(label_file=LABEL_FILE, expected_protocol=PROTOCOL)
+        rows, checks, manifest, signal = effort_dataset(directory, **kwargs)
+        for row in rows:
+            row.update(session=directory.name, local_trial=row['trial'],
+                       trial=directory.name+':'+row['trial'])
+        records.extend(rows); quality.extend(checks); sources.append(manifest)
+    states, _, snaps = prepare_records({'records': records}, review)
+    tasks = {'state': states, 'snap': snaps}
+    seen = {str(Path(s['directory']).resolve()) for s in sources}
+    for path in camera_reviews:
+        annotation = read_json(path); directory = Path(annotation['source_directory'])
+        if str(directory.resolve()) in seen:
+            raise ValueError('Duplicate recording in dataset')
+        seen.add(str(directory.resolve()))
+        verify_files(directory, annotation['source_hashes'])
+        capture = capture_features(directory, include_waveforms=True)
+        if capture['metadata']['model']['signal'] != signal:
+            raise ValueError('Signal settings differ across recordings')
+        state, snap = reviewed_records(capture, annotation)
+        waves = {(f['kind'], f['start'], f['t']): f['waveform'] for f in capture['features']}
+        for name, rows in (('state', state), ('snap', snap)):
+            for row in rows:
+                row['waveform'] = waves[(name, row['start'], row['end'])]
+                row['trial'] = directory.name+':'+row['trial']
+                row['session'] = directory.name
+            tasks[name].extend(rows)
+        sources.append({'directory': str(directory.resolve()), 'review': str(Path(path).resolve()),
+                        'review_sha256': _hash(path), 'hashes': annotation['source_hashes']})
+    for name, rows in tasks.items():
+        key = 'hand_state' if name == 'state' else 'snap_label'
+        for row in rows:
+            row['label'] = row[key]
+            row['group'] = row.get('parent_trial', row['trial'])
+    result = {'schema': 1, 'signal': signal, 'tasks': tasks, 'sources': sources,
+              'reference_review_sha256': _hash(reference_review), 'quality': quality,
+              'evaluation_role': 'known_development_regression_not_independent_session'}
+    validate_dataset(result)
+    return result
+
+
+def validate_dataset(dataset):
+    """No original clip or overlapping raw window may span task splits."""
+    for name, supervised in dataset['tasks'].items():
+        rows = list(supervised)
+        for bag in dataset.get('weak_bags', {}).get(name, []):
+            if bag['part'] != 'train' or not bag['positive']:
+                raise ValueError('Weak positive bags must be training-only')
+            rows.extend(bag['rows'])
+        groups = {}; sessions = {}
+        for row in rows:
+            if row['part'] not in ('train', 'validation', 'test'):
+                raise ValueError('Invalid split')
+            group = (row['session'], row['group'])
+            if group in groups and groups[group] != row['part']:
+                raise ValueError('Original clip crosses splits: '+str(group))
+            groups[group] = row['part']
+            if not row['start'] < row['end']:
+                raise ValueError('Invalid window times')
+            if not np.isfinite(row['x']).all() or not np.isfinite(row['waveform']).all():
+                raise ValueError('Non-finite input')
+            sessions.setdefault(row['session'], {}).setdefault(row['part'], []).append(row)
+        for session, parts in sessions.items():
+            names = list(parts)
+            for i, a in enumerate(names):
+                # Check actual window unions, allowing disjoint clips in each split.
+                for b in names[i+1:]:
+                    aa = sorted(parts[a], key=lambda r: r['start'])
+                    bb = sorted(parts[b], key=lambda r: r['start'])
+                    j = 0
+                    for r in aa:
+                        while j < len(bb) and bb[j]['end'] <= r['start']:
+                            j += 1
+                        if j < len(bb) and bb[j]['start'] < r['end']:
+                            raise ValueError('Raw windows overlap across splits: '+session+':'+name)
+
+
+def add_reviewed_examples(dataset, path, config):
+    """Append independently reviewed examples, including future gesture classes.
+
+    NPZ contains feature[N,F] and waveform[N,C,T]. JSON rows carry their source,
+    group, split, label and times. Unreviewed/intent-only examples are rejected.
+    This interface is separate from the historical protocol-specific adapter.
+    """
+    manifest = read_json(path)
+    if manifest.get('independently_reviewed') is not True:
+        raise ValueError('Independent example review required')
+    root = Path(path).resolve().parent
+    verify_files(root, manifest['source_hashes'])
+    for task, entry in manifest['tasks'].items():
+        if task not in config['tasks']:
+            raise ValueError('Task absent from class registry: '+task)
+        if entry['arrays'] not in manifest['source_hashes']:
+            raise ValueError('Example arrays must be source-hashed')
+        with np.load(root/entry['arrays'], allow_pickle=False) as arrays:
+            if len(arrays['features']) != len(entry['rows']) or len(arrays['waveforms']) != len(entry['rows']):
+                raise ValueError('Example/array count mismatch')
+            for i, row in enumerate(entry['rows']):
+                if row['label'] not in config['tasks'][task]['classes'] and row['label'] is not None:
+                    raise ValueError('Label absent from class registry')
+                dataset['tasks'].setdefault(task, []).append({**row, 'x': arrays['features'][i].copy(),
+                                                            'waveform': arrays['waveforms'][i].copy()})
+    dataset['sources'].append({'review': str(Path(path).resolve()), 'sha256': _hash(path),
+                               'hashes': manifest['source_hashes']})
+    validate_dataset(dataset)
+
+
+def add_guided_capture(dataset, directory):
+    """Count-confirmed positives become MIL bags, never guessed snap windows.
+
+    All new guided clips fit only; fresh evaluation must remain separate. A
+    20-snap block is collected as 20 individually confirmed short bags, with
+    rotation/intensity variants. Count > 1 still supplies at-least-one evidence.
+    """
+    directory = Path(directory)
+    if any(s.get('directory') == str(directory.resolve()) for s in dataset['sources']):
+        raise ValueError('Duplicate guided capture')
+    manifest = read_json(directory/'guided-manifest.json')
+    verify_files(directory, manifest['source_hashes'])
+    capture = capture_features(directory, include_waveforms=True)
+    if capture['metadata'].get('dataset_role') == 'untouched_guided_count_check':
+        raise ValueError('Reserved evaluation capture cannot enter fitting')
+    if capture['metadata']['model']['signal'] != dataset['signal']:
+        raise ValueError('Guided capture signal settings differ')
+    from .common import json_lines
+    raw = [r for r in json_lines(directory/'streams.jsonl') if r['kind'] == 'emg']
+    for trial in read_json(directory/'guided-trials.json'):
+        if not trial['confirmed']:
+            continue
+        check_trial_coverage(raw, trial, capture['metadata'])
+        group = directory.name+':'+trial['id']
+        rows = []
+        for feature in capture['features']:
+            if feature['start'] < trial['start']+.15 or feature['t'] > trial['end']-.15:
+                continue
+            kind = 'snap' if trial['kind'] in ('snap', 'negative') else 'state'
+            if feature['kind'] != kind:
+                continue
+            rows.append({**feature, 'end': feature['t'], 'part': 'train', 'group': group, 'trial': group,
+                         'session': directory.name, 'wearing_session': manifest['wearing_session'],
+                         'label_source': 'participant_confirmation'})
+        if not rows:
+            raise ValueError('No usable windows in guided clip')
+        if trial['kind'] in ('snap', 'negative') and trial['reported_count'] > 0:
+            dataset.setdefault('weak_bags', {}).setdefault('snap', []).append({
+                'rows': rows, 'reported_count': trial['reported_count'], 'group': group,
+                'part': 'train', 'positive': True, 'label_source': 'participant_confirmed_count',
+                'instruction': trial['instruction']})
+        else:
+            label = 'negative' if trial['kind'] in ('snap', 'negative') else trial['kind']
+            for row in rows:
+                row['label'] = label; row['hand_state' if kind == 'state' else 'snap_label'] = label
+                row['expected_events'] = []
+            dataset['tasks'][kind].extend(rows)
+    dataset['sources'].append({'directory': str(directory.resolve()), 'supervision': 'weak_participant_confirmed',
+                              'hashes': manifest['source_hashes'], 'wearing_session': manifest['wearing_session']})
+    validate_dataset(dataset)

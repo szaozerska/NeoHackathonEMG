@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "task": "neural_emg_only",
+  "signal": {
+    "sample_rate": 2048,
+    "channels": 8,
+    "state_window": 410,
+    "state_hop": 102,
+    "snap_window": 256,
+    "snap_hop": 32,
+    "notch": true,
+    "noise_threshold": 3.0,
+    "warmup_samples": 512
+  },
+  "tasks": {
+    "state": {
+      "window_kind": "state",
+      "classes": [
+        "none",
+        "open",
+        "fist"
+      ],
+      "background": "none",
+      "checkpoint": "state-fnn-seed7.pt",
+      "threshold": 0.65
+    },
+    "snap": {
+      "window_kind": "snap",
+      "classes": [
+        "negative",
+        "snap"
+      ],
+      "background": "negative",
+      "event_class": "snap",
+      "checkpoint": "snap-fnn-seed7.pt",
+      "threshold": 0.995
+    }
+  },
+  "spell_mapping": {
+    "open": "shield_candidate",
+    "fist": "sword",
+    "snap": "fireball_equip"
+  },
+  "automatically_activated": false,
+  "provenance": "Packaged EMG-only development weights. Historical source data remain private on the original training machine.",
+  "training_sources": [
+    {
+      "source_id": "band-01",
+      "wearing_session": "band-01",
+      "streams_sha256": "b9b3a01e94df48ad95d6077d142f8ec0a82059cad1be8db7ad75d16ecd080874"
+    },
+    {
+      "source_id": "band-02",
+      "wearing_session": "band-02",
+      "streams_sha256": "917992282f3cf4292fa61073cf8cb04ca6046f566db4c018cb0819935a2ba781"
+    },
+    {
+      "source_id": "20261107-221247-7793d5af",
+      "wearing_session": "20261107-221247-7793d5af",
+      "streams_sha256": "01cf853086d590bc5462e799e745f9c32f639221724444ff164ec520bb91c2f6"
+    }
+  ]
+}

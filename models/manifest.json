@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "models": {
+    "gestures-v4/model.joblib": {
+      "sha256": "9e448cc1bbfd69c0df5a0d9340920e8a573c4053abcddd987f75493070bb6087",
+      "role": "live_fallback"
+    },
+    "gestures-v6/model.joblib": {
+      "sha256": "60ff8e0641de9ae3d612b15cc6dd99603a884e49453b5cb28ac3d08b207a7132",
+      "role": "saved_comparison"
+    },
+    "neural-emg-03/state-fnn-seed7.pt": {
+      "sha256": "11705cbf6fe800113b47dc326dd38c5e845a366d6d508bc6edfd308d38402d71",
+      "role": "experimental_state"
+    },
+    "neural-emg-03/snap-fnn-seed7.pt": {
+      "sha256": "44a4cf573acb76f6a3795ac8661574cdf985a5593d8005d9ccf821a61bfbcd1a",
+      "role": "experimental_snap"
+    },
+    "neural-emg-03/model.json": {
+      "sha256": "900085125c4f21e6f8d13665570d934a6065c01085dab7dfa3853af74274d568",
+      "role": "experimental_manifest"
+    }
+  },
+  "kinesis": {
+    "archive": "apps/kinesis-axo/release/Kinesis-haptics-arm64.zip",
+    "sha256": "7aed1a43b9abe9fc10b8010f5d15628d1806521394b7d4f5e3f23bc323986604",
+    "minimum_macos": "14.0",
+    "architecture": "arm64",
+    "source": "apps/kinesis-axo",
+    "description": "Existing repository build including haptics; raw recorder retained."
+  }
+}
