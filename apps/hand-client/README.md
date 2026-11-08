@@ -24,7 +24,8 @@ uv run python -m handclient --kinesis-url 'URL' --host 10.0.0.5   # no prompts
 
 Signs come from the neural EMG model `models/neural-emg-05` by default; it needs the `neural` extra
 (`uv sync --extra neural`). Pick another bundle with `--neural-model models/neural-emg-04`, or send no signs and
-only log EMG with `--log-only`.
+only log EMG with `--log-only`. If accidental fireballs fire, raise `--snap-threshold` (e.g. `0.999`; it
+also misses more real snaps).
 
 The client connects unpaired. To pair, start pairing mode on the server (`p` in its monitor): when the server prompts your headset's player, pinch your index or middle finger to your thumb.
 
