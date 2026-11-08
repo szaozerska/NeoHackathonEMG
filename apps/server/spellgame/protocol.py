@@ -201,6 +201,56 @@ class Paired(Message):
     player_id: str
 
 
+class AlignMethod:
+    ANCHOR = "anchor"
+    """Loaded the host's Shared Spatial Anchor and aligned its tracking space to it."""
+    FLOOR_SPOTS = "floor_spots"
+    """Fallback: recentered while standing on its marked floor spot, facing `spot_yaw`."""
+
+
+@dataclass
+class Space(Message):
+    """Server → VR: the shared room frame (§5.1). Sent on join and whenever the host or anchor changes."""
+
+    TYPE: ClassVar[str] = "space"
+    group_uuid: str
+    """Meta colocation group UUID to share the anchor to and load it from."""
+    host_id: str | None
+    """The headset that should create and share the anchor."""
+    anchor_uuid: str | None
+    """The shared anchor to align to; None until the host has shared one."""
+    spot_pos: list[float]
+    """This headset's floor spot in the shared frame, for the `floor_spots` fallback."""
+    spot_yaw: float
+    """Degrees about +y the player faces on their spot; 0 is +z."""
+
+
+@dataclass
+class AnchorShared(Message):
+    """VR (host only) → server: the anchor at the shared frame's origin was saved and shared to `group_uuid`."""
+
+    TYPE: ClassVar[str] = "anchor_shared"
+    anchor_uuid: str
+
+
+@dataclass
+class Aligned(Message):
+    """VR → server: this headset's poses are now in the shared frame."""
+
+    TYPE: ClassVar[str] = "aligned"
+    method: str
+    """An `AlignMethod`."""
+    anchor_uuid: str | None = None
+    """The anchor aligned to; required for `anchor`, so a stale anchor is rejected."""
+
+
+@dataclass
+class SpaceReset(Message):
+    """Any client → server: drop the anchor and re-align everyone."""
+
+    TYPE: ClassVar[str] = "space_reset"
+
+
 @dataclass
 class Pose(Message):
     TYPE: ClassVar[str] = "pose"
@@ -315,6 +365,8 @@ class PlayerSnapshot:
     """Seconds until the player can conjure again."""
     shield_boost: float = 0.0
     """0-1 power from the last shield push; at `Tuning.shield_parry_min_boost` or more a sword contact is a parry."""
+    aligned: bool = False
+    """The headset has reported its poses are in the shared room frame (§5.1)."""
 
     def to_dict(self) -> dict[str, Any]:
         return {f.name: getattr(self, f.name) for f in fields(self)}

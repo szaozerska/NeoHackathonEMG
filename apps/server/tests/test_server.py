@@ -277,3 +277,48 @@ def test_pairing_mode_moves_on_when_the_prompted_headset_leaves_and_ends_when_al
             await server.stop()
 
     run(scenario())
+
+
+def test_first_headset_hosts_the_anchor_and_both_report_aligned_to_it():
+    async def scenario():
+        server = GameServer(host="127.0.0.1", port=0, beacon_address=None, spot_distance=4.0)
+        await server.start()
+        try:
+            vr1 = await Connection.open("127.0.0.1", server.port)
+            await vr1.handshake(p.Role.VR)
+            space1 = await until(vr1, lambda m: isinstance(m, p.Space))
+            assert space1.host_id == "P1" and space1.anchor_uuid is None
+            assert (space1.spot_pos, space1.spot_yaw) == ([0.0, 0.0, -2.0], 0.0)
+
+            vr2 = await Connection.open("127.0.0.1", server.port)
+            await vr2.handshake(p.Role.VR)
+            space2 = await until(vr2, lambda m: isinstance(m, p.Space))
+            assert space2.host_id == "P1" and space2.group_uuid == space1.group_uuid
+            assert (space2.spot_pos, space2.spot_yaw) == ([0.0, 0.0, 2.0], 180.0)
+
+            vr2.send(p.AnchorShared(anchor_uuid="not-the-host"))
+            assert isinstance(await until(vr2, lambda m: isinstance(m, p.Error)), p.Error)
+
+            vr1.send(p.AnchorShared(anchor_uuid="anchor-1"))
+            announced = await until(vr2, lambda m: isinstance(m, p.Space) and m.anchor_uuid is not None)
+            assert announced.anchor_uuid == "anchor-1"
+            vr2.send(p.Aligned(method=p.AlignMethod.ANCHOR, anchor_uuid="stale"))
+            await until(vr2, lambda m: isinstance(m, p.Error))
+            vr1.send(p.Aligned(method=p.AlignMethod.ANCHOR, anchor_uuid="anchor-1"))
+            vr2.send(p.Aligned(method=p.AlignMethod.ANCHOR, anchor_uuid="anchor-1"))
+            state = await until(vr1, lambda m: isinstance(m, p.State) and all(pl.aligned for pl in m.players))
+            assert {pl.player_id for pl in state.players} == {"P1", "P2"}
+
+            await vr1.close()
+            handover = await until(vr2, lambda m: isinstance(m, p.Space) and m.host_id == "P2")
+            assert handover.anchor_uuid == "anchor-1"
+
+            vr2.send(p.SpaceReset())
+            reset = await until(vr2, lambda m: isinstance(m, p.Space) and m.anchor_uuid is None)
+            assert reset.host_id == "P2" and reset.group_uuid != space1.group_uuid
+            await until(vr2, lambda m: isinstance(m, p.State) and not m.players[1].aligned)
+            await vr2.close()
+        finally:
+            await server.stop()
+
+    run(scenario())
