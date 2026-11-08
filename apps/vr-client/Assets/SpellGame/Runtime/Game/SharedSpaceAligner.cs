@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Meta.XR.MRUtilityKit;
 using SpellGame.Protocol;
+using TMPro;
 using UnityEngine;
 
 namespace SpellGame.Game
@@ -40,6 +42,12 @@ namespace SpellGame.Game
         [Tooltip("Degrees added to the marker's direction, should its top not point the way the printed arrow does.")]
         [SerializeField] private float markerYawOffset;
 
+        [Tooltip("A lock is rejected if any marker reading strays further than this from the average (metres).")]
+        [SerializeField] private float maxMarkerSpread = 0.04f;
+
+        [Tooltip("A lock is rejected if the marker's direction wobbles more than this (degrees).")]
+        [SerializeField] private float maxMarkerWobbleDegrees = 6f;
+
         [Tooltip("Metres from the controller anchor forward to the tip that touches the other player's.")]
         [SerializeField] private float tipOffset = 0.06f;
 
@@ -68,18 +76,37 @@ namespace SpellGame.Game
         private Vector3 _markerPositionSum;
         private Vector3 _markerForwardSum;
         private int _markerSamples;
+        private readonly List<Vector3> _markerPositions = new();
+        private bool? _markerWasAvailable;
+        private string _status = "";
+        private float _calibratedAt = float.NegativeInfinity;
+        private TextMeshPro _hint;
         private LineRenderer[] _ring;
         private int _ringShows;
 
         private const string TouchPrompt =
             "Calibrate: meet in the middle, touch right controller tips, click the left stick";
-        private const string MarkerPrompt = "Calibrate: look down at the marker in the middle of the room";
+        private const string MarkerPrompt = "Calibrate: stand next to the QR marker and look straight down at it";
 
         /// <summary>Whether this headset can calibrate on the floor marker (else players touch controller tips).</summary>
-        public bool MarkerAvailable =>
-            MRUK.Instance != null && MRUK.Instance.QRCodeTrackingSupported && HasScenePermission();
+        public bool MarkerAvailable => MarkerProblem == null;
 
-        private string CalibratePrompt => MarkerAvailable ? MarkerPrompt : TouchPrompt;
+        /// <summary>Why the floor marker can't be used on this headset, or null if it can.</summary>
+        public string MarkerProblem =>
+            MRUK.Instance == null || !MRUK.Instance.QRCodeTrackingSupported ? "This headset can't track QR codes"
+            : !HasScenePermission() ? "Spatial data permission is off (Settings > Apps > SpellGame > Permissions)"
+            : null;
+
+        private string CalibratePrompt => MarkerAvailable ? MarkerPrompt : $"{MarkerProblem}.\n{TouchPrompt}";
+
+        /// <summary>Asks for the spatial data permission QR tracking needs, if it's missing (e.g. from I'm ready).</summary>
+        public void RequestMarkerPermission()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            if (MRUK.Instance != null && MRUK.Instance.QRCodeTrackingSupported && !HasScenePermission())
+                UnityEngine.Android.Permission.RequestUserPermission(OVRPermissionsRequester.ScenePermission);
+#endif
+        }
 
         private void OnEnable() => gameClient.SpaceReceived += OnSpace;
 
@@ -166,7 +193,55 @@ namespace SpellGame.Game
             if (OVRInput.GetDown(OVRInput.Button.PrimaryThumbstick, OVRInput.Controller.RTouch))
                 gameClient.Send(new SpaceResetMessage());
 
+            if (_markerWasAvailable != MarkerAvailable)
+            {
+                _markerWasAvailable = MarkerAvailable;
+                if (!IsAligned(_space))
+                    SetStatus(CalibratePrompt);
+            }
+
             UpdateMarker();
+            UpdateHint();
+        }
+
+        private void SetStatus(string text)
+        {
+            _status = text;
+            gameClient.SetSpaceStatus(text);
+        }
+
+        /// <summary>
+        /// The space status, also floating where the player looks while they look down (at the floor marker), since the
+        /// menu panel is out of view then. Stays a few seconds after calibrating.
+        /// </summary>
+        private void UpdateHint()
+        {
+            var head = cameraRig.centerEyeAnchor;
+            var show = head.forward.y < -0.45f && !string.IsNullOrEmpty(_status) &&
+                       (!IsAligned(_space) || Time.time < _calibratedAt + 3f);
+            if (_hint == null)
+            {
+                if (!show)
+                    return;
+                _hint = UiStyle.CreateText("Calibration Hint", null, "", Vector3.zero, 0.035f, UiStyle.Text,
+                    display: true, look: UiStyle.Look.Title, width: 0.7f);
+            }
+
+            if (_hint.gameObject.activeSelf != show)
+            {
+                _hint.gameObject.SetActive(show);
+                if (show)
+                    _hint.transform.position = head.position + head.forward * 0.7f;
+            }
+            if (!show)
+                return;
+
+            if (_hint.text != _status)
+                _hint.text = _status;
+            var target = head.position + head.forward * 0.7f + Vector3.up * 0.12f;
+            var hint = _hint.transform;
+            hint.position = Vector3.Lerp(hint.position, target, 1f - Mathf.Exp(-6f * Time.deltaTime));
+            hint.rotation = Quaternion.LookRotation(hint.position - head.position, Vector3.up);
         }
 
         /// <summary>
@@ -177,9 +252,12 @@ namespace SpellGame.Game
         {
             if (IsAligned(_space) || _calibrating || _marker == null || !_marker.IsTracked)
             {
-                _markerSeenFor = 0f;
-                _markerSamples = 0;
-                _markerPositionSum = _markerForwardSum = Vector3.zero;
+                if (_markerSamples > 0 && !IsAligned(_space) && !_calibrating)
+                {
+                    SetStatus("Lost the marker: keep looking straight down at it");
+                    HideRing();
+                }
+                ResetMarkerSamples();
                 return;
             }
 
@@ -190,25 +268,82 @@ namespace SpellGame.Game
             var top = rotation * Vector3.up;
             if (Mathf.Max(Mathf.Abs(normal.y), Mathf.Abs(top.y)) < 0.8f)
             {
-                gameClient.SetSpaceStatus("Lay the marker flat on the floor");
+                SetStatus("Lay the marker flat on the floor");
+                ResetMarkerSamples();
                 return;
             }
 
             var along = Mathf.Abs(normal.y) > Mathf.Abs(top.y) ? top : normal;
-            _markerPositionSum += trackingSpace.TransformPoint(_marker.transform.position);
-            _markerForwardSum += new Vector3(along.x, 0f, along.z).normalized;
+            var position = trackingSpace.TransformPoint(_marker.transform.position);
+            var forward = new Vector3(along.x, 0f, along.z).normalized;
+            _markerPositions.Add(position);
+            _markerPositionSum += position;
+            _markerForwardSum += forward;
             _markerSamples++;
             _markerSeenFor += Time.deltaTime;
-            gameClient.SetSpaceStatus("Marker found, hold still…");
+            var progress = Mathf.Clamp01(_markerSeenFor / markerLockSeconds);
+            SetStatus($"Marker found: hold still\n<size=70%>{Dots(progress)}</size>");
+            PlaceRing(position, Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg + markerYawOffset, 0.006f + 0.01f * progress);
             if (_markerSeenFor < markerLockSeconds)
                 return;
 
+            var center = _markerPositionSum / _markerSamples;
+            var spread = _markerPositions.Max(p => Vector3.Distance(p, center));
+            var steadiness = _markerForwardSum.magnitude / _markerSamples;
+            if (spread > maxMarkerSpread || steadiness < Mathf.Cos(maxMarkerWobbleDegrees * Mathf.Deg2Rad))
+            {
+                Debug.Log($"[SpellGame] Marker lock rejected: spread {spread:F3} m, steadiness {steadiness:F4}");
+                ResetMarkerSamples();
+                HideRing();
+                SetStatus("Shaky reading: hold still and keep looking at the marker");
+                return;
+            }
+
             var yaw = Mathf.Atan2(_markerForwardSum.x, _markerForwardSum.z) * Mathf.Rad2Deg + markerYawOffset;
-            AlignTo(new Pose(_markerPositionSum / _markerSamples, Quaternion.Euler(0f, yaw, 0f)));
+            AlignTo(new Pose(center, Quaternion.Euler(0f, yaw, 0f)));
             _alignedTo = MarkerKey(_space);
             gameClient.Send(new AlignedMessage { Method = AlignMethod.Marker });
-            gameClient.SetSpaceStatus("Room calibrated on the marker");
+            SetStatus("Room calibrated! The ring should sit on the marker.\n<size=70%>If it doesn't, click the right stick to redo it</size>");
             ShowOriginRing();
+        }
+
+        private void ResetMarkerSamples()
+        {
+            _markerSeenFor = 0f;
+            _markerSamples = 0;
+            _markerPositions.Clear();
+            _markerPositionSum = _markerForwardSum = Vector3.zero;
+        }
+
+        private static string Dots(float progress)
+        {
+            const int count = 10;
+            var filled = Mathf.Clamp(Mathf.RoundToInt(progress * count), 0, count);
+            return new string('•', filled) + "<alpha=#40>" + new string('•', count - filled);
+        }
+
+        /// <summary>The ring, drawn on the marker while it's being read (its width grows with the progress).</summary>
+        private void PlaceRing(Vector3 position, float yaw, float width)
+        {
+            if (ringMaterial == null)
+                return;
+            _ring ??= CreateOriginRing();
+            _ringShows++;
+            _ring[0].transform.parent.SetPositionAndRotation(position, Quaternion.Euler(0f, yaw, 0f));
+            foreach (var line in _ring)
+            {
+                line.gameObject.SetActive(true);
+                line.widthMultiplier = width;
+            }
+        }
+
+        private void HideRing()
+        {
+            if (_ring == null)
+                return;
+            _ringShows++;
+            foreach (var line in _ring)
+                line.gameObject.SetActive(false);
         }
 
         private void OnSpace(SpaceMessage space)
@@ -233,7 +368,7 @@ namespace SpellGame.Game
             if (!useSharedAnchors)
             {
                 if (!IsAligned(space))
-                    gameClient.SetSpaceStatus(CalibratePrompt);
+                    SetStatus(CalibratePrompt);
                 return;
             }
 
@@ -242,7 +377,7 @@ namespace SpellGame.Game
                 if (space.HostId == gameClient.PlayerId && _sharedInGroup != space.GroupUuid)
                     await Run(() => ShareAnchorAsync(space), "Sharing the room anchor failed");
                 else if (!IsAligned(space))
-                    gameClient.SetSpaceStatus($"Waiting for {space.HostId ?? "a host"} to share the room anchor…");
+                    SetStatus($"Waiting for {space.HostId ?? "a host"} to share the room anchor…");
                 return;
             }
 
@@ -261,7 +396,7 @@ namespace SpellGame.Game
             catch (Exception exception)
             {
                 Debug.LogError($"[SpellGame] {failure}: {exception}");
-                gameClient.SetSpaceStatus($"{failure}. {CalibratePrompt}");
+                SetStatus($"{failure}. {CalibratePrompt}");
                 return;
             }
             finally
@@ -274,7 +409,7 @@ namespace SpellGame.Game
 
         private async Task ShareAnchorAsync(SpaceMessage space)
         {
-            gameClient.SetSpaceStatus("Placing the room anchor: stand on your spot, facing the other player");
+            SetStatus("Placing the room anchor: stand on your spot, facing the other player");
             await Awaitable.WaitForSecondsAsync(placementDelaySeconds, destroyCancellationToken);
 
             var origin = OriginFromFloorSpot(space);
@@ -309,12 +444,12 @@ namespace SpellGame.Game
             _anchor = anchor;
             _sharedInGroup = space.GroupUuid;
             gameClient.Send(new AnchorSharedMessage { AnchorUuid = anchor.Uuid.ToString() });
-            gameClient.SetSpaceStatus("Room anchor shared, aligning…");
+            SetStatus("Room anchor shared, aligning…");
         }
 
         private async Task AlignToAnchorAsync(SpaceMessage space)
         {
-            gameClient.SetSpaceStatus("Aligning to the room anchor…");
+            SetStatus("Aligning to the room anchor…");
             var uuid = Guid.Parse(space.AnchorUuid);
             if (_anchor == null || _anchor.Uuid != uuid)
             {
@@ -333,7 +468,7 @@ namespace SpellGame.Game
             AlignTo(new Pose(_anchor.transform.position, _anchor.transform.rotation));
             _alignedTo = space.AnchorUuid;
             gameClient.Send(new AlignedMessage { Method = AlignMethod.Anchor, AnchorUuid = space.AnchorUuid });
-            gameClient.SetSpaceStatus("Aligned to the room anchor");
+            SetStatus("Aligned to the room anchor");
             ShowOriginRing();
         }
 
@@ -382,7 +517,7 @@ namespace SpellGame.Game
             _calibrating = true;
             try
             {
-                gameClient.SetSpaceStatus("Hold still: calibrating…");
+                SetStatus("Hold still: calibrating…");
                 var controller = cameraRig.rightControllerAnchor;
                 var tip = Vector3.zero;
                 var pointing = Vector3.zero;
@@ -399,7 +534,7 @@ namespace SpellGame.Game
 
                 if (pointing.sqrMagnitude < 0.01f * samples * samples)
                 {
-                    gameClient.SetSpaceStatus("Point the right controller at the other player, then click the left stick again");
+                    SetStatus("Point the right controller at the other player, then click the left stick again");
                     return;
                 }
 
@@ -410,7 +545,7 @@ namespace SpellGame.Game
                 AlignTo(new Pose(new Vector3(tip.x, floorY, tip.z), Quaternion.Euler(0f, yaw - space.SpotYaw, 0f)));
                 _alignedTo = CenterKey(space);
                 gameClient.Send(new AlignedMessage { Method = AlignMethod.Center });
-                gameClient.SetSpaceStatus("Room calibrated: walk back to your side");
+                SetStatus("Room calibrated: walk back to your side");
                 ShowOriginRing();
                 OVRInput.SetControllerVibration(1f, 0.6f, OVRInput.Controller.RTouch);
                 await Awaitable.WaitForSecondsAsync(0.15f, destroyCancellationToken);
@@ -461,6 +596,8 @@ namespace SpellGame.Game
                 return;
 
             _ring ??= CreateOriginRing();
+            _ring[0].transform.parent.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+            _calibratedAt = Time.time;
             var show = ++_ringShows;
             foreach (var line in _ring)
                 line.gameObject.SetActive(true);
