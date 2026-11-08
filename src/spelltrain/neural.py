@@ -337,7 +337,7 @@ def select_threshold(rows, p, spec):
     if 'event_class' in spec:
         scores = p[:, spec['classes'].index(spec['event_class'])]
         options = [event_scores(rows, scores, t, spec['event_class'], spec['background'])
-                   for t in (.5, .65, .75, .85, .9, .95, .98, .995)]
+                   for t in (.5, .65, .75, .85, .9, .95, .98, .995, .998, .999, .9995)]
         best = max(options, key=lambda m: (m['f1'], -m['fp'], m['threshold']))
         return best['threshold'], best['f1'], best
     options = [classification_metrics(rows, p, spec['classes'], t) for t in (0., .55, .65, .75, .85, .95)]
