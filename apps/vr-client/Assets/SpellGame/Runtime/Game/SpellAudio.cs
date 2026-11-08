@@ -16,6 +16,8 @@ namespace SpellGame.Game
 
         private const int Rate = 44100;
 
+        private float Volume => volume * GameSettings.EffectsVolume;
+
         private AudioClip _charge, _throw, _explode, _draw, _swordHit, _shield, _block, _parry, _hitTaken;
         private AudioSource _local;
         private readonly System.Random _random = new(7);
@@ -79,7 +81,7 @@ namespace SpellGame.Game
         private void OnDamage(DamageMessage damage)
         {
             if (damage.TargetId == gameClient.PlayerId)
-                _local.PlayOneShot(_hitTaken, volume);
+                _local.PlayOneShot(_hitTaken, Volume);
             else if (damage.Kind == SpellKind.Sword)
                 PlayAt(_swordHit, damage.Pos, damage.SourceId);
         }
@@ -90,11 +92,11 @@ namespace SpellGame.Game
             if (clip == null)
                 return;
             if (pos is { Length: 3 })
-                AudioSource.PlayClipAtPoint(clip, new Vector3(pos[0], pos[1], pos[2]), volume);
+                AudioSource.PlayClipAtPoint(clip, new Vector3(pos[0], pos[1], pos[2]), Volume);
             else if (playerId != null && gameClient.TryGetJoints(playerId, out var joints) && joints?.Head != null)
-                AudioSource.PlayClipAtPoint(clip, joints.Head.Position, volume);
+                AudioSource.PlayClipAtPoint(clip, joints.Head.Position, Volume);
             else
-                _local.PlayOneShot(clip, volume);
+                _local.PlayOneShot(clip, Volume);
         }
 
         private float _phase;

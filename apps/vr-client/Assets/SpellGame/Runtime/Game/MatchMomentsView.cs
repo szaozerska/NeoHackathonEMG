@@ -117,6 +117,7 @@ namespace SpellGame.Game
 
         private Transform Eye => cameraRig != null ? cameraRig.centerEyeAnchor : Camera.main.transform;
         private float Now => Time.unscaledTime;
+        private float EffectsVolume => effectsVolume * GameSettings.EffectsVolume;
 
         private void Awake()
         {
@@ -229,7 +230,7 @@ namespace SpellGame.Game
             pop.Drift = -_forward * 0.25f;
             pop.OnLand = () =>
             {
-                _audio.PlayOneShot(_drum, effectsVolume);
+                _audio.PlayOneShot(_drum, EffectsVolume);
                 Announce(clip);
                 Buzz(0.5f, 0.08f, 1f, false);
             };
@@ -238,7 +239,7 @@ namespace SpellGame.Game
         private void Fight()
         {
             CaptureView();
-            _audio.PlayOneShot(_whoosh, effectsVolume * 0.7f);
+            _audio.PlayOneShot(_whoosh, EffectsVolume * 0.7f);
             var pop = Spawn("FIGHT!", _fightMaterial, fightFontSize, MomentPalette.FightText, true, fightDistance, fightDistance, 0f);
             if (pop == null)
             {
@@ -252,7 +253,7 @@ namespace SpellGame.Game
             pop.Shake = 0.015f;
             pop.OnLand = () =>
             {
-                _audio.PlayOneShot(_impact, effectsVolume);
+                _audio.PlayOneShot(_impact, EffectsVolume);
                 Announce(fight);
                 Buzz(1f, 0.35f, 1f, false);
                 Shockwave(pop.To, pop.Rotation);
@@ -270,7 +271,7 @@ namespace SpellGame.Game
                 pop.Fade = 0.3f;
                 pop.StartScale = 1.8f;
             }
-            _audio.PlayOneShot(_impact, effectsVolume * 0.7f);
+            _audio.PlayOneShot(_impact, EffectsVolume * 0.7f);
             Announce(suddenDeath);
             Buzz(0.8f, 0.3f, 1f, false);
         }
@@ -282,7 +283,7 @@ namespace SpellGame.Game
             var pop = Spawn("K.O.", _koMaterial, koFontSize, MomentPalette.Text, true, koDistance, koDistance, koTilt);
             if (pop == null)
             {
-                _audio.PlayOneShot(_bass, effectsVolume);
+                _audio.PlayOneShot(_bass, EffectsVolume);
                 Announce(ko);
                 Buzz(1f, 1f, 0.5f, true);
                 return;
@@ -296,7 +297,7 @@ namespace SpellGame.Game
             pop.Shake = 0.03f;
             pop.OnLand = () =>
             {
-                _audio.PlayOneShot(_bass, effectsVolume);
+                _audio.PlayOneShot(_bass, EffectsVolume);
                 Announce(ko);
                 Buzz(1f, 1f, 0.5f, true);
             };
@@ -305,7 +306,7 @@ namespace SpellGame.Game
         private void Announce(AudioClip clip)
         {
             if (clip != null)
-                _audio.PlayOneShot(clip, voiceVolume);
+                _audio.PlayOneShot(clip, voiceVolume * GameSettings.AnnouncerVolume);
         }
 
         // ---------------------------------------------------------------- per frame
@@ -388,6 +389,8 @@ namespace SpellGame.Game
 
         private void StartSlowMotion()
         {
+            if (!GameSettings.KoSlowMotion)
+                return;
             _slowStart = Now;
             _slowActive = true;
             Time.timeScale = slowMotionScale;
@@ -429,10 +432,10 @@ namespace SpellGame.Game
         {
             _buzzStart = Now;
             _buzzEnd = Now + seconds;
-            _buzzAmplitude = amplitude;
+            _buzzAmplitude = amplitude * GameSettings.Haptics;
             _buzzFrequency = frequency;
             _buzzDecays = decays;
-            _buzzing = true;
+            _buzzing = _buzzAmplitude > 0f;
         }
 
         private void UpdateBuzz()
