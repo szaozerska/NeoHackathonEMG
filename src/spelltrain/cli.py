@@ -58,6 +58,7 @@ def parser():
     p = sub.add_parser('live-test', help='Run a read-only live EMG gesture tester with a trained bundle')
     p.add_argument('--model', required=True)
     p.add_argument('--kinesis-file', required=True)
+    p.add_argument('--auto-source', action='store_true', help='Follow Kinesis active recordings or a configured local feed')
     p.add_argument('--web-port', type=int, default=8765)
     p.add_argument('--display-policy', choices=('v4_feedback','equipment'))
     p = sub.add_parser("calibrate", help="Fit hip and motion thresholds from verified Quest actions")
@@ -199,7 +200,7 @@ def main():
         if args.command == 'live-test':
             from .models import load_artifact
             from .live_test import LiveTester
-            tester = LiveTester(load_artifact(args.model), args.kinesis_file, display_policy=args.display_policy)
+            tester = LiveTester(load_artifact(args.model), args.kinesis_file, display_policy=args.display_policy, auto_source=args.auto_source)
             signal.signal(signal.SIGINT, lambda *_: tester.stop.set())
             signal.signal(signal.SIGTERM, lambda *_: tester.stop.set())
             try:

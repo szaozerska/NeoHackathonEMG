@@ -64,3 +64,14 @@ def test_camera_http_separates_observations_from_band_and_requires_matching_capt
         report=json.loads((tester.capture_root/capture_id/'external-review.json').read_text())
         assert report['disagreements_at_receipt']==1 and report['accuracy'] is None
     finally:tester.close()
+
+
+def test_camera_proposes_intervals_without_auto_labeling_or_bridging_occlusion(tmp_path):
+    clock=[100.];capture=LiveCapture(tmp_path,lambda:clock[0],{})
+    for offset,label in [(0,'open'),(.1,'open'),(.2,'open'),(.3,'unknown'),(.4,'fist'),(.5,'fist'),(.6,'fist')]:
+        capture.append('camera_observation',100+offset,observation={'posture':{'label':label},'band_state_at_receipt':'none'})
+    capture.finish();report=review_capture(capture.directory)
+    proposals=json.loads((capture.directory/'camera-state-proposals.json').read_text())
+    assert report['camera_state_proposals']==2
+    assert [p['label'] for p in proposals['proposals']]==['open','fist']
+    assert all(not p['eligible_for_automatic_training'] and not p['independently_reviewed'] for p in proposals['proposals'])

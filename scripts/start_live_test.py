@@ -46,9 +46,13 @@ def main():
         capture=raw/f'live-test-{index:02}.jsonl'
     command=[str(root/'.venv/bin/python'),'-m','spelltrain','live-test','--model',str(model),
              '--kinesis-file',str(capture),'--web-port',str(port)]
+    if not args.kinesis_file:command.append('--auto-source')
     url=f'http://127.0.0.1:{port}'
     print('Live model tester: '+url,flush=True)
-    print('Start a new raw EMG recording in Kinesis at: '+str(capture),flush=True)
+    if args.kinesis_file:
+        print('Following Kinesis raw recording: '+str(capture),flush=True)
+    else:
+        print('Automatically following Kinesis active recording or the saved local feed.',flush=True)
     if not args.background:
         if args.open_browser:subprocess.run(['open',url],check=True)
         raise SystemExit(subprocess.call(command,cwd=root))

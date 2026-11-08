@@ -14,7 +14,8 @@
 <div class="instructions"><div><strong>Sword</strong>Close your right fist.<br>Open to release.</div><div><strong>Shield</strong>Open your shield hand.<br>Vary forearm tension.</div><div><strong>Fireball</strong>Snap your middle finger and thumb.<br>Behavior follows the active feedback mode above.</div></div>
 <p id="modeNote" class="note">Loading active baseline…</p>
 <p id="error" role="status"></p>
-<details id="setup" open><summary>Connect the band stream</summary><p>In the compatible Kinesis app: Readings → Live EMG → Record. Start a new recording at this path:</p><code id="path">Loading…</code><button id="copy">Copy recording path</button><p>Keep Kinesis recording while you test. Band inference uses only EMG. Camera/audio are separate local validation references.</p></details>
+<details id="setup" open><summary>Connect the band</summary><p>The partner bench automatically follows Kinesis’s active recording, wherever you save it. In Kinesis: Readings → Live EMG → Record. Alternatively, connect the local feed below to test without a recording file.</p><p>For an explicit recording path:</p><code id="path">Loading…</code><button id="copy">Copy recording path</button></details>
+<details><summary>Connect without a recording file</summary><p>In Kinesis → stream, enable local sensor feed and copy stream URL. Paste it here once. The bench remembers it on this Mac; a restarted Kinesis feed needs its new link.</p><label for="streamUrl">Kinesis stream URL</label><input id="streamUrl" type="password" autocomplete="off" style="width:100%;margin:12px 0;padding:10px" placeholder="Paste the local Kinesis link"><button id="connectStream">Connect live feed</button><p id="streamStatus" role="status"></p></details>
 <script>
 const token='__CSRF__';let sessionToken=token;window.liveSessionToken=()=>sessionToken;
 const $=id=>document.getElementById(id);
@@ -84,5 +85,10 @@ $('saveEmgOnly').onclick=async()=>{try{await window.CameraReference.abandon();aw
 window.addEventListener('beforeunload',event=>{if(live?.recording?.active){event.preventDefault();event.returnValue=''}});
 $('reset').onclick=()=>{countOffset=live?.fireballs||0;render()};
 $('copy').onclick=async()=>{try{await navigator.clipboard.writeText(live.band_file);$('copy').textContent='Copied'}catch(e){$('error').textContent='Select and copy the recording path above.'}};
+$('connectStream').onclick=async()=>{
+ const button=$('connectStream');button.disabled=true;
+ try{const response=await fetch('/api/source/stream',{method:'POST',headers:{'Content-Type':'application/json','X-Session-Token':sessionToken},body:JSON.stringify({url:$('streamUrl').value.trim()})});const value=await response.json();if(!response.ok)throw Error(value.error||'Refresh this page and retry.');$('streamUrl').value='';$('streamStatus').textContent='Connecting to Kinesis…';}
+ catch(error){$('streamStatus').textContent=error.message}finally{button.disabled=false}
+};
 setInterval(refresh,100);setInterval(render,100);refresh();
 </script><script src="/camera-live.js"></script></body></html>

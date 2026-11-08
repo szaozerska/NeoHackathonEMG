@@ -4,10 +4,12 @@ set -euo pipefail
 TASK_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$TASK_ROOT"
 WITH_GAME=0
+WITH_CAMERA=0
 for argument in "$@"; do
   case "$argument" in
     --with-game) WITH_GAME=1 ;;
-    --help|-h) echo 'Usage: bash scripts/setup_partner.sh [--with-game]'; exit 0 ;;
+    --with-camera) WITH_CAMERA=1 ;;
+    --help|-h) echo 'Usage: bash scripts/setup_partner.sh [--with-game] [--with-camera]'; exit 0 ;;
     *) echo "Unknown argument: $argument" >&2; exit 2 ;;
   esac
 done
@@ -40,6 +42,9 @@ fi
 .setup/bin/uv pip install --python .venv/bin/python -r requirements-lock.txt -r requirements-neural-lock.txt -e .
 echo 'Checking models and preparing the bundled Kinesis app…'
 .venv/bin/python scripts/prepare_partner.py
+if [[ "$WITH_CAMERA" == 1 ]]; then
+  .venv/bin/python scripts/install_camera_observer.py
+fi
 if [[ "$WITH_GAME" == 1 ]]; then
   .setup/bin/uv sync --frozen --python 3.14 --project apps/server
   .setup/bin/uv sync --frozen --python 3.14 --project apps/hand-client
