@@ -282,7 +282,9 @@ namespace SpellGame.Editor
             var serializedView = new SerializedObject(view);
             serializedView.FindProperty("gameClient").objectReferenceValue = client;
             serializedView.FindProperty("centerEye").objectReferenceValue = centerEye;
-            serializedView.FindProperty("voidMaterial").objectReferenceValue = FolderMaterial(InfiniteVoidFolder, "Void", "SpellGame/InfiniteVoid/Void");
+            serializedView.FindProperty("flatMaterial").objectReferenceValue = FolderMaterial(InfiniteVoidFolder, "Void", "SpellGame/InfiniteVoid/Void");
+            serializedView.FindProperty("inkMaterial").objectReferenceValue = FolderMaterial(InfiniteVoidFolder, "Ink", "SpellGame/InfiniteVoid/Ink");
+            serializedView.FindProperty("streakMaterial").objectReferenceValue = FolderMaterial(InfiniteVoidFolder, "Streak", "SpellGame/InfiniteVoid/Streak");
             serializedView.ApplyModifiedPropertiesWithoutUndo();
         }
 

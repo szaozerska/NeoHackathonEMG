@@ -4,6 +4,7 @@ import pytest
 from spellgame import protocol as p
 from spellgame.game_state import GameState, Item, PlayerInput, Projectile, Tuning
 from spellgame.sim import (
+    HAND_IDLE,
     SWORD_DRAW_DURATION_S,
     SWORD_DRAWN_HAND,
     THROW_DURATION_S,
@@ -140,12 +141,27 @@ def test_fireball_damage_is_proportional_to_its_speed():
 
 def test_heavy_fireball_ignores_a_wrist_flick_but_follows_a_full_swing():
     flick = Match()
-    push_hand(flick, 8.0, 0.05)
+    push_hand(flick, 3.0, 0.05)
     assert flick.p1.item == Item.FIREBALL
 
     swing = Match()
     push_hand(swing, 8.0, 0.3)
     assert swing.p1.item == Item.NONE
+
+
+def test_a_quick_overhand_throw_tracked_by_position_alone_releases():
+    """Headsets send no hand velocity: a 0.2 s forward swing peaking at 5 m/s must still leave the hand."""
+    match = Match()
+    match.step(snap=True)
+    duration, peak = 0.2, 5.0
+    elapsed = 0.0
+    while elapsed < duration + 0.3:
+        t = min(elapsed, duration)
+        forward = peak * (t / 2.0 - duration / (4.0 * np.pi) * np.sin(2.0 * np.pi * t / duration))
+        match.step(p1_hand=HAND_IDLE + np.array([0.0, 0.0, forward]))
+        elapsed += DT
+    assert match.p1.item == Item.NONE
+    assert match.game.projectiles
 
 
 def test_backswing_alone_does_not_throw():

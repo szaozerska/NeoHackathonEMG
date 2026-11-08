@@ -6,9 +6,10 @@ using UnityEngine.Rendering;
 namespace SpellGame.Game
 {
     /// <summary>
-    /// Plays the server's <c>domain_expansion</c> (Infinite Void) on every headset: the world turns white, purple, pink
-    /// and red streaks race from the caster to each target while an inky black void expands from the caster behind them,
-    /// the streaks die out, the void fills the world, and each target's own view goes white while they are stunned.
+    /// Plays the server's <c>domain_expansion</c> (Infinite Void) on every headset: the world turns white, hundreds of thin
+    /// straight purple, pink, red and white streaks race from the caster to each target like a jump to warp speed while an
+    /// inky, starry void expands from the caster behind them, the streaks die out, the void fills the world, and each
+    /// target's own view goes white while they are stunned.
     /// <para>
     /// The white world and the void are drawn first and write no depth, so the remote bodies, the AI and the streaks stay
     /// visible on top of them; the white-out is drawn over everything.
@@ -18,8 +19,12 @@ namespace SpellGame.Game
     {
         [SerializeField] private GameClient gameClient;
         [SerializeField] private Transform centerEye;
-        [Tooltip("A material on SpellGame/InfiniteVoid/Void; copied and tinted per layer.")]
-        [SerializeField] private Material voidMaterial;
+        [Tooltip("A material on SpellGame/InfiniteVoid/Void; copied for the white world and the white-out.")]
+        [SerializeField] private Material flatMaterial;
+        [Tooltip("A material on SpellGame/InfiniteVoid/Ink: the starry black void.")]
+        [SerializeField] private Material inkMaterial;
+        [Tooltip("A material on SpellGame/InfiniteVoid/Streak, coloured per particle.")]
+        [SerializeField] private Material streakMaterial;
 
         [Header("Timing (seconds)")]
         [SerializeField] private float whiteInSeconds = 0.4f;
@@ -28,11 +33,19 @@ namespace SpellGame.Game
         [SerializeField] private float fadeOutSeconds = 0.5f;
 
         [Header("Streaks")]
-        [SerializeField, Min(1)] private int streaksPerTarget = 14;
-        [SerializeField] private float streakWidth = 0.05f;
-        [SerializeField] private float streakTrailSeconds = 0.35f;
-        [SerializeField] private float streakSpread = 0.3f;
-        [SerializeField] private float streakMaxBow = 0.6f;
+        [SerializeField, Min(1f)] private float streaksPerSecond = 1800f;
+        [Tooltip("Streaks keep coming this long after they reach the targets, then die out.")]
+        [SerializeField] private float streakTailSeconds = 0.4f;
+        [Tooltip("Streaks start this far from the line between caster and target, so they fill the view.")]
+        [SerializeField] private float tunnelRadius = 2.5f;
+        [Tooltip("At the target the streaks are this share of their starting distance from the line.")]
+        [SerializeField, Range(0f, 1f)] private float convergence = 0.35f;
+        [SerializeField] private Vector2 streakSpeed = new(18f, 30f);
+        [SerializeField] private Vector2 streakWidth = new(0.004f, 0.012f);
+        [SerializeField] private Vector2 streakLifetime = new(0.12f, 0.3f);
+        [Tooltip("Rendered length per m/s of speed.")]
+        [SerializeField] private float streakStretch = 0.06f;
+        [SerializeField, Range(0f, 1f)] private float whiteStreakShare = 0.35f;
         [Tooltip("The void's edge trails this share of the way behind the streaks.")]
         [SerializeField, Range(0f, 1f)] private float voidLag = 0.1f;
 
@@ -44,36 +57,24 @@ namespace SpellGame.Game
         private static readonly int ColorId = Shader.PropertyToID("_Color");
         private static readonly Color[] StreakColors =
         {
-            new(0.62f, 0.2f, 1f),
-            new(1f, 0.35f, 0.75f),
-            new(1f, 0.12f, 0.2f),
+            new(0.85f, 0.55f, 1f),
+            new(1f, 0.6f, 0.95f),
+            new(1f, 0.4f, 0.45f),
         };
 
         private const int WorldQueue = (int)RenderQueue.Background;
         private const int VoidQueue = (int)RenderQueue.Background + 1;
-        private const int StreakQueue = (int)RenderQueue.Transparent;
         private const int WhiteoutQueue = (int)RenderQueue.Overlay;
 
         private Material _worldMaterial;
         private Material _voidMaterial;
         private Material _whiteoutMaterial;
-        private Material[] _streakMaterials;
         private Transform _world;
         private Transform _void;
         private Transform _whiteout;
+        private ParticleSystem _streaks;
+        private float _streakDebt;
         private Domain _domain;
-
-        private sealed class Streak
-        {
-            public Transform Head;
-            public MeshRenderer HeadRenderer;
-            public string TargetId;
-            public Vector3 Start;
-            public Vector3 Bow;
-
-            /// <summary>Share of the travel time this streak needs; below 1 it lands early.</summary>
-            public float Pace;
-        }
 
         private sealed class Domain
         {
@@ -81,24 +82,20 @@ namespace SpellGame.Game
             public float StartTime;
             public Vector3 Origin;
             public readonly Dictionary<string, Vector3> TargetPositions = new();
-            public readonly List<Streak> Streaks = new();
-            public Transform StreakRoot;
 
             public float End => Message.ExpandS + Message.StunS;
         }
 
         private void Awake()
         {
-            _worldMaterial = Layer(Color.white, WorldQueue, CompareFunction.Always);
-            _voidMaterial = Layer(Color.black, VoidQueue, CompareFunction.Always);
-            _whiteoutMaterial = Layer(Color.white, WhiteoutQueue, CompareFunction.Always);
-            _streakMaterials = new Material[StreakColors.Length];
-            for (var i = 0; i < StreakColors.Length; i++)
-                _streakMaterials[i] = Layer(StreakColors[i], StreakQueue, CompareFunction.LessEqual);
+            _worldMaterial = Layer(flatMaterial, WorldQueue);
+            _voidMaterial = Layer(inkMaterial, VoidQueue);
+            _whiteoutMaterial = Layer(flatMaterial, WhiteoutQueue);
 
             _world = SpellVfx.CreateOrb("Infinite Void World", transform, _worldMaterial, worldRadius * 2f);
             _void = SpellVfx.CreateOrb("Infinite Void", transform, _voidMaterial, 1f);
             _whiteout = SpellVfx.CreateOrb("Infinite Void Whiteout", transform, _whiteoutMaterial, whiteoutRadius * 2f);
+            _streaks = CreateStreaks();
             ShowLayers(false, false);
         }
 
@@ -111,16 +108,50 @@ namespace SpellGame.Game
             Destroy(_worldMaterial);
             Destroy(_voidMaterial);
             Destroy(_whiteoutMaterial);
-            foreach (var material in _streakMaterials)
-                Destroy(material);
         }
 
-        private Material Layer(Color color, int queue, CompareFunction depthTest)
+        /// <summary>A copy of <paramref name="source"/> drawn at <paramref name="queue"/> over whatever is already there.</summary>
+        private static Material Layer(Material source, int queue)
         {
-            var material = new Material(voidMaterial) { renderQueue = queue };
-            material.SetColor(ColorId, color);
-            material.SetFloat("_ZTest", (float)depthTest);
+            var material = new Material(source) { renderQueue = queue };
+            material.SetFloat("_ZTest", (float)CompareFunction.Always);
             return material;
+        }
+
+        /// <summary>One particle system for every streak: thin billboards stretched along their velocity.</summary>
+        private ParticleSystem CreateStreaks()
+        {
+            var go = new GameObject("Infinite Void Streaks");
+            go.transform.SetParent(transform, false);
+            var particles = go.AddComponent<ParticleSystem>();
+            particles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+            var main = particles.main;
+            main.playOnAwake = false;
+            main.loop = true;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.maxParticles = 3000;
+            var emission = particles.emission;
+            emission.enabled = false;
+            var shape = particles.shape;
+            shape.enabled = false;
+            var colorOverLifetime = particles.colorOverLifetime;
+            colorOverLifetime.enabled = true;
+            var fadeOut = new Gradient();
+            fadeOut.SetKeys(
+                new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 0.7f), new GradientAlphaKey(0f, 1f) });
+            colorOverLifetime.color = fadeOut;
+
+            var renderer = go.GetComponent<ParticleSystemRenderer>();
+            renderer.renderMode = ParticleSystemRenderMode.Stretch;
+            renderer.velocityScale = streakStretch;
+            renderer.lengthScale = 1f;
+            renderer.sharedMaterial = streakMaterial;
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            particles.Play();
+            return particles;
         }
 
         private void OnDomainExpansion(DomainExpansionMessage message)
@@ -133,30 +164,14 @@ namespace SpellGame.Game
 
             EndDomain();
             _domain = new Domain { Message = message, StartTime = Time.time, Origin = origin };
-            _domain.StreakRoot = new GameObject("Infinite Void Streaks").transform;
-            _domain.StreakRoot.SetParent(transform, false);
             foreach (var targetId in message.TargetIds)
             {
-                if (!TryGetChest(targetId, out var target))
-                    continue;
-                _domain.TargetPositions[targetId] = target;
-                for (var i = 0; i < streaksPerTarget; i++)
-                    _domain.Streaks.Add(CreateStreak(targetId, origin, target, i));
+                if (TryGetChest(targetId, out var target))
+                    _domain.TargetPositions[targetId] = target;
             }
 
             _void.position = origin;
             ShowLayers(true, message.TargetIds.Contains(gameClient.PlayerId));
-        }
-
-        private Streak CreateStreak(string targetId, Vector3 origin, Vector3 target, int index)
-        {
-            var material = _streakMaterials[index % _streakMaterials.Length];
-            var head = SpellVfx.CreateOrb("Streak", _domain.StreakRoot, material, streakWidth);
-            var start = origin + Random.insideUnitSphere * streakSpread;
-            head.position = start;
-            SpellVfx.AddTrail(head, material, streakWidth, streakTrailSeconds);
-            var bow = Vector3.ProjectOnPlane(Random.onUnitSphere, target - origin).normalized * Random.Range(0f, streakMaxBow);
-            return new Streak { Head = head, HeadRenderer = head.GetComponent<MeshRenderer>(), TargetId = targetId, Start = start, Bow = bow, Pace = Random.Range(0.8f, 1f) };
         }
 
         private void Update()
@@ -181,7 +196,7 @@ namespace SpellGame.Game
 
             var travel = TravelProgress(elapsed);
             UpdateTargetPositions();
-            UpdateStreaks(travel);
+            EmitStreaks(elapsed, travel);
             _void.localScale = Vector3.one * (2f * VoidRadius(elapsed, travel));
         }
 
@@ -213,18 +228,49 @@ namespace SpellGame.Game
             }
         }
 
-        /// <summary>Heads fly a bowed path to the target's chest and vanish there; their trails then shrink away.</summary>
-        private void UpdateStreaks(float travel)
+        /// <summary>
+        /// Straight streaks spawn anywhere between the caster and the advancing front and fly toward their target, dying
+        /// before they pass the front; they start spread across <see cref="tunnelRadius"/> and close in toward the target.
+        /// </summary>
+        private void EmitStreaks(float elapsed, float travel)
         {
-            foreach (var streak in _domain.Streaks)
+            var emitting = elapsed >= whiteInSeconds && elapsed < _domain.Message.ExpandS + streakTailSeconds;
+            if (!emitting || _domain.TargetPositions.Count == 0)
+                return;
+
+            _streakDebt += streaksPerSecond * Time.deltaTime;
+            var count = Mathf.FloorToInt(_streakDebt);
+            _streakDebt -= count;
+            var targets = new List<Vector3>(_domain.TargetPositions.Values);
+            for (var i = 0; i < count; i++)
+                EmitStreak(targets[Random.Range(0, targets.Count)], travel);
+        }
+
+        private void EmitStreak(Vector3 target, float travel)
+        {
+            var axis = target - _domain.Origin;
+            var distance = axis.magnitude;
+            var offset = RandomPerpendicular(axis) * (tunnelRadius * Mathf.Sqrt(Random.value));
+            var direction = (axis + offset * (convergence - 1f)).normalized;
+            var front = distance * travel;
+            var along = Random.Range(-tunnelRadius, front);
+            var speed = Random.Range(streakSpeed.x, streakSpeed.y);
+            var untilFront = Mathf.Max(0.02f, (front - along) / speed);
+            _streaks.Emit(new ParticleSystem.EmitParams
             {
-                if (!streak.HeadRenderer.enabled)
-                    continue;
-                var progress = Mathf.Clamp01(travel / streak.Pace);
-                var target = _domain.TargetPositions[streak.TargetId];
-                streak.Head.position = Vector3.Lerp(streak.Start, target, progress) + streak.Bow * Mathf.Sin(progress * Mathf.PI);
-                streak.HeadRenderer.enabled = progress < 1f;
-            }
+                position = _domain.Origin + offset + direction * along,
+                velocity = direction * speed,
+                startSize = Random.Range(streakWidth.x, streakWidth.y),
+                startLifetime = Mathf.Min(Random.Range(streakLifetime.x, streakLifetime.y), untilFront),
+                startColor = Random.value < whiteStreakShare ? Color.white : StreakColors[Random.Range(0, StreakColors.Length)],
+                applyShapeToPosition = false,
+            }, 1);
+        }
+
+        private static Vector3 RandomPerpendicular(Vector3 axis)
+        {
+            var perpendicular = Vector3.ProjectOnPlane(Random.onUnitSphere, axis);
+            return perpendicular.normalized;
         }
 
         private void EndDomain()
@@ -232,7 +278,8 @@ namespace SpellGame.Game
             if (_domain == null)
                 return;
 
-            Destroy(_domain.StreakRoot.gameObject);
+            _streaks.Clear();
+            _streakDebt = 0f;
             _domain = null;
             ShowLayers(false, false);
         }

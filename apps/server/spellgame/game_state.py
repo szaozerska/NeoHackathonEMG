@@ -40,9 +40,11 @@ class Tuning:
     """A fireball that hits nothing fizzles after flying this far."""
     fireball_hold_timeout_s: float = 8.0
     fireball_cooldown_s: float = 0.75
-    fireball_inertia_s: float = 0.15
+    fireball_inertia_s: float = 0.05
     """Time constant of the held fireball following the hand: it picks up 63% of a steady hand velocity in this long,
-    so a quick wrist flick barely moves it and only a full arm swing builds a fast throw."""
+    so a quick wrist flick barely moves it while a real throw does. Hand velocity is already smoothed by the server's
+    finite difference over two ticks, so much more than this keeps ordinary 0.2 s throws below `throw_min_speed` and
+    the fireball never leaves the hand."""
     throw_min_speed: float = 2.5
     """m/s of the held fireball's velocity. Slower, it never leaves the hand."""
     throw_min_forward: float = 0.3

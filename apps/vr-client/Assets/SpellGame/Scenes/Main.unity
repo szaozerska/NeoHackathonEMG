@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &126262129
+--- !u!1 &34443019
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,63 +127,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 126262131}
-  - component: {fileID: 126262130}
-  m_Layer: 0
-  m_Name: Shield View
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &126262130
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 126262129}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a44acdb8d81d42ada44970bc0a197115, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: SpellGame.Runtime::SpellGame.Game.ShieldView
-  gameClient: {fileID: 1950647919}
-  shieldMaterial: {fileID: 2100000, guid: 149731e2b08bf4fa28a234093b5014a1, type: 2}
-  sparkMaterial: {fileID: 2100000, guid: 960ea4b12f8e248c09f2345b9202a490, type: 2}
-  ringMaterial: {fileID: 2100000, guid: 96ac397b428f94f51af07944e9aecf68, type: 2}
-  shieldRadius: 0.3
-  shieldOffset: 0.08
-  parryMinBoost: 0.3
-  domeDepth: 0.12
-  boostSwell: 0.2
-  spawnTime: 0.18
-  flashTime: 0.35
---- !u!4 &126262131
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 126262129}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &211528513
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 211528515}
-  - component: {fileID: 211528514}
+  - component: {fileID: 34443021}
+  - component: {fileID: 34443020}
   m_Layer: 0
   m_Name: AI Avatar
   m_TagString: Untagged
@@ -191,31 +136,31 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &211528514
+--- !u!114 &34443020
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 211528513}
+  m_GameObject: {fileID: 34443019}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a9f081ad8a1841e693af014200783109, type: 3}
   m_Name: 
   m_EditorClassIdentifier: SpellGame.Runtime::SpellGame.Game.AiAvatarView
-  gameClient: {fileID: 1950647919}
+  gameClient: {fileID: 1637707393}
   robeMaterial: {fileID: 2100000, guid: 59f7ea20b3a174f83b89ca66ac7aa6c2, type: 2}
   trimMaterial: {fileID: 2100000, guid: d906b21ac27c2499e91c8a89696083dd, type: 2}
   shadowMaterial: {fileID: 2100000, guid: 0848130e2331d41a7b7d2af29ad3241e, type: 2}
   glowMaterial: {fileID: 2100000, guid: c688db7b3234f46ce9759645b2707cb6, type: 2}
   hitFlashSeconds: 0.25
---- !u!4 &211528515
+--- !u!4 &34443021
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 211528513}
+  m_GameObject: {fileID: 34443019}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -224,7 +169,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &361025453
+--- !u!1 &161452925
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -232,148 +177,48 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 361025456}
-  - component: {fileID: 361025455}
-  - component: {fileID: 361025454}
+  - component: {fileID: 161452927}
+  - component: {fileID: 161452926}
   m_Layer: 0
-  m_Name: Status Label
+  m_Name: Fireball View
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!102 &361025454
-TextMesh:
-  serializedVersion: 3
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 361025453}
-  m_Text: SpellGame
-  m_OffsetZ: 0
-  m_CharacterSize: 0.01
-  m_LineSpacing: 1
-  m_Anchor: 4
-  m_Alignment: 1
-  m_TabSize: 4
-  m_FontSize: 48
-  m_FontStyle: 0
-  m_RichText: 1
-  m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-  m_Color:
-    serializedVersion: 2
-    rgba: 4294967295
---- !u!23 &361025455
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 361025453}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 10100, guid: 0000000000000000e000000000000000, type: 0}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_MaskInteraction: 0
-  m_AdditionalVertexStreams: {fileID: 0}
---- !u!4 &361025456
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 361025453}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.25, z: 1}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 676363087}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &369727857
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 369727859}
-  - component: {fileID: 369727858}
-  m_Layer: 0
-  m_Name: End Game View
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &369727858
+--- !u!114 &161452926
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 369727857}
+  m_GameObject: {fileID: 161452925}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3c9d2e71b84f4a0f9e6a5d1c7b20e4f8, type: 3}
+  m_Script: {fileID: 11500000, guid: cfe761c79cbf48618def4d196abe7d2c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: SpellGame.Runtime::SpellGame.Game.EndGameView
-  gameClient: {fileID: 1950647919}
-  cameraRig: {fileID: 676363091}
-  baseMaterial: {fileID: 2100000, guid: 988f5e12656cf44149d6fe5768b46d41, type: 2}
-  bannerDistance: 2.2
-  bannerLift: 0.3
-  refollowAngle: 45
-  followSpeed: 2.5
-  confettiInterval: 0.7
-  confettiBursts: 6
-  crownHeight: 0.62
---- !u!4 &369727859
+  m_EditorClassIdentifier: SpellGame.Runtime::SpellGame.Game.FireballView
+  gameClient: {fileID: 1637707393}
+  materials:
+    core: {fileID: 2100000, guid: 35378f91a8772453dbc50e7841ab9a61, type: 2}
+    glow: {fileID: 2100000, guid: 938e2ea02f97d4e768179c6bcb255ee5, type: 2}
+    flame: {fileID: 2100000, guid: af3487ee518b54d159cef841ac3a269c, type: 2}
+    tongue: {fileID: 2100000, guid: 1f27e84b3e60c4907a3c6fc5d66fac43, type: 2}
+    smoke: {fileID: 2100000, guid: 6b6e8ca4daa53499eac287f5dd6a85cb, type: 2}
+    shockwave: {fileID: 2100000, guid: 03bc15def5973443b8fb3e48b73018d4, type: 2}
+  heldDiameter: 0.12
+  projectileDiameter: 0.2
+  emberDiameter: 0.04
+  explosionScale: 1
+  fullCooldown: 0.75
+  projectileCorrectionRate: 25
+--- !u!4 &161452927
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 369727857}
+  m_GameObject: {fileID: 161452925}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -382,7 +227,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &425677034
+--- !u!1 &240965336
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -390,71 +235,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 425677035}
-  - component: {fileID: 425677036}
-  - component: {fileID: 425677037}
-  m_Layer: 0
-  m_Name: Body Tracking
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &425677035
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 425677034}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 676363088}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &425677036
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 425677034}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 274835e4e2feae04b87f0d000555f8a4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Oculus.VR::OVRBody
-  _providedSkeletonType: 1
---- !u!114 &425677037
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 425677034}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2609c54f376cffc4da1ab9401cc1a36f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Oculus.VR::OVRSkeleton
-  _skeletonType: 3
-  _updateRootPose: 0
-  _updateRootScale: 0
-  _enablePhysicsCapsules: 0
-  _applyBoneTranslations: 1
---- !u!1 &576976926
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 576976928}
-  - component: {fileID: 576976927}
+  - component: {fileID: 240965338}
+  - component: {fileID: 240965337}
   m_Layer: 0
   m_Name: Health View
   m_TagString: Untagged
@@ -462,20 +244,20 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &576976927
+--- !u!114 &240965337
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 576976926}
+  m_GameObject: {fileID: 240965336}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8fe8ac70251e47bda1120b062d9ed22a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: SpellGame.Runtime::SpellGame.Game.HealthView
-  gameClient: {fileID: 1950647919}
-  centerEye: {fileID: 676363087}
+  gameClient: {fileID: 1637707393}
+  centerEye: {fileID: 453916008}
   baseMaterial: {fileID: 2100000, guid: 988f5e12656cf44149d6fe5768b46d41, type: 2}
   maxHp: 150
   wristBarSize: {x: 0.12, y: 0.016}
@@ -489,13 +271,13 @@ MonoBehaviour:
   swordFlash: {r: 0.25, g: 0.85, b: 1, a: 1}
   blockFlash: {r: 0.3, g: 0.45, b: 1, a: 1}
   blockFlashStrength: 0.35
---- !u!4 &576976928
+--- !u!4 &240965338
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 576976926}
+  m_GameObject: {fileID: 240965336}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -504,7 +286,87 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &676363086
+--- !u!1 &395338173
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 395338175}
+  - component: {fileID: 395338174}
+  m_Layer: 0
+  m_Name: Hit Callouts
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &395338174
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 395338173}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3dc0eba0ad0944e6ad8ddc3b01b76e52, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: SpellGame.Runtime::SpellGame.Game.HitCalloutView
+  gameClient: {fileID: 1637707393}
+  solidFrom: 7
+  heavyFrom: 12
+  lifetime: 0.9
+  rise: 0.25
+--- !u!4 &395338175
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 395338173}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &448283145
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 448283146}
+  m_Layer: 0
+  m_Name: LeftHandAnchorDetached
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &448283146
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 448283145}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 453916009}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &453916007
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -597,70 +459,67 @@ PrefabInstance:
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 459718, guid: 126d619cf4daa52469682f85c1378b4a, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1668199994}
+      addedObject: {fileID: 448283146}
     - targetCorrespondingSourceObject: {fileID: 459718, guid: 126d619cf4daa52469682f85c1378b4a, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 855556741}
+      addedObject: {fileID: 1895298174}
     - targetCorrespondingSourceObject: {fileID: 459718, guid: 126d619cf4daa52469682f85c1378b4a, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 425677035}
-    - targetCorrespondingSourceObject: {fileID: 400002, guid: 126d619cf4daa52469682f85c1378b4a, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 361025456}
+      addedObject: {fileID: 1730724479}
     - targetCorrespondingSourceObject: {fileID: 482130, guid: 126d619cf4daa52469682f85c1378b4a, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1643681557}
+      addedObject: {fileID: 1205195465}
     - targetCorrespondingSourceObject: {fileID: 487254, guid: 126d619cf4daa52469682f85c1378b4a, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 857683617}
+      addedObject: {fileID: 1354641738}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 100004, guid: 126d619cf4daa52469682f85c1378b4a, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 676363093}
+      addedObject: {fileID: 453916014}
   m_SourcePrefab: {fileID: 100100000, guid: 126d619cf4daa52469682f85c1378b4a, type: 3}
---- !u!4 &676363087 stripped
+--- !u!4 &453916008 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 400002, guid: 126d619cf4daa52469682f85c1378b4a, type: 3}
-  m_PrefabInstance: {fileID: 676363086}
+  m_PrefabInstance: {fileID: 453916007}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &676363088 stripped
+--- !u!4 &453916009 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 459718, guid: 126d619cf4daa52469682f85c1378b4a, type: 3}
-  m_PrefabInstance: {fileID: 676363086}
+  m_PrefabInstance: {fileID: 453916007}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &676363089 stripped
+--- !u!4 &453916010 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 487254, guid: 126d619cf4daa52469682f85c1378b4a, type: 3}
-  m_PrefabInstance: {fileID: 676363086}
+  m_PrefabInstance: {fileID: 453916007}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &676363090 stripped
+--- !u!4 &453916011 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 482130, guid: 126d619cf4daa52469682f85c1378b4a, type: 3}
-  m_PrefabInstance: {fileID: 676363086}
+  m_PrefabInstance: {fileID: 453916007}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &676363091 stripped
+--- !u!114 &453916012 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 11400010, guid: 126d619cf4daa52469682f85c1378b4a, type: 3}
-  m_PrefabInstance: {fileID: 676363086}
+  m_PrefabInstance: {fileID: 453916007}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 676363092}
+  m_GameObject: {fileID: 453916013}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: df9f338034892c44ebb62d97894772f1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!1 &676363092 stripped
+--- !u!1 &453916013 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 100004, guid: 126d619cf4daa52469682f85c1378b4a, type: 3}
-  m_PrefabInstance: {fileID: 676363086}
+  m_PrefabInstance: {fileID: 453916007}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &676363093
+--- !u!114 &453916014
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 676363092}
+  m_GameObject: {fileID: 453916013}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 555725d48e9051a4bb6b8d45178c2fdd, type: 3}
@@ -716,7 +575,7 @@ MonoBehaviour:
   edgeRenderingEnabled_: 0
   edgeColor_: {r: 1, g: 1, b: 1, a: 1}
   colorMapType: 0
---- !u!1 &855556740
+--- !u!1 &530936639
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -724,30 +583,30 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 855556741}
+  - component: {fileID: 530936640}
   m_Layer: 0
-  m_Name: RightHandAnchorDetached
+  m_Name: LeftHandOnControllerAnchor
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &855556741
+--- !u!4 &530936640
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 855556740}
+  m_GameObject: {fileID: 530936639}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 676363088}
+  m_Father: {fileID: 1205195465}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &857683616
+--- !u!1 &906313343
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -755,7 +614,145 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 857683617}
+  - component: {fileID: 906313345}
+  - component: {fileID: 906313344}
+  m_Layer: 0
+  m_Name: Spell Audio
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &906313344
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 906313343}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4145022e03b64b3e91c59984808be742, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: SpellGame.Runtime::SpellGame.Game.SpellAudio
+  gameClient: {fileID: 1637707393}
+  volume: 0.8
+--- !u!4 &906313345
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 906313343}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1205195464
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1205195465}
+  m_Layer: 0
+  m_Name: LeftControllerInHandAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1205195465
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1205195464}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 530936640}
+  m_Father: {fileID: 453916011}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1219786863
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1219786865}
+  - component: {fileID: 1219786864}
+  m_Layer: 0
+  m_Name: Infinite Void View
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1219786864
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1219786863}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1ea0fcaf2a9f42b2954f0a153eedeb3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: SpellGame.Runtime::SpellGame.Game.InfiniteVoidView
+  gameClient: {fileID: 1637707393}
+  centerEye: {fileID: 453916008}
+  voidMaterial: {fileID: 2100000, guid: 973345746b6664ecb89fb22c63744a0c, type: 2}
+  whiteInSeconds: 0.4
+  engulfSeconds: 0.6
+  whiteoutInSeconds: 0.25
+  fadeOutSeconds: 0.5
+  streaksPerTarget: 14
+  streakWidth: 0.05
+  streakTrailSeconds: 0.35
+  streakSpread: 0.3
+  streakMaxBow: 0.6
+  voidLag: 0.1
+  worldRadius: 20
+  filledVoidRadius: 30
+  whiteoutRadius: 0.3
+--- !u!4 &1219786865
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1219786863}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1354641737
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1354641738}
   m_Layer: 0
   m_Name: RightControllerInHandAnchor
   m_TagString: Untagged
@@ -763,23 +760,23 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &857683617
+--- !u!4 &1354641738
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 857683616}
+  m_GameObject: {fileID: 1354641737}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1352987743}
-  m_Father: {fileID: 676363089}
+  - {fileID: 1906587186}
+  m_Father: {fileID: 453916010}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1193989764
+--- !u!1 &1380124193
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -787,200 +784,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1193989766}
-  - component: {fileID: 1193989765}
-  m_Layer: 0
-  m_Name: Debug Skeletons
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1193989765
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1193989764}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 68de6d1f1e44247778e3d1887cab8453, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: SpellGame.Runtime::SpellGame.Game.DebugSkeletonsView
-  boneMaterial: {fileID: 2100000, guid: 988f5e12656cf44149d6fe5768b46d41, type: 2}
-  bodyMaterial: {fileID: 2100000, guid: 7060db2daa8a4c699f6a8c3535f65ea0, type: 2}
---- !u!4 &1193989766
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1193989764}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1230644307
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1230644309}
-  - component: {fileID: 1230644308}
-  m_Layer: 0
-  m_Name: Fireball View
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1230644308
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1230644307}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cfe761c79cbf48618def4d196abe7d2c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: SpellGame.Runtime::SpellGame.Game.FireballView
-  gameClient: {fileID: 1950647919}
-  materials:
-    core: {fileID: 2100000, guid: 35378f91a8772453dbc50e7841ab9a61, type: 2}
-    glow: {fileID: 2100000, guid: 938e2ea02f97d4e768179c6bcb255ee5, type: 2}
-    flame: {fileID: 2100000, guid: af3487ee518b54d159cef841ac3a269c, type: 2}
-    tongue: {fileID: 2100000, guid: 1f27e84b3e60c4907a3c6fc5d66fac43, type: 2}
-    smoke: {fileID: 2100000, guid: 6b6e8ca4daa53499eac287f5dd6a85cb, type: 2}
-    shockwave: {fileID: 2100000, guid: 03bc15def5973443b8fb3e48b73018d4, type: 2}
-  heldDiameter: 0.12
-  projectileDiameter: 0.2
-  emberDiameter: 0.04
-  explosionScale: 1
-  fullCooldown: 0.75
-  projectileCorrectionRate: 25
---- !u!4 &1230644309
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1230644307}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1352987742
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1352987743}
-  m_Layer: 0
-  m_Name: RightHandOnControllerAnchor
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1352987743
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1352987742}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 857683617}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1558779686
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1558779688}
-  - component: {fileID: 1558779687}
-  m_Layer: 0
-  m_Name: Match Menu
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1558779687
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1558779686}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 721442f012af4578815ca17455a51f1e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: SpellGame.Runtime::SpellGame.Game.MatchMenu
-  gameClient: {fileID: 1950647919}
-  cameraRig: {fileID: 676363091}
-  baseMaterial: {fileID: 2100000, guid: 988f5e12656cf44149d6fe5768b46d41, type: 2}
-  panelDistance: 1.1
-  panelDrop: 0.05
-  refollowAngle: 35
-  followSpeed: 4
-  dwellSeconds: 1.2
-  pointerLength: 3
-  panelWidth: 0.62
-  buttonHeight: 0.075
-  buttonGap: 0.018
-  textScale: 1
---- !u!4 &1558779688
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1558779686}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1570654433
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1570654435}
-  - component: {fileID: 1570654434}
+  - component: {fileID: 1380124195}
+  - component: {fileID: 1380124194}
   m_Layer: 0
   m_Name: Sword View
   m_TagString: Untagged
@@ -988,19 +793,19 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1570654434
+--- !u!114 &1380124194
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1570654433}
+  m_GameObject: {fileID: 1380124193}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 136dc1f5a0334049ab48a2caad20ad68, type: 3}
   m_Name: 
   m_EditorClassIdentifier: SpellGame.Runtime::SpellGame.Game.SwordView
-  gameClient: {fileID: 1950647919}
+  gameClient: {fileID: 1637707393}
   bladeMaterial: {fileID: 2100000, guid: 35b9be73b5b204db2b6c43c4c6b0b8a6, type: 2}
   glowMaterial: {fileID: 2100000, guid: 02cfad0c241094dd59ec0ef104ada7af, type: 2}
   trailMaterial: {fileID: 2100000, guid: 12a257be88a0946b5b0995924386392f, type: 2}
@@ -1014,13 +819,13 @@ MonoBehaviour:
   minTrailCoverage: 0.35
   trailSubdivisions: 4
   igniteTime: 0.1
---- !u!4 &1570654435
+--- !u!4 &1380124195
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1570654433}
+  m_GameObject: {fileID: 1380124193}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -1029,7 +834,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1643681556
+--- !u!1 &1608179421
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1037,62 +842,55 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1643681557}
+  - component: {fileID: 1608179423}
+  - component: {fileID: 1608179422}
   m_Layer: 0
-  m_Name: LeftControllerInHandAnchor
+  m_Name: Shield View
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &1643681557
+--- !u!114 &1608179422
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1608179421}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a44acdb8d81d42ada44970bc0a197115, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: SpellGame.Runtime::SpellGame.Game.ShieldView
+  gameClient: {fileID: 1637707393}
+  shieldMaterial: {fileID: 2100000, guid: 149731e2b08bf4fa28a234093b5014a1, type: 2}
+  sparkMaterial: {fileID: 2100000, guid: 960ea4b12f8e248c09f2345b9202a490, type: 2}
+  ringMaterial: {fileID: 2100000, guid: 96ac397b428f94f51af07944e9aecf68, type: 2}
+  shieldRadius: 0.3
+  shieldOffset: 0.08
+  parryMinBoost: 0.3
+  domeDepth: 0.12
+  boostSwell: 0.2
+  spawnTime: 0.18
+  flashTime: 0.35
+  spentOpacity: 0.2
+--- !u!4 &1608179423
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1643681556}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 2008098982}
-  m_Father: {fileID: 676363090}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1668199993
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1668199994}
-  m_Layer: 0
-  m_Name: LeftHandAnchorDetached
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1668199994
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1668199993}
+  m_GameObject: {fileID: 1608179421}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 676363088}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1950647918
+--- !u!1 &1615296524
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1100,11 +898,70 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1950647923}
-  - component: {fileID: 1950647919}
-  - component: {fileID: 1950647922}
-  - component: {fileID: 1950647921}
-  - component: {fileID: 1950647920}
+  - component: {fileID: 1615296526}
+  - component: {fileID: 1615296525}
+  m_Layer: 0
+  m_Name: Match Menu
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1615296525
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1615296524}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 721442f012af4578815ca17455a51f1e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: SpellGame.Runtime::SpellGame.Game.MatchMenu
+  gameClient: {fileID: 1637707393}
+  cameraRig: {fileID: 453916012}
+  spaceAligner: {fileID: 1637707394}
+  baseMaterial: {fileID: 2100000, guid: 988f5e12656cf44149d6fe5768b46d41, type: 2}
+  panelDistance: 1.1
+  panelDrop: 0.05
+  refollowAngle: 35
+  followSpeed: 4
+  dwellSeconds: 1.2
+  pointerLength: 3
+  panelWidth: 0.62
+  buttonHeight: 0.075
+  buttonGap: 0.018
+  textScale: 1
+--- !u!4 &1615296526
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1615296524}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1637707392
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1637707398}
+  - component: {fileID: 1637707393}
+  - component: {fileID: 1637707397}
+  - component: {fileID: 1637707396}
+  - component: {fileID: 1637707395}
+  - component: {fileID: 1637707394}
   m_Layer: 0
   m_Name: Game Client
   m_TagString: Untagged
@@ -1112,79 +969,94 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1950647919
+--- !u!114 &1637707393
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1950647918}
+  m_GameObject: {fileID: 1637707392}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2170915f0d4c443938aac8d634af7e99, type: 3}
   m_Name: 
   m_EditorClassIdentifier: SpellGame.Runtime::SpellGame.Game.GameClient
-  bodySkeleton: {fileID: 425677037}
-  debugSkeletons: {fileID: 1193989765}
-  statusLabel: {fileID: 361025454}
+  bodySkeleton: {fileID: 1730724480}
+  debugSkeletons: {fileID: 1748527193}
+  statusLabel: {fileID: 0}
   manualServerHost: 
   manualServerPort: 9100
   discoveryPort: 47777
   connectTimeoutSeconds: 5
   poseSendRateHz: 72
---- !u!114 &1950647920
+--- !u!114 &1637707394
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1950647918}
+  m_GameObject: {fileID: 1637707392}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3da010980afa4efe8c0dbc26a0a33bbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: SpellGame.Runtime::SpellGame.Game.SharedSpaceAligner
-  gameClient: {fileID: 1950647919}
-  cameraRig: {fileID: 676363091}
+  gameClient: {fileID: 1637707393}
+  cameraRig: {fileID: 453916012}
   floorSpotsOnly: 0
   placementDelaySeconds: 3
   localizeTimeoutSeconds: 10
   loadAttempts: 5
---- !u!114 &1950647921
+--- !u!114 &1637707395
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1950647918}
+  m_GameObject: {fileID: 1637707392}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cbde2085f767c4d798607af045c4d7ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: SpellGame.Runtime::SpellGame.Game.DomainExpansionButton
+  gameClient: {fileID: 1637707393}
+  holdSeconds: 4
+--- !u!114 &1637707396
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1637707392}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 10311fd0322894bcb9542bbd9b9cd8e2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: SpellGame.Runtime::SpellGame.Game.PairingButton
-  gameClient: {fileID: 1950647919}
---- !u!114 &1950647922
+  gameClient: {fileID: 1637707393}
+  holdSeconds: 3
+--- !u!114 &1637707397
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1950647918}
+  m_GameObject: {fileID: 1637707392}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2a28bb243edf43d2bea8e3624efc9d08, type: 3}
   m_Name: 
   m_EditorClassIdentifier: SpellGame.Runtime::SpellGame.Game.ControllerBand
-  gameClient: {fileID: 1950647919}
+  gameClient: {fileID: 1637707393}
   bandHand: right
   pressThreshold: 0.5
---- !u!4 &1950647923
+--- !u!4 &1637707398
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1950647918}
+  m_GameObject: {fileID: 1637707392}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -1193,7 +1065,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2008098981
+--- !u!1 &1730724478
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1201,40 +1073,312 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2008098982}
+  - component: {fileID: 1730724479}
+  - component: {fileID: 1730724481}
+  - component: {fileID: 1730724480}
   m_Layer: 0
-  m_Name: LeftHandOnControllerAnchor
+  m_Name: Body Tracking
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &2008098982
+--- !u!4 &1730724479
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2008098981}
+  m_GameObject: {fileID: 1730724478}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1643681557}
+  m_Father: {fileID: 453916009}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1730724480
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1730724478}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2609c54f376cffc4da1ab9401cc1a36f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Oculus.VR::OVRSkeleton
+  _skeletonType: 3
+  _updateRootPose: 0
+  _updateRootScale: 0
+  _enablePhysicsCapsules: 0
+  _applyBoneTranslations: 1
+--- !u!114 &1730724481
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1730724478}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 274835e4e2feae04b87f0d000555f8a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Oculus.VR::OVRBody
+  _providedSkeletonType: 1
+--- !u!1 &1748527192
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1748527194}
+  - component: {fileID: 1748527193}
+  m_Layer: 0
+  m_Name: Debug Skeletons
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1748527193
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1748527192}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68de6d1f1e44247778e3d1887cab8453, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: SpellGame.Runtime::SpellGame.Game.DebugSkeletonsView
+  boneMaterial: {fileID: 2100000, guid: 988f5e12656cf44149d6fe5768b46d41, type: 2}
+  bodyMaterial: {fileID: 2100000, guid: 7060db2daa8a4c699f6a8c3535f65ea0, type: 2}
+  showSkeletons: 0
+  showRemoteBodies: 0
+--- !u!4 &1748527194
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1748527192}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1797742096
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1797742098}
+  - component: {fileID: 1797742097}
+  m_Layer: 0
+  m_Name: Match Moments
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1797742097
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1797742096}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 576a3c1899414ab19d6ca58e63700928, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: SpellGame.Runtime::SpellGame.Game.MatchMomentsView
+  gameClient: {fileID: 1637707393}
+  cameraRig: {fileID: 453916012}
+  passthrough: {fileID: 453916014}
+  baseMaterial: {fileID: 2100000, guid: 988f5e12656cf44149d6fe5768b46d41, type: 2}
+  font: {fileID: 0}
+  textMaterial: {fileID: 0}
+  three: {fileID: 8300000, guid: dab1370c3afb4fab9d6c93f85947cafa, type: 3}
+  two: {fileID: 8300000, guid: c46a6f99de0d48d4949e3b3017d63aeb, type: 3}
+  one: {fileID: 8300000, guid: 85c4f3ffcb27428d878951950786a6e3, type: 3}
+  fight: {fileID: 8300000, guid: 4f513e6698d14e948d1d6e089727a832, type: 3}
+  ko: {fileID: 8300000, guid: 589e015971f644d18923248fd67e51bb, type: 3}
+  time: {fileID: 8300000, guid: 9869548085944f8faad02836320cbd79, type: 3}
+  suddenDeath: {fileID: 8300000, guid: edc52f021a0641f69ad41388afd25cd0, type: 3}
+  voiceVolume: 1
+  effectsVolume: 0.8
+  spawnDistance: 4
+  landDistance: 1.9
+  flySeconds: 0.25
+  countdownFontSize: 8
+  fightDistance: 2.2
+  fightFontSize: 6
+  koDistance: 2
+  koFontSize: 7
+  koTilt: 7
+  slowMotionScale: 0.25
+  slowMotionSeconds: 0.8
+  passthroughBrightness: -0.3
+  passthroughSaturation: -0.85
+--- !u!4 &1797742098
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1797742096}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1895298173
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1895298174}
+  m_Layer: 0
+  m_Name: RightHandAnchorDetached
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1895298174
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1895298173}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 453916009}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1906587185
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1906587186}
+  m_Layer: 0
+  m_Name: RightHandOnControllerAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1906587186
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1906587185}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1354641738}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2142127936
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2142127938}
+  - component: {fileID: 2142127937}
+  m_Layer: 0
+  m_Name: End Game View
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2142127937
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2142127936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c9d2e71b84f4a0f9e6a5d1c7b20e4f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: SpellGame.Runtime::SpellGame.Game.EndGameView
+  gameClient: {fileID: 1637707393}
+  cameraRig: {fileID: 453916012}
+  baseMaterial: {fileID: 2100000, guid: 988f5e12656cf44149d6fe5768b46d41, type: 2}
+  bannerDistance: 2.2
+  bannerLift: 0.3
+  refollowAngle: 45
+  followSpeed: 2.5
+  confettiInterval: 0.7
+  confettiBursts: 6
+  crownHeight: 0.62
+--- !u!4 &2142127938
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2142127936}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 676363086}
-  - {fileID: 1193989766}
-  - {fileID: 1950647923}
-  - {fileID: 1230644309}
-  - {fileID: 1570654435}
-  - {fileID: 126262131}
-  - {fileID: 576976928}
-  - {fileID: 1558779688}
-  - {fileID: 369727859}
-  - {fileID: 211528515}
+  - {fileID: 453916007}
+  - {fileID: 1748527194}
+  - {fileID: 1637707398}
+  - {fileID: 161452927}
+  - {fileID: 1380124195}
+  - {fileID: 1608179423}
+  - {fileID: 240965338}
+  - {fileID: 1615296526}
+  - {fileID: 2142127938}
+  - {fileID: 1797742098}
+  - {fileID: 34443021}
+  - {fileID: 906313345}
+  - {fileID: 395338175}
+  - {fileID: 1219786865}
