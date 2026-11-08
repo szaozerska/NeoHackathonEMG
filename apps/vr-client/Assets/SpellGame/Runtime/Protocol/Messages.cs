@@ -477,6 +477,9 @@ namespace SpellGame.Protocol
         /// <summary>The AI opponent's player ID in a solo match.</summary>
         public string AiId { get; set; }
 
+        /// <summary>Only the sword works: no fireball, shield or domain expansion.</summary>
+        public bool SwordOnly { get; set; }
+
         /// <summary>The fighter who paused a <c>playing</c> match; null while it runs.</summary>
         public string PausedBy { get; set; }
 
@@ -497,6 +500,9 @@ namespace SpellGame.Protocol
         public override string Type => TypeName;
         public string Mode { get; set; }
         public float DurationS { get; set; }
+
+        /// <summary>No spells: only the sword works.</summary>
+        public bool SwordOnly { get; set; }
     }
 
     public sealed class ReadyMessage : Message

@@ -1,7 +1,7 @@
 import pytest
 
 from spellgame import protocol as p
-from spellgame.game_state import GameState, Item
+from spellgame.game_state import GameState, Item, PlayerInput
 from spellgame.match import Match
 
 DT = 0.1
@@ -203,6 +203,19 @@ def test_ready_sent_straight_after_setup_counts_and_spectators_ready_is_ignored(
     match.step(game, ["P1", "P3"], DT)
     assert match.phase == p.MatchPhase.COUNTDOWN
     assert match.snapshot().ready == ["P1", p.AI_PLAYER_ID]
+
+
+def test_sword_only_drops_every_sign_but_the_fist_and_resets_in_the_lobby():
+    match = Match()
+    assert match.setup("P1", p.MatchMode.VERSUS, 60.0, sword_only=True) is None
+    assert match.snapshot().sword_only
+    for sign in (p.Sign.SNAP, p.Sign.OPEN_PALM, p.Sign.INFINITE_VOID):
+        restricted = match.restrict(PlayerInput(sign=sign, snapped=True, domain_expanded=True))
+        assert (restricted.sign, restricted.snapped, restricted.domain_expanded) == (p.Sign.NONE, False, False)
+    assert match.restrict(PlayerInput(sign=p.Sign.FIST)).sign == p.Sign.FIST
+    match.quit("P1")
+    assert not match.sword_only
+    assert match.restrict(PlayerInput(sign=p.Sign.SNAP, snapped=True)).snapped
 
 
 def test_pause_freezes_the_clock_is_limited_per_fighter_and_resumes_after_a_countdown():

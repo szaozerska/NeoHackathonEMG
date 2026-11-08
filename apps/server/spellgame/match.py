@@ -8,10 +8,10 @@ a few pauses each, resuming after a countdown), and the fighters can restart onc
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from . import protocol as p
-from .game_state import GameState, Item
+from .game_state import GameState, Item, PlayerInput
 
 log = logging.getLogger(__name__)
 
@@ -34,6 +34,7 @@ class Match:
         self.rules = rules or MatchRules()
         self.phase = Phase.LOBBY
         self.mode: str | None = None
+        self.sword_only = False
         self.duration_s = 0.0
         self.time_left = 0.0
         self.countdown = 0.0
@@ -69,7 +70,14 @@ class Match:
             return True
         return self.phase == Phase.PLAYING and not self.paused and player_id in self.fighters
 
-    def setup(self, player_id: str, mode: str, duration_s: float) -> str | None:
+    def restrict(self, player_input: PlayerInput) -> PlayerInput:
+        """In a sword-only match every sign but the fist is dropped: no fireball, shield or domain expansion."""
+        if not self.sword_only:
+            return player_input
+        sign = player_input.sign if player_input.sign == p.Sign.FIST else p.Sign.NONE
+        return replace(player_input, sign=sign, snapped=False, domain_expanded=False)
+
+    def setup(self, player_id: str, mode: str, duration_s: float, sword_only: bool = False) -> str | None:
         """Returns an error message, or None once the match is waiting for ready."""
         if self.phase not in (Phase.LOBBY, Phase.READY):
             return f"can't set up a match while {self.phase}"
@@ -77,13 +85,15 @@ class Match:
             return f"unknown match mode {mode!r}"
         self._clear_result()
         self.mode = mode
+        self.sword_only = bool(sword_only)
         self.duration_s = min(max(float(duration_s), self.rules.min_duration_s), self.rules.max_duration_s)
         self.time_left = self.duration_s
         self.owner = player_id
         self.fighters = []
         self.ready.clear()
         self.phase = Phase.READY
-        log.info("%s set up a %s match, %.0f s", player_id, mode, self.duration_s)
+        rules = " sword-only" if self.sword_only else ""
+        log.info("%s set up a %s%s match, %.0f s", player_id, mode, rules, self.duration_s)
         return None
 
     def set_ready(self, player_id: str, ready: bool) -> None:
@@ -174,6 +184,7 @@ class Match:
             reason=self.reason,
             ended_by=self.ended_by,
             ai_id=self.ai_id,
+            sword_only=self.sword_only,
             paused_by=self.paused_by,
             resume_in=round(self.resume_in, 2),
             pauses_left=[self.rules.pauses_per_fighter - self.pauses_used.get(f, 0) for f in self.fighters],
@@ -262,6 +273,7 @@ class Match:
         self._clear_result()
         self.phase = Phase.LOBBY
         self.mode = self.owner = None
+        self.sword_only = False
         self.fighters = []
         self.ready.clear()
         self.duration_s = self.time_left = 0.0

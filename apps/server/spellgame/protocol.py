@@ -531,6 +531,8 @@ class MatchSetup(Message):
     TYPE: ClassVar[str] = "match_setup"
     mode: str
     duration_s: float = 60.0
+    sword_only: bool = False
+    """No spells: only the sword works (no fireball, shield or domain expansion)."""
 
 
 @dataclass
@@ -592,6 +594,8 @@ class MatchSnapshot:
     """Who sent `match_quit`, for a quit."""
     ai_id: str | None = None
     """The AI opponent's player ID in a solo match; its poses arrive like any other player's."""
+    sword_only: bool = False
+    """The set-up match allows only the sword."""
     paused_by: str | None = None
     """The fighter who paused a `playing` match; everything is frozen until it resumes."""
     resume_in: float = 0.0

@@ -81,10 +81,13 @@ namespace SpellGame.Game
         private View _controlsReturn = View.Mode;
         private bool _seenControls;
 
-        private const string MenuColoursPref = "SpellGame.MenuColours";
+        private const string MenuThemePref = "SpellGame.MenuTheme";
         private UiTheme[] _menuThemes;
+        private string[] _menuThemeNames;
+        private int _paletteStart;
         private int _menuColours;
         private string _pendingMode = MatchMode.Solo;
+        private bool _pendingSwordOnly;
         private MatchSnapshot _match = new();
         private StateMessage _state;
         private string _lastPhase;
@@ -150,15 +153,24 @@ namespace SpellGame.Game
             _themeVersion++;
         }
 
-        /// <summary>The menu colours picked in Settings last time (default Smoky Opal, the theme asset's own palette).</summary>
+        /// <summary>
+        /// The menu style picked in Settings last time. Default Midnight (plain black) when its theme asset exists, then the
+        /// crystal theme asset's own palette (Smoky Opal) and its other <see cref="UiPalette.Presets"/>.
+        /// </summary>
         private void LoadMenuColours()
         {
             var baseTheme = UiStyle.Theme;
             if (baseTheme == null)
                 return;
-            _menuThemes = new UiTheme[UiPalette.Presets.Length];
-            _menuThemes[0] = baseTheme;
-            _menuColours = Mathf.Clamp(PlayerPrefs.GetInt(MenuColoursPref, 0), 0, _menuThemes.Length - 1);
+            var midnight = UiTheme.Load(UiTheme.MidnightResourceName);
+            _paletteStart = midnight != null ? 1 : 0;
+            _menuThemeNames = (midnight != null ? new[] { midnight.DisplayName } : Array.Empty<string>())
+                .Concat(UiPalette.Presets.Select(preset => preset.Name)).ToArray();
+            _menuThemes = new UiTheme[_menuThemeNames.Length];
+            if (midnight != null)
+                _menuThemes[0] = midnight;
+            _menuThemes[_paletteStart] = baseTheme;
+            _menuColours = Mathf.Max(0, Array.IndexOf(_menuThemeNames, PlayerPrefs.GetString(MenuThemePref, _menuThemeNames[0])));
             UiStyle.Theme = MenuTheme(_menuColours);
         }
 
@@ -167,15 +179,16 @@ namespace SpellGame.Game
             if (_menuThemes == null)
                 return;
             _menuColours = (_menuColours + 1) % _menuThemes.Length;
-            PlayerPrefs.SetInt(MenuColoursPref, _menuColours);
+            PlayerPrefs.SetString(MenuThemePref, _menuThemeNames[_menuColours]);
             PlayerPrefs.Save();
             UiStyle.Theme = MenuTheme(_menuColours);
         }
 
         private UiTheme MenuTheme(int index) =>
-            _menuThemes[index] ??= _menuThemes[0].WithPalette(UiPalette.Presets[index].Name, UiPalette.Presets[index].Palette);
+            _menuThemes[index] ??= _menuThemes[_paletteStart].WithPalette(
+                UiPalette.Presets[index - _paletteStart].Name, UiPalette.Presets[index - _paletteStart].Palette);
 
-        private string MenuColoursName => UiPalette.Presets[_menuThemes == null ? 0 : _menuColours].Name;
+        private string MenuColoursName => _menuThemeNames == null ? UiPalette.Presets[0].Name : _menuThemeNames[_menuColours];
 
         private void OnEnable()
         {
@@ -341,7 +354,8 @@ namespace SpellGame.Game
             return view switch
             {
                 View.Connection => $"connection|{gameClient.Connection}|{gameClient.ServerEndpoint}",
-                View.Ready => $"ready|{Me}|{_match.Mode}|{_match.DurationS}|{string.Join(",", _match.Fighters)}|{string.Join(",", _match.Ready)}|{string.Join(",", AlignedFighters())}",
+                View.Duration => $"duration|{_pendingMode}|{_pendingSwordOnly}",
+                View.Ready => $"ready|{Me}|{_match.Mode}|{_match.SwordOnly}|{_match.DurationS}|{string.Join(",", _match.Fighters)}|{string.Join(",", _match.Ready)}|{string.Join(",", AlignedFighters())}",
                 View.Pause => $"pause|{IsFighter}|{_match.PausedBy}|{Mathf.CeilToInt(_match.ResumeIn)}|{string.Join(",", _match.RestartVotes ?? new List<string>())}|{PausesLeft(Me)}",
                 View.Results => $"results|{IsFighter}",
                 _ => view.ToString(),
@@ -368,15 +382,18 @@ namespace SpellGame.Game
                         ("Settings", Kind.Secondary, () => _view = View.Settings));
                     break;
                 case View.Settings:
-                    Layout(panel, "SETTINGS", "Menu colours change menus and buttons only; spells look the same.",
-                        ($"Menu colours: {MenuColoursName}", Kind.Primary, NextMenuColours),
+                    Layout(panel, "SETTINGS", "Menu style changes menus and buttons only; spells look the same.",
+                        ($"Menu style: {MenuColoursName}", Kind.Primary, NextMenuColours),
                         ("Back", Kind.Secondary, () => _view = View.Mode));
                     break;
                 case View.Duration:
-                    Layout(panel, _pendingMode == MatchMode.Solo ? "1 PLAYER  ·  vs AI" : "2 PLAYERS", "How long?",
+                    Layout(panel, _pendingMode == MatchMode.Solo ? "1 PLAYER  ·  vs AI" : "2 PLAYERS",
+                        _pendingSwordOnly ? "Sword only: no fireball, shield or Infinite Void.\nHow long?" : "All spells.\nHow long?",
                         ("1 minute", Kind.Primary, () => PickDuration(Durations[0])),
                         ("2 minutes", Kind.Primary, () => PickDuration(Durations[1])),
                         ("5 minutes", Kind.Primary, () => PickDuration(Durations[2])),
+                        (_pendingSwordOnly ? "Rules: Sword only" : "Rules: All spells", Kind.Secondary,
+                            () => _pendingSwordOnly = !_pendingSwordOnly),
                         ("Back", Kind.Secondary, () => _view = View.Mode));
                     break;
                 case View.Controls:
@@ -427,6 +444,8 @@ namespace SpellGame.Game
         {
             var title = $"{(_match.Mode == MatchMode.Solo ? "1 PLAYER  ·  vs AI" : "2 PLAYERS")}  ·  {Minutes(_match.DurationS)}";
             var lines = new List<string>();
+            if (_match.SwordOnly)
+                lines.Add("<b>SWORD ONLY</b>  ·  no spells\n");
             foreach (var fighter in _match.Fighters)
             {
                 var name = fighter == Me ? $"{fighter} (you)" : fighter == _match.AiId ? "AI mage" : fighter;
@@ -568,7 +587,7 @@ namespace SpellGame.Game
 
         private void PickDuration(float seconds)
         {
-            gameClient.Send(new MatchSetupMessage { Mode = _pendingMode, DurationS = seconds });
+            gameClient.Send(new MatchSetupMessage { Mode = _pendingMode, DurationS = seconds, SwordOnly = _pendingSwordOnly });
             _view = View.Ready;
         }
 

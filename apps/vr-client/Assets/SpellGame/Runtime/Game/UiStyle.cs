@@ -137,6 +137,8 @@ namespace SpellGame.Game
         {
             get
             {
+                if (Shape.Minimal)
+                    return Plain(0.75f, 2f);
                 var style = Glass(Accent, 0.38f);
                 style.Rim = WithAlpha(Color.Lerp(Rim, Color.white, 0.4f), 0.95f);
                 return style;
@@ -144,7 +146,16 @@ namespace SpellGame.Game
         }
 
         /// <summary>Secondary button: nearly clear glass with a thin rim.</summary>
-        public static CrystalStyle Secondary => Glass(Fill, 0.16f);
+        public static CrystalStyle Secondary => Shape.Minimal ? Plain(0.5f, 1f) : Glass(Fill, 0.16f);
+
+        /// <summary>Minimal themes: a button in the card fill at <paramref name="opacity"/> with the theme's hairline rim.</summary>
+        private static CrystalStyle Plain(float opacity, float rimAlphaScale)
+        {
+            var style = Glass(Fill, opacity);
+            style.Rim = WithAlpha(Rim, Mathf.Clamp01(Rim.a * rimAlphaScale));
+            style.RimWidth = Shape.RimWidth;
+            return style;
+        }
 
         /// <summary>Flat see-through glass for buttons: no facets, outline or drop shadow.</summary>
         private static CrystalStyle Glass(Color tint, float opacity)
@@ -192,6 +203,12 @@ namespace SpellGame.Game
         /// <summary>Pointer on it: tinted toward the accent, thicker rim, ink outline.</summary>
         public static CrystalStyle Hovered(CrystalStyle style)
         {
+            if (Shape.Minimal)
+            {
+                style.Fill = WithAlpha(Color.Lerp(style.Fill, Accent, 0.18f), Mathf.Max(style.Fill.a, 0.85f));
+                style.Rim = WithAlpha(Rim, 0.9f);
+                return style;
+            }
             style.Fill = WithAlpha(Color.Lerp(style.Fill, Accent, 0.35f), Mathf.Min(0.6f, style.Fill.a + 0.2f));
             style.Rim = WithAlpha(Color.Lerp(style.Rim, Color.white, 0.6f), 1f);
             style.RimWidth *= 1.6f;
@@ -387,9 +404,19 @@ namespace SpellGame.Game
                 source = (display ? theme.DisplayFont : theme.BodyFont).material;
             var material = new Material(source) { name = $"{source.name} {look}" };
             material.SetColor(OutlineColorId, Ink);
-            material.SetFloat(OutlineWidthId, look == Look.Title ? 0.26f : display ? 0.22f : 0.2f);
-            material.SetFloat(FaceDilateId, 0.1f);
-            material.SetColor(UnderlayColorId, look == Look.Title ? Ink : Color.clear);
+            if (Shape.Minimal)
+            {
+                // A light outline keeps white text readable in a bright room without the heavy arcade look.
+                material.SetFloat(OutlineWidthId, 0.08f);
+                material.SetFloat(FaceDilateId, 0.05f);
+                material.SetColor(UnderlayColorId, Color.clear);
+            }
+            else
+            {
+                material.SetFloat(OutlineWidthId, look == Look.Title ? 0.26f : display ? 0.22f : 0.2f);
+                material.SetFloat(FaceDilateId, 0.1f);
+                material.SetColor(UnderlayColorId, look == Look.Title ? Ink : Color.clear);
+            }
             TextMaterials[key] = material;
             return material;
         }

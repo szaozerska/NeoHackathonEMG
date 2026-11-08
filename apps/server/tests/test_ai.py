@@ -85,3 +85,16 @@ def test_ai_freezes_in_place_while_caught_in_a_domain_expansion():
     assert not [e for e in events if isinstance(e, p.Spell) and e.caster_id == ai.player_id]
     run(game, ai, human, 1.0)
     assert game.players[ai.player_id].pose.joints["hips"].pos != frozen
+
+
+def test_sword_only_ai_follows_its_target_and_slashes_it():
+    game, ai, human = arena(strafe_amplitude=0.0)
+    ai.sword_only = True
+    ai.place_facing(game, "P1")
+    assert np.allclose(ai.home, [0.0, ai.tuning.sword_distance])
+    events = run(game, ai, human, 6.0)
+    spells = [e for e in events if isinstance(e, p.Spell) and e.caster_id == ai.player_id]
+    assert spells and all(e.spell == Item.SWORD for e in spells)
+    assert game.players[ai.player_id].item == Item.SWORD
+    hits = [e for e in events if isinstance(e, p.Damage) and e.source_id == ai.player_id]
+    assert hits and all(e.kind == Item.SWORD for e in hits)
