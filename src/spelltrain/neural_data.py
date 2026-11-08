@@ -6,6 +6,7 @@ not labels. Historical test clips remain known development regression checks.
 from pathlib import Path
 import joblib
 import numpy as np
+from .snap_onsets import refine_snap_onsets
 from .common import read_json
 from .effort import effort_dataset, _hash
 from .retraining import prepare_records
@@ -162,7 +163,7 @@ def add_reviewed_examples(dataset, path, config):
     validate_dataset(dataset)
 
 
-def add_guided_capture(dataset, directory, hold_negatives=False):
+def add_guided_capture(dataset, directory, hold_negatives=False, audio_onsets=False):
     """Count-confirmed positives become MIL bags, never guessed snap windows.
 
     All new guided clips fit only; fresh evaluation must remain separate. A
@@ -182,6 +183,8 @@ def add_guided_capture(dataset, directory, hold_negatives=False):
         raise ValueError('Guided capture signal settings differ')
     from .common import json_lines
     raw = [r for r in json_lines(directory/'streams.jsonl') if r['kind'] == 'emg']
+    # audio_onsets: trials whose marks refine to an audible transient the EMG agrees with become supervised.
+    refined = refine_snap_onsets(directory, capture['features']) if audio_onsets else {}
     for trial in read_json(directory/'guided-trials.json'):
         if not trial['confirmed']:
             continue
@@ -199,7 +202,20 @@ def add_guided_capture(dataset, directory, hold_negatives=False):
                          'label_source': 'participant_confirmation'})
         if not rows:
             raise ValueError('No usable windows in guided clip')
-        if trial['kind'] in ('snap', 'negative') and trial['reported_count'] > 0:
+        if trial['id'] in refined:
+            onsets = refined[trial['id']]['onsets']
+            for row in rows:
+                t = row['end']
+                if any(o-.05 <= t <= o+.125 for o in onsets):
+                    label = 'snap'
+                elif any(row['start']-.3 <= o <= t+.3 for o in onsets):
+                    continue
+                else:
+                    label = 'negative'
+                dataset['tasks']['snap'].append({**row, 'label': label, 'snap_label': label, 'expected_events': onsets,
+                                                 'label_source': 'audio_refined_action_mark'})
+            dataset.setdefault('snap_onsets', {})[group] = refined[trial['id']]
+        elif trial['kind'] in ('snap', 'negative') and trial['reported_count'] > 0:
             dataset.setdefault('weak_bags', {}).setdefault('snap', []).append({
                 'rows': rows, 'reported_count': trial['reported_count'], 'group': group,
                 'part': 'train', 'positive': True, 'label_source': 'participant_confirmed_count',
@@ -220,8 +236,9 @@ def guided_only_dataset(directories):
     """Train from guided captures alone, without the historical reference review.
 
     Whole captures are the split unit: for every held kind with two or more
-    captures the newest one validates. Snap count bags stay training-only, so
-    snap validation measures false events on held-out holds, not recall.
+    captures the newest one validates (a single capture: each clip's last 20%).
+    The latest quarter of audio-refined snap trials validates snap recall;
+    unrefined count bags stay training-only.
     """
     directories = sorted(Path(d) for d in directories)
     if not directories:
@@ -231,15 +248,34 @@ def guided_only_dataset(directories):
                'evaluation_role': 'guided_capture_holdout_same_wearing_sessions'}
     kinds = {}
     for directory in directories:
-        add_guided_capture(dataset, directory, hold_negatives=True)
+        add_guided_capture(dataset, directory, hold_negatives=True, audio_onsets=True)
         trial_kinds = {t['kind'] for t in read_json(directory/'guided-trials.json') if t['confirmed']}
         if len(trial_kinds) == 1 and not trial_kinds & {'snap', 'negative'}:
             kinds.setdefault(trial_kinds.pop(), []).append(directory.name)
     held_out = {names[-1] for names in kinds.values() if len(names) > 1}
-    for rows in dataset['tasks'].values():
+    single = {names[0] for names in kinds.values() if len(names) == 1}
+    timed = sorted(dataset.get('snap_onsets', {}), key=lambda g: dataset['snap_onsets'][g]['onsets'][0])
+    snap_validation = set(timed[len(timed)-len(timed)//4:])
+    for name, rows in dataset['tasks'].items():
+        spans = {}
         for row in rows:
-            if row['session'] in held_out:
+            a, b = spans.get(row['group'], (row['start'], row['end']))
+            spans[row['group']] = (min(a, row['start']), max(b, row['end']))
+        kept = []
+        for row in rows:
+            if row['session'] in held_out or row['group'] in snap_validation:
                 row['part'] = 'validation'
+            elif row['session'] in single:
+                # A kind with one capture validates on the last 20% of each clip; straddling windows are dropped.
+                a, b = spans[row['group']]; cut = a+.8*(b-a)
+                if row['start'] < cut < row['end']:
+                    continue
+                if row['start'] >= cut:
+                    row['part'] = 'validation'; row['group'] += ':tail'; row['trial'] += ':tail'
+            kept.append(row)
+        dataset['tasks'][name] = kept
     dataset['validation_captures'] = sorted(held_out)
+    dataset['validation_tail_captures'] = sorted(single)
+    dataset['validation_snap_trials'] = sorted(snap_validation)
     validate_dataset(dataset)
     return dataset

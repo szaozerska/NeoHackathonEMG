@@ -13,7 +13,7 @@ from .evaluation import event_metrics
 
 
 LSTM_DEFAULTS = {'conv_channels': 128, 'kernel_width': 21, 'stride': 10, 'hidden': 128, 'layers': 2,
-                 'compression_range': 4., 'compression_midpoint': 4., 'rotation': 1,
+                 'compression_range': 4., 'compression_midpoint': 4., 'rotation': 1, 'channel_gain': .1, 'noise': .05,
                  'learning_rate': 5e-4, 'warmup_epochs': 5, 'warmup_start_factor': .001,
                  'lr_milestones': [25], 'lr_factor': .5, 'gradient_clip': .5}
 
@@ -167,7 +167,12 @@ def fit_classifier(train, validation, spec, architecture, config, seed, weak_bag
                 raw = raw*gain.unsqueeze(-1)
                 if hyper and hyper['rotation']:
                     raw = rotate_channels(raw, hyper['rotation'])
+                if hyper and hyper['channel_gain']:
+                    # Per-electrode contact variation on top of the global gain.
+                    raw = raw*torch.exp(torch.randn(len(ix), raw.shape[1], 1, device=device)*hyper['channel_gain'])
                 batch = (raw-tmean)/tstd
+                if hyper and hyper['noise']:
+                    batch = batch+torch.randn_like(batch)*hyper['noise']
             else:
                 logged = batch*tstd+tmean
                 values = torch.expm1(logged).clamp_min(0).reshape(len(ix), -1, 40)
