@@ -9,7 +9,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol
+from typing import Any, Protocol
 
 import numpy as np
 from spellgame import protocol as p
@@ -85,18 +85,29 @@ class NeuralSignClassifier:
     rising edge into `snap` once per detection. Held states are reported on change and re-sent every `heartbeat_s`.
     """
 
-    def __init__(self, model_dir: str | Path, heartbeat_s: float = 1.0, predictor: object | None = None) -> None:
+    def __init__(
+        self,
+        model_dir: str | Path,
+        heartbeat_s: float = 1.0,
+        predictor: Any = None,
+        snap_threshold: float | None = None,
+    ) -> None:
+        """`snap_threshold` replaces the bundle's snap confidence threshold (higher: fewer accidental fireballs)."""
         if predictor is None:
             from spelltrain.neural import NeuralEMGPredictor
 
             predictor = NeuralEMGPredictor(model_dir)
+        if snap_threshold is not None:
+            for spec in predictor.manifest["tasks"].values():
+                if "event_class" in spec:
+                    spec["threshold"] = snap_threshold
         self._predictor = predictor
         self._heartbeat_s = heartbeat_s
         self._sign: str | None = None
         self._sent_at = -float("inf")
 
     def push(self, batch: EmgBatch) -> SignPrediction | None:
-        outputs = self._predictor.feed(  # type: ignore[attr-defined]
+        outputs = self._predictor.feed(
             {"source_seq": batch.sequence, "source_t": batch.band_timestamp_us, "samples": batch.samples.astype(float)}
         )
         snap = next((o for o in outputs if o["kind"] == "neural_event"), None)

@@ -50,3 +50,13 @@ def test_unchanged_state_is_resent_as_heartbeat_and_packet_keeps_sensor_clock():
     assert sent == [0, 10]
     assert predictor.packets[1]["source_seq"] == 1 and predictor.packets[1]["source_t"] == 1_007_812
     assert predictor.packets[1]["samples"].shape == (16, 8)
+
+
+def test_snap_threshold_overrides_only_the_event_task():
+    predictor = ScriptedPredictor([])
+    predictor.manifest = {"tasks": {"state": {"threshold": 0.55}, "snap": {"threshold": 0.995, "event_class": "snap"}}}
+    NeuralSignClassifier("unused", predictor=predictor, snap_threshold=0.999)
+    assert predictor.manifest["tasks"] == {
+        "state": {"threshold": 0.55},
+        "snap": {"threshold": 0.999, "event_class": "snap"},
+    }

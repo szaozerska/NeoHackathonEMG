@@ -128,6 +128,12 @@ def main() -> None:
         default=str(DEFAULT_NEURAL_MODEL),
         help="trained neural EMG bundle that turns EMG into signs (default: models/neural-emg-05)",
     )
+    parser.add_argument(
+        "--snap-threshold",
+        type=float,
+        help="snap confidence needed to fire a fireball (default: the bundle's, 0.995 for neural-emg-05); "
+        "0.999 roughly halves accidental snaps but misses more real ones",
+    )
     parser.add_argument("--log-only", action="store_true", help="send no signs; only log the EMG stream")
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
@@ -139,7 +145,11 @@ def main() -> None:
             input("Paste the stream URL from Kinesis's stream tab: ").strip()
         )
         server = (args.host, args.port) if args.host else pick_server(args.discovery_port, args.discovery_s)
-        classifier = EmgLogger() if args.log_only else NeuralSignClassifier(args.neural_model)
+        classifier = (
+            EmgLogger()
+            if args.log_only
+            else NeuralSignClassifier(args.neural_model, snap_threshold=args.snap_threshold)
+        )
         log.info("classifier: %s", "EMG log only" if args.log_only else args.neural_model)
         asyncio.run(run_hand_client(kinesis_url, server, classifier))
 
