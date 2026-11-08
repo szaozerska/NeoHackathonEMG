@@ -12,6 +12,8 @@ namespace SpellGame.Game
     /// chest through the hand: a shallow dome whose rim is the disc the server hit-tests;</item>
     /// <item>the field swells and warms towards gold with <c>shield_boost</c> (push impulse), with a ring pulse when the
     /// boost reaches parry strength;</item>
+    /// <item>the field fades with <c>shield_strength</c> as it blocks less damage, down to a faint outline that can still
+    /// parry;</item>
     /// <item><c>impact blocked</c> on a shield ripples the field from the hit point and throws sparks;
     /// <c>impact parried</c> adds a gold flash, bigger burst and shock rings.</item>
     /// </list>
@@ -23,6 +25,7 @@ namespace SpellGame.Game
         private const int MaxHits = 4;
         private static readonly int BoostId = Shader.PropertyToID("_Boost");
         private static readonly int SpawnId = Shader.PropertyToID("_Spawn");
+        private static readonly int OpacityId = Shader.PropertyToID("_Opacity");
         private static readonly int HitPointsId = Shader.PropertyToID("_HitPoints");
 
         private static readonly Color FieldColor = new(0.45f, 0.85f, 1f);
@@ -53,10 +56,13 @@ namespace SpellGame.Game
         [SerializeField] private float spawnTime = 0.18f;
         [Tooltip("Seconds for a parry flash to fade.")]
         [SerializeField] private float flashTime = 0.35f;
+        [Tooltip("Share of the material's opacity left once the shield blocks no damage.")]
+        [SerializeField] private float spentOpacity = 0.2f;
 
         private readonly Dictionary<string, PlayerSnapshot> _players = new();
         private readonly Dictionary<string, Disc> _discs = new();
         private Mesh _domeMesh;
+        private float _fullOpacity;
         private ParticleSystem _sparks;
         private ParticleSystem _rings;
 
@@ -77,6 +83,7 @@ namespace SpellGame.Game
         private void Awake()
         {
             _domeMesh = BuildDomeMesh(domeDepth, rings: 16, segments: 48);
+            _fullOpacity = shieldMaterial.GetFloat(OpacityId);
             _sparks = CreateEmitter("Shield Sparks", sparkMaterial, stretched: true, maxParticles: 300, gravity: 0.5f,
                 sizeCurve: AnimationCurve.Linear(0f, 1f, 1f, 0f));
             _rings = CreateEmitter("Shield Rings", ringMaterial, stretched: false, maxParticles: 16, gravity: 0f,
@@ -185,6 +192,8 @@ namespace SpellGame.Game
                 disc.Flash = Mathf.MoveTowards(disc.Flash, 0f, Time.deltaTime / Mathf.Max(flashTime, 0.01f));
                 disc.Props.SetFloat(BoostId, Mathf.Max(boost, disc.Flash));
                 disc.Props.SetFloat(SpawnId, Mathf.Clamp01((now - disc.RaisedAt) / Mathf.Max(spawnTime, 0.01f)));
+                var strength = Mathf.Clamp01(player.ShieldStrength);
+                disc.Props.SetFloat(OpacityId, _fullOpacity * Mathf.Lerp(spentOpacity, 1f, Mathf.Max(strength, disc.Flash)));
                 disc.Props.SetVectorArray(HitPointsId, disc.Hits);
                 disc.Renderer.SetPropertyBlock(disc.Props);
             }

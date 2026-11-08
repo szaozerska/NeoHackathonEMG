@@ -107,11 +107,25 @@ def test_throw_launches_fireball_forward_and_hits_opponent():
     assert match.p1.item == Item.NONE
 
     events += match.run(1.0)
-    hp_after = match.game.tuning.max_hp - match.game.tuning.fireball_damage
-    assert [(d.target_id, d.source_id, d.hp_after) for d in of_type(events, p.Damage)] == [("P2", "P1", hp_after)]
+    [damage] = of_type(events, p.Damage)
+    hp_after = match.game.tuning.max_hp - damage.amount
+    assert damage.amount > 0
+    assert (damage.target_id, damage.source_id, damage.hp_after) == ("P2", "P1", hp_after)
     assert [(i.reason, i.target_id) for i in of_type(events, p.Impact)] == [("hit", "P2")]
     assert match.p2.hp == hp_after
     assert not match.game.projectiles
+
+
+def thrown_fireball_damage(throw_speed_scale: float) -> float:
+    match = Match(Tuning(aim_assist_strength=0.0, throw_speed_scale=throw_speed_scale))
+    match.step(snap=True)
+    events = match.throw() + match.run(1.0)
+    [damage] = of_type(events, p.Damage)
+    return damage.amount
+
+
+def test_fireball_damage_is_proportional_to_its_speed():
+    assert thrown_fireball_damage(4.0) == pytest.approx(2 * thrown_fireball_damage(2.0), abs=0.1)
 
 
 def test_backswing_alone_does_not_throw():
@@ -359,6 +373,43 @@ def test_raised_shield_blocks_a_fireball_from_the_front():
     assert not of_type(events, p.Damage)
     assert [(i.reason, i.target_id) for i in of_type(events, p.Impact)] == [("blocked", "P1")]
     assert match.p1.hp == match.game.tuning.max_hp
+
+
+def fireball_through_shield_held_for(seconds):
+    """Damage events from a 6 m/s fireball that reaches P1's shield about `seconds` after it was raised."""
+    match = Match()
+    raise_shield(match)
+    match.run(seconds, p1_hand=SHIELD_HAND)
+    incoming_fireball(match, z=0.6)
+    events = match.run(0.5, p1_hand=SHIELD_HAND)
+    assert [(i.reason, i.target_id) for i in of_type(events, p.Impact)] == [("blocked", "P1")]
+    return of_type(events, p.Damage)
+
+
+def test_shield_fades_after_its_full_block_window():
+    tuning = Tuning()
+    assert not fireball_through_shield_held_for(tuning.shield_full_block_s - 0.1)
+
+    [mid_fade] = fireball_through_shield_held_for(tuning.shield_full_block_s + tuning.shield_fade_s / 2)
+    assert mid_fade.amount == pytest.approx(3.0, abs=0.3)
+
+    [faded] = fireball_through_shield_held_for(tuning.shield_full_block_s + tuning.shield_fade_s + 0.1)
+    assert (faded.target_id, faded.source_id, faded.amount, faded.zone) == ("P1", "P2", 6.0, p.Zone.ARM)
+
+
+def test_snapshot_reports_shield_strength_fading_while_raised():
+    match = Match()
+    assert match.game.snapshot().players[0].shield_strength == 0.0
+
+    raise_shield(match)
+    assert match.game.snapshot().players[0].shield_strength == 1.0
+
+    tuning = match.game.tuning
+    match.run(tuning.shield_full_block_s + tuning.shield_fade_s / 2, p1_hand=SHIELD_HAND)
+    assert match.game.snapshot().players[0].shield_strength == pytest.approx(0.5, abs=0.05)
+
+    match.run(tuning.shield_fade_s, p1_hand=SHIELD_HAND)
+    assert match.game.snapshot().players[0].shield_strength == 0.0
 
 
 def test_fireball_hits_without_a_shield_or_from_behind_it():

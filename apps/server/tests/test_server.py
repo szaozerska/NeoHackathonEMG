@@ -189,7 +189,7 @@ def test_headset_starts_pairing_mode_bands_pair_by_pinch_and_fireball_deals_dama
                 cast = await until(vr2, lambda m: isinstance(m, p.Spell) and m.state == p.SpellState.CAST)
                 assert cast.caster_id == "P1"
                 damage = await until(vr2, lambda m: isinstance(m, p.Damage))
-                hp_after = Tuning().max_hp - Tuning().fireball_damage
+                hp_after = Tuning().max_hp - damage.amount
                 assert (damage.target_id, damage.source_id, damage.hp_after) == ("P2", "P1", hp_after)
                 state = await until(vr1, lambda m: isinstance(m, p.State) and m.players[1].hp < Tuning().max_hp)
                 assert {pl.player_id: pl.hp for pl in state.players} == {"P1": Tuning().max_hp, "P2": hp_after}

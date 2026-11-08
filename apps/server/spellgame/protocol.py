@@ -377,6 +377,8 @@ class PlayerSnapshot:
     """Seconds until the player can conjure again."""
     shield_boost: float = 0.0
     """0-1 power from the last shield push; at `Tuning.shield_parry_min_boost` or more a sword contact is a parry."""
+    shield_strength: float = 0.0
+    """0-1 share of damage the raised shield blocks: 1 when fresh, fading to 0 (`Tuning.shield_fade_s`); 0 when down."""
     aligned: bool = False
     """The headset has reported its poses are in the shared room frame (§5.1)."""
     max_hp: float = 0.0

@@ -320,6 +320,9 @@ namespace SpellGame.Protocol
         /// <summary>0-1 shield power from the last push; high enough, a sword contact is a parry.</summary>
         public float ShieldBoost { get; set; }
 
+        /// <summary>0-1 share of damage the raised shield blocks: 1 when fresh, fading to 0; 0 when lowered.</summary>
+        public float ShieldStrength { get; set; }
+
         /// <summary>The headset has reported its poses are in the shared room frame.</summary>
         public bool Aligned { get; set; }
 

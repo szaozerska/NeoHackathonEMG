@@ -32,8 +32,8 @@ class Tuning:
     velocity_window_s: float = 0.04
     hand_history_s: float = 0.3
 
-    fireball_damage: float = 8.0
-    """100 HP / 8 is about 13 hits, roughly a minute of steady fireball exchange."""
+    fireball_damage_per_speed: float = 1.0
+    """Damage per m/s of fireball speed, so the slowest throw (5 m/s) deals 5 and a 7 m/s hand (14 m/s) deals 14."""
     fireball_radius: float = 0.1
     """Collision radius; the drawn orb may be larger."""
     fireball_lifetime_s: float = 4.0
@@ -47,9 +47,7 @@ class Tuning:
     """Release once hand speed falls below this fraction of its peak (the peak velocity is the throw)."""
     throw_release_timeout_s: float = 0.15
     throw_speed_scale: float = 2.0
-    throw_min_speed: float = 6.0
-    throw_max_speed: float = 10.0
-    """m/s. Slow enough to see, dodge or block across a 3-5 m room (about 0.4-0.7 s in flight)."""
+    """Fireball speed per m/s of peak hand speed; `throw_min_hand_speed` makes the slowest throw 5 m/s."""
     aim_assist_cone_deg: float = 20.0
     aim_assist_strength: float = 0.5
     """0 disables aim assist; 1 snaps throws within the cone straight at the opponent's chest."""
@@ -75,6 +73,12 @@ class Tuning:
     """A swing hits each target at most once in this window, so one pass isn't counted every tick."""
 
     shield_radius: float = 0.3
+    shield_full_block_s: float = 0.5
+    """A freshly raised shield blocks all damage for this long."""
+    shield_fade_s: float = 3.5
+    """After full block, the blocked fraction falls along a logistic curve from 1 to 0 over this time."""
+    shield_fade_steepness: float = 10.0
+    """Logistic steepness across the fade; higher keeps the shield strong longer and drops it more sharply mid-fade."""
     shield_offset: float = 0.08
     """The disc sits this far in front of the palm."""
     shield_push_min_speed: float = 1.0
@@ -241,6 +245,9 @@ class GameState:
                     band_hand=player.band_hand,
                     cooldown=round(max(0.0, player.cooldown_until - self.time), 3),
                     shield_boost=round(player.shield_boost, 3),
+                    shield_strength=round(self._shield_block_fraction(player), 3)
+                    if player.item == Item.SHIELD
+                    else 0.0,
                     aligned=player.aligned,
                 )
                 for player in self.players.values()
@@ -324,11 +331,7 @@ class GameState:
     def _throw_fireball(self, player: PlayerState, hand_velocity: np.ndarray) -> p.Spell:
         tuning = self.tuning
         direction = self._aim_assist(player, normalize(hand_velocity))
-        speed = float(
-            np.clip(
-                np.linalg.norm(hand_velocity) * tuning.throw_speed_scale, tuning.throw_min_speed, tuning.throw_max_speed
-            )
-        )
+        speed = float(np.linalg.norm(hand_velocity)) * tuning.throw_speed_scale
         origin = player.band_hand_tracker.position
         assert origin is not None
         self.projectiles.append(
@@ -376,10 +379,12 @@ class GameState:
             hit = self._first_hit(projectile, start, end) if blocked is None else None
             if blocked is not None:
                 shielder, contact = blocked
+                damage = self._fireball_damage(projectile)
+                events.extend(self._shield_leak(shielder, projectile.owner_id, damage, Item.FIREBALL, contact))
                 events.append(self._impact(projectile, contact, "blocked", shielder.player_id))
             elif hit is not None:
                 target, body = hit
-                damage = tuning.fireball_damage
+                damage = self._fireball_damage(projectile)
                 events.append(self._damage(target, projectile.owner_id, damage, Item.FIREBALL, body.pos, body.zone))
                 events.append(self._impact(projectile, body.pos, "hit", target.player_id))
             elif self.time - projectile.born >= tuning.fireball_lifetime_s:
@@ -389,6 +394,9 @@ class GameState:
                 remaining.append(projectile)
         self.projectiles = remaining
         return events
+
+    def _fireball_damage(self, projectile: Projectile) -> float:
+        return round(self.tuning.fireball_damage_per_speed * float(np.linalg.norm(projectile.vel)), 1)
 
     def _step_sword(self, player: PlayerState, dt: float) -> list[p.Message]:
         able = player.alive and player.connected and player.sign == p.Sign.FIST
@@ -482,6 +490,8 @@ class GameState:
                     return events
                 if fast and rehit_ready:
                     player.sword_hits[target.player_id] = self.time
+                    damage = self._sword_damage(tip_speed)
+                    events.extend(self._shield_leak(target, player.player_id, damage, Item.SWORD, shield_contact))
                     events.append(self._sword_impact(player, shield_contact, "blocked", target.player_id))
                 continue
             if not fast or not rehit_ready:
@@ -490,11 +500,15 @@ class GameState:
             if body is None:
                 continue
             player.sword_hits[target.player_id] = self.time
-            speed_range = tuning.sword_full_damage_tip_speed - tuning.sword_min_tip_speed
-            strength = float(np.clip((tip_speed - tuning.sword_min_tip_speed) / speed_range, 0.0, 1.0))
-            amount = round(tuning.sword_min_damage + (tuning.sword_max_damage - tuning.sword_min_damage) * strength, 1)
-            events.append(self._damage(target, player.player_id, amount, Item.SWORD, body.pos, body.zone))
+            damage = self._sword_damage(tip_speed)
+            events.append(self._damage(target, player.player_id, damage, Item.SWORD, body.pos, body.zone))
         return events
+
+    def _sword_damage(self, tip_speed: float) -> float:
+        tuning = self.tuning
+        speed_range = tuning.sword_full_damage_tip_speed - tuning.sword_min_tip_speed
+        strength = float(np.clip((tip_speed - tuning.sword_min_tip_speed) / speed_range, 0.0, 1.0))
+        return round(tuning.sword_min_damage + (tuning.sword_max_damage - tuning.sword_min_damage) * strength, 1)
 
     def _step_shield(self, player: PlayerState, dt: float) -> list[p.Message]:
         tuning = self.tuning
@@ -520,6 +534,29 @@ class GameState:
                 strength = float(np.clip((push - tuning.shield_push_min_speed) / speed_range, 0.0, 1.0))
                 player.shield_boost = max(player.shield_boost, strength)
         return []
+
+    def _shield_block_fraction(self, shielder: PlayerState) -> float:
+        """Share of damage the raised shield blocks: 1 while fresh, then a logistic fade to 0 over `shield_fade_s`."""
+        tuning = self.tuning
+        fade_progress = (self.time - shielder.item_since - tuning.shield_full_block_s) / tuning.shield_fade_s
+        if fade_progress <= 0.0:
+            return 1.0
+        if fade_progress >= 1.0:
+            return 0.0
+        start, end = (
+            _logistic_fall(0.0, tuning.shield_fade_steepness),
+            _logistic_fall(1.0, tuning.shield_fade_steepness),
+        )
+        return (_logistic_fall(fade_progress, tuning.shield_fade_steepness) - end) / (start - end)
+
+    def _shield_leak(
+        self, shielder: PlayerState, source_id: str, damage: float, kind: str, contact: np.ndarray
+    ) -> list[p.Damage]:
+        """The part of `damage` a fading shield lets through, dealt to the shielding arm."""
+        leaked = round(damage * (1.0 - self._shield_block_fraction(shielder)), 1)
+        if leaked <= 0.0:
+            return []
+        return [self._damage(shielder, source_id, leaked, kind, contact, p.Zone.ARM)]
 
     def _shield_disc(self, player: PlayerState) -> tuple[np.ndarray, np.ndarray] | None:
         """Centre and outward normal. The palm is taken to face away from the chest, through the hand."""
@@ -616,6 +653,11 @@ class GameState:
             reason=reason,
             target_id=target_id,
         )
+
+
+def _logistic_fall(x: float, steepness: float) -> float:
+    """Logistic curve falling from near 1 to near 0, centred on x = 0.5."""
+    return 1.0 / (1.0 + float(np.exp(steepness * (x - 0.5))))
 
 
 def _round(values: np.ndarray) -> list[float]:
