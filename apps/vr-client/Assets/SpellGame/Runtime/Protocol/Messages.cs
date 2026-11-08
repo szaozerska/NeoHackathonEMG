@@ -365,6 +365,9 @@ namespace SpellGame.Protocol
     {
         public const string Solo = "solo";
         public const string Versus = "versus";
+
+        /// <summary>The server's AI opponent in solo matches.</summary>
+        public const string AiPlayerId = "AI";
     }
 
     public static class MatchEndReason
