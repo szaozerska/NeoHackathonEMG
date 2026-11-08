@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "kind": "neural_emg_guided",
+  "id": "20261108-005424-8e243c7b",
+  "started_host_uptime": 78898.834994791,
+  "created_utc": "2026-11-08T08:54:24Z",
+  "model": {
+    "signal": {
+      "sample_rate": 2048,
+      "channels": 8,
+      "state_window": 410,
+      "state_hop": 102,
+      "snap_window": 256,
+      "snap_hop": 32,
+      "notch": true,
+      "noise_threshold": 3.0,
+      "warmup_samples": 512
+    },
+    "model_version": "guided-collection-no-model"
+  },
+  "recording_complete": true,
+  "online_learning": false,
+  "dataset_role": "training_only_weak_labels",
+  "label_policy": "Predictions are observations, not training labels. Corrections are participant reports requiring review.",
+  "time_basis": "capture_t is host monotonic seconds relative to Record; sensor timestamps/sequence remain original",
+  "pre_roll_seconds": 2.0,
+  "wearing_session": "ken-wearing-01",
+  "supervision": "participant_confirmed_clip_labels_no_event_timestamps",
+  "stopped_host_uptime": 78995.047877,
+  "duration_seconds": 96.21288220900169,
+  "stop_reason": "user_stop",
+  "counts": {
+    "emg": 12321
+  },
+  "correction_count": 0,
+  "sequence_discontinuities": 0,
+  "last_emg_capture_t": 96.00276195899642
+}

@@ -1,0 +1,14 @@
+[
+  {
+    "id": "infinite_void-001",
+    "kind": "infinite_void",
+    "instruction": "Hold the Infinite Void gesture steadily",
+    "intended_count": 0,
+    "start": 12.336739125006716,
+    "end": 42.3410592500004,
+    "confirmed": true,
+    "reported_count": null,
+    "label_source": "participant_confirmation",
+    "exact_event_times_verified": false
+  }
+]
