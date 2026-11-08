@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "architectures": ["fnn", "cnn"],
+  "architectures": ["lstm", "fnn", "cnn"],
   "seeds": [7, 19],
   "epochs": 60,
   "patience": 10,
@@ -8,6 +8,10 @@
   "learning_rate": 0.001,
   "weight_decay": 0.01,
   "dropout": 0.25,
+  "lstm": {"conv_channels": 128, "kernel_width": 21, "stride": 10, "hidden": 128, "layers": 2,
+           "compression_range": 4.0, "compression_midpoint": 4.0, "rotation": 1,
+           "learning_rate": 0.0005, "warmup_epochs": 5, "warmup_start_factor": 0.001,
+           "lr_milestones": [25], "lr_factor": 0.5, "gradient_clip": 0.5},
   "tasks": {
     "state": {"window_kind": "state", "classes": ["none", "open", "fist", "infinite_void"], "background": "none"},
     "snap": {"window_kind": "snap", "classes": ["negative", "snap"], "background": "negative", "event_class": "snap"}

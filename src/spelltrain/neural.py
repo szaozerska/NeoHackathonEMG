@@ -4,7 +4,6 @@ The same classifier factory supports any registered vocabulary. New spells can
 reuse gestures; new gestures require examples and a new versioned checkpoint.
 """
 from collections import Counter
-import copy
 import time
 import numpy as np
 import torch
@@ -13,9 +12,44 @@ from sklearn.metrics import accuracy_score, confusion_matrix, f1_score
 from .evaluation import event_metrics
 
 
-class EMGClassifier(nn.Module):
-    def __init__(self, architecture, input_shape, classes, dropout=.25):
+LSTM_DEFAULTS = {'conv_channels': 128, 'kernel_width': 21, 'stride': 10, 'hidden': 128, 'layers': 2,
+                 'compression_range': 4., 'compression_midpoint': 4., 'rotation': 1,
+                 'learning_rate': 5e-4, 'warmup_epochs': 5, 'warmup_start_factor': .001,
+                 'lr_milestones': [25], 'lr_factor': .5, 'gradient_clip': .5}
+
+
+def lstm_settings(config):
+    return {**LSTM_DEFAULTS, **(config or {}).get('lstm', {})}
+
+
+class ReinhardCompression(nn.Module):
+    """Meta's sEMG squashing: near-linear for small inputs, saturating spikes at ±range."""
+    def __init__(self, range_, midpoint):
         super().__init__()
+        self.range, self.midpoint = range_, midpoint
+
+    def forward(self, x):
+        return self.range*x/(self.midpoint+x.abs())
+
+
+class EMGClassifier(nn.Module):
+    def __init__(self, architecture, input_shape, classes, dropout=.25, hyper=None):
+        super().__init__()
+        self.architecture = architecture
+        if architecture == 'lstm':
+            # Meta's DiscreteGesturesArchitecture (generic-neuromotor-interface), scaled to our data:
+            # compression -> strided causal Conv1d -> ReLU/dropout -> LayerNorm -> stacked LSTM -> LayerNorm -> linear.
+            # Inputs are per-channel z-scored, so compression saturates beyond ~range standard deviations.
+            h = {**LSTM_DEFAULTS, **(hyper or {})}
+            self.compression = ReinhardCompression(h['compression_range'], h['compression_midpoint'])
+            self.conv = nn.Conv1d(input_shape[0], h['conv_channels'], h['kernel_width'], stride=h['stride'])
+            self.conv_dropout = nn.Dropout(dropout)
+            self.post_conv_norm = nn.LayerNorm(h['conv_channels'])
+            self.lstm = nn.LSTM(h['conv_channels'], h['hidden'], h['layers'], batch_first=True,
+                                dropout=dropout if h['layers'] > 1 else 0.)
+            self.post_lstm_norm = nn.LayerNorm(h['hidden'])
+            self.output = nn.Linear(h['hidden'], classes)
+            return
         if architecture == 'fnn':
             self.encoder = nn.Sequential(nn.Linear(input_shape[0], 128), nn.ReLU(), nn.Dropout(dropout),
                                          nn.Linear(128, 64), nn.ReLU(), nn.Dropout(dropout))
@@ -35,6 +69,11 @@ class EMGClassifier(nn.Module):
         self.output = nn.Linear(width, classes)
 
     def forward(self, x):
+        if self.architecture == 'lstm':
+            x = self.conv_dropout(torch.relu(self.conv(self.compression(x))))
+            x, _ = self.lstm(self.post_conv_norm(x.transpose(1, 2)))
+            # The window ends at its timestamp, so the last LSTM step has seen the whole (past-only) window.
+            return self.output(self.post_lstm_norm(x[:, -1]))
         return self.output(self.encoder(x))
 
 
@@ -66,9 +105,15 @@ def normalize_fit(x, architecture):
 
 @torch.inference_mode()
 def probabilities(model, x, batch_size=512):
-    model.eval()
-    return torch.cat([model(torch.from_numpy(np.ascontiguousarray(v))).softmax(-1)
+    model.eval(); device = next(model.parameters()).device
+    return torch.cat([model(torch.from_numpy(np.ascontiguousarray(v)).to(device)).softmax(-1).cpu()
                       for v in np.array_split(x, max(1, int(np.ceil(len(x)/batch_size))))]).numpy()
+
+
+def rotate_channels(batch, max_shift):
+    """Meta's electrode-rotation augmentation: one random circular channel shift per batch."""
+    shift = int(torch.randint(-max_shift, max_shift+1, (1,)))
+    return batch.roll(shift, dims=1) if shift else batch
 
 
 def fit_classifier(train, validation, spec, architecture, config, seed, weak_bags=()):
@@ -83,60 +128,84 @@ def fit_classifier(train, validation, spec, architecture, config, seed, weak_bag
         raise ValueError('Weak bags require an event head')
     x = (x-mean)/std; vx = (vx-mean)/std
     labels = spec['classes']
-    if set(r['label'] for r in train) != set(labels):
+    present = {r['label'] for r in train} | ({spec['event_class']} if bags else set())
+    if present != set(labels):
         raise ValueError('Training must contain every registered class')
     y = torch.tensor([labels.index(r['label']) for r in train])
     vy = torch.tensor([labels.index(r['label']) for r in validation])
-    w = torch.from_numpy(row_weights(train)); vw = torch.from_numpy(row_weights(validation))
-    model = EMGClassifier(architecture, x.shape[1:], len(labels), config['dropout'])
-    optimizer = torch.optim.AdamW(model.parameters(), lr=config['learning_rate'], weight_decay=config['weight_decay'])
+    device = torch.device(config.get('device') or ('cuda' if torch.cuda.is_available() else 'cpu'))
+    w = torch.from_numpy(row_weights(train)).to(device); vw = torch.from_numpy(row_weights(validation)).to(device)
+    y = y.to(device); vy = vy.to(device); bags = [b.to(device) for b in bags]
+    hyper = lstm_settings(config) if architecture == 'lstm' else None
+    model = EMGClassifier(architecture, x.shape[1:], len(labels), config['dropout'], hyper).to(device)
+    lr = hyper['learning_rate'] if hyper else config['learning_rate']
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=config['weight_decay'])
+    scheduler = None
+    if hyper:
+        # Meta's schedule: linear warm-up, then step decay at the milestones.
+        def lr_scale(epoch):
+            if epoch < hyper['warmup_epochs']:
+                start = hyper['warmup_start_factor']
+                return start+(1-start)*epoch/hyper['warmup_epochs']
+            return hyper['lr_factor']**sum(epoch >= m for m in hyper['lr_milestones'])
+        scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_scale)
+    clip = hyper['gradient_clip'] if hyper else 5.
     loss_fn = nn.CrossEntropyLoss(reduction='none')
-    tx = torch.from_numpy(x); tvx = torch.from_numpy(vx)
+    tx = torch.from_numpy(x).to(device); tvx = torch.from_numpy(vx).to(device)
+    tmean = torch.from_numpy(mean).to(device); tstd = torch.from_numpy(std).to(device)
     best_loss = float('inf'); best = None; stale = 0; history = []
     started = time.monotonic()
     for epoch in range(config['epochs']):
-        model.train(); order = torch.randperm(len(x))
+        model.train(); order = torch.randperm(len(x), device=device)
         for ix in order.split(config['batch_size']):
             optimizer.zero_grad()
             batch = tx[ix]
             # Training-only gain jitter; retain channel layout and burst order.
-            gain = torch.exp(torch.randn(len(ix), 1)*.20)
-            if architecture == 'cnn':
-                raw = batch*torch.from_numpy(std)+torch.from_numpy(mean)
+            gain = torch.exp(torch.randn(len(ix), 1, device=device)*.20)
+            if architecture != 'fnn':
+                raw = batch*tstd+tmean
                 raw = raw*gain.unsqueeze(-1)
-                batch = (raw-torch.from_numpy(mean))/torch.from_numpy(std)
+                if hyper and hyper['rotation']:
+                    raw = rotate_channels(raw, hyper['rotation'])
+                batch = (raw-tmean)/tstd
             else:
-                logged = batch*torch.from_numpy(std)+torch.from_numpy(mean)
+                logged = batch*tstd+tmean
                 values = torch.expm1(logged).clamp_min(0).reshape(len(ix), -1, 40)
                 values = values.clone(); values[:, :, :24] *= gain.unsqueeze(-1)
-                batch = (torch.log1p(values.reshape(len(ix), -1))-torch.from_numpy(mean))/torch.from_numpy(std)
+                batch = (torch.log1p(values.reshape(len(ix), -1))-tmean)/tstd
             loss = (loss_fn(model(batch), y[ix])*w[ix]).mean()
             if bags:
                 # At least one event in each confirmed positive short clip.
                 # Counts remain metadata, never point-event pseudo labels.
                 bag_index = int(torch.randint(len(bags), (1,)))
-                logits = model(bags[bag_index])
+                bag = bags[bag_index]
+                if hyper and hyper['rotation']:
+                    bag = (rotate_channels(bag*tstd+tmean, hyper['rotation'])-tmean)/tstd
+                logits = model(bag)
                 event_index = labels.index(spec['event_class'])
                 background_index = labels.index(spec['background'])
                 odds = logits[:, event_index]-logits[:, background_index]
                 pooled = .3*(torch.logsumexp(odds/.3, 0)-np.log(len(odds)))
                 loss = loss+.25*nn.functional.softplus(-pooled)
-            loss.backward(); nn.utils.clip_grad_norm_(model.parameters(), 5.)
+            loss.backward(); nn.utils.clip_grad_norm_(model.parameters(), clip)
             optimizer.step()
+        if scheduler:
+            scheduler.step()
         model.eval()
         with torch.inference_mode():
             losses = torch.cat([loss_fn(model(tvx[ix]), vy[ix]) for ix in torch.arange(len(vx)).split(512)])
             val_loss = float((losses*vw).sum()/vw.sum())
         history.append(val_loss)
         if val_loss < best_loss-1e-5:
-            best_loss = val_loss; best = copy.deepcopy(model.state_dict()); best_epoch = epoch+1; stale = 0
+            best_loss = val_loss; best = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+            best_epoch = epoch+1; stale = 0
         else:
             stale += 1
         if stale >= config['patience']:
             break
-    model.load_state_dict(best)
+    model = model.cpu(); model.load_state_dict(best)
     checkpoint = {'schema': 1, 'architecture': architecture, 'input_shape': list(x.shape[1:]),
-                  'classes': list(labels), 'dropout': config['dropout'], 'state_dict': best,
+                  'classes': list(labels), 'dropout': config['dropout'], 'state_dict': best, 'hyper': hyper,
                   'mean': torch.from_numpy(mean), 'std': torch.from_numpy(std), 'seed': seed,
                   'best_epoch': best_epoch}
     return model, checkpoint, probabilities(model, vx), {
@@ -152,7 +221,8 @@ class NeuralClassifier:
             checkpoint = torch.load(checkpoint, map_location='cpu', weights_only=True)
         self.checkpoint = checkpoint; self.classes_ = np.array(checkpoint['classes'])
         self.architecture = checkpoint['architecture']
-        self.model = EMGClassifier(self.architecture, checkpoint['input_shape'], len(self.classes_), checkpoint['dropout'])
+        self.model = EMGClassifier(self.architecture, checkpoint['input_shape'], len(self.classes_),
+                                   checkpoint['dropout'], checkpoint.get('hyper'))
         self.model.load_state_dict(checkpoint['state_dict']); self.model.eval()
 
     def predict_rows(self, rows):

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Versioned, isolated FNN/CNN development comparison; never switches live model."""
+"""Versioned, isolated FNN/CNN/LSTM development comparison; never switches live model."""
 import argparse
 import copy
 import json
@@ -11,7 +11,8 @@ import numpy as np
 import torch
 from spelltrain.common import read_json, write_json
 from spelltrain.effort import _hash
-from spelltrain.neural_data import build_dataset, add_reviewed_examples, add_guided_capture, validate_dataset
+from spelltrain.neural_data import (build_dataset, add_reviewed_examples, add_guided_capture, validate_dataset,
+                                    guided_only_dataset)
 from spelltrain.neural import (fit_classifier, NeuralClassifier, classification_metrics,
                               event_scores, select_threshold)
 
@@ -27,6 +28,10 @@ def main():
     parser.add_argument('--dataset', help='Reuse a locally generated trusted neural-dataset.joblib')
     parser.add_argument('--guided-capture', action='append', default=[], help='EMG-only participant-confirmed training clips')
     parser.add_argument('--epochs', type=int)
+    parser.add_argument('--guided-only', action='store_true',
+                        help='Build the dataset from --guided-capture clips alone (no reference review); whole captures are held out')
+    parser.add_argument('--skip-incomplete-tasks', action='store_true',
+                        help='Skip a task whose training data lacks a registered class instead of failing')
     args = parser.parse_args()
     output = Path(args.output)
     if output.exists():
@@ -56,13 +61,20 @@ def main():
     write_json(output/'backup-manifest.json', baselines)
     write_json(output/'config.json', config)
     print('Preserved fallback models. Rebuilding source-checked EMG dataset.', flush=True)
-    data = joblib.load(args.dataset) if args.dataset else build_dataset(args.reference_cache, args.reference_review, args.review)
+    guided = list(args.guided_capture)
+    if args.dataset:
+        data = joblib.load(args.dataset)
+    elif args.guided_only:
+        data = guided_only_dataset(guided); guided = []
+    else:
+        data = build_dataset(args.reference_cache, args.reference_review, args.review)
     for path in args.examples:
         add_reviewed_examples(data, path, config)
-    for path in args.guided_capture:
+    for path in guided:
         add_guided_capture(data, path)
     validate_dataset(data)
-    joblib.dump(data, output/'neural-dataset.joblib', compress=3)
+    if not args.dataset:
+        joblib.dump(data, output/'neural-dataset.joblib', compress=3)
     report = {'schema': 1, 'evaluation_role': data['evaluation_role'], 'automatically_activated': False,
               'config': config, 'sources': data['sources'], 'baselines': baselines,
               'torch_version': str(torch.__version__), 'input_modalities': ['emg'], 'tasks': {},
@@ -80,6 +92,12 @@ def main():
         rows = data['tasks'][task]
         labeled = lambda part: [r for r in rows if r['part'] == part and r['label'] is not None]
         training, validation = labeled('train'), labeled('validation')
+        bag_classes = {spec['event_class']} if 'event_class' in spec and data.get('weak_bags', {}).get(task) else set()
+        missing = set(spec['classes'])-{r['label'] for r in training}-bag_classes
+        if args.skip_incomplete_tasks and (missing or not validation):
+            print(f'Skipping {task}: no training windows for {sorted(missing)}' if missing else f'Skipping {task}: no validation windows', flush=True)
+            report['tasks'][task] = {'skipped': True, 'missing_classes': sorted(missing)}
+            continue
         if any(r['label'] not in spec['classes'] for r in training+validation):
             raise ValueError('Dataset labels absent from registry')
         # Event replay includes ambiguous windows, never using their labels for fitting.
@@ -115,6 +133,8 @@ def main():
     failures = []
     for task, spec in config['tasks'].items():
         rows = [r for r in data['tasks'][task] if r['part'] == 'test' and ('event_class' in spec or r['label'] is not None)]
+        if task not in selected or not rows:
+            continue
         def evaluate(p, threshold):
             if 'event_class' in spec:
                 return event_scores(rows, p[:, spec['classes'].index(spec['event_class'])], threshold, spec['event_class'], spec['background'])
@@ -152,6 +172,8 @@ def main():
     lines = ['# Neural EMG experiment', '', 'Known development regression checks; not independent-session accuracy.', '',
              '| Task | Selected architecture | Check | v4 fallback |', '|---|---|---|---|']
     for task, result in report['tasks'].items():
+        if 'development_check' not in result.get('selected', {}):
+            continue
         s = result['selected']; m = s['development_check']; old = result['baseline_checks'].get('v4', {})
         if 'event_class' in config['tasks'][task]:
             text = f"TP {m['tp']}, FP {m['fp']}, FN {m['fn']}"; oldtext = f"TP {old.get('tp')}, FP {old.get('fp')}, FN {old.get('fn')}"

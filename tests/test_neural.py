@@ -37,13 +37,13 @@ def test_waveform_export_preserves_streaming_features_and_packet_boundaries():
         np.testing.assert_allclose(fn(x['waveform'].T), y['x'], rtol=1e-5, atol=1e-6)
 
 
-@pytest.mark.parametrize('architecture,shape', [('fnn', (40,)), ('cnn', (8, 410))])
+@pytest.mark.parametrize('architecture,shape', [('fnn', (40,)), ('cnn', (8, 410)), ('lstm', (8, 410)), ('lstm', (8, 256))])
 def test_vocabulary_can_expand_and_checkpoint_reloads(tmp_path, architecture, shape):
     torch.manual_seed(7)
     model = EMGClassifier(architecture, shape, 4, 0.)
     model.eval(); raw = torch.randn(3, *shape)
     checkpoint = {'architecture': architecture, 'input_shape': list(shape),
-                  'classes': ['none', 'fist', 'open', 'future_gesture'], 'dropout': 0.,
+                  'classes': ['none', 'fist', 'open', 'future_gesture'], 'dropout': 0., 'hyper': None,
                   'state_dict': model.state_dict(), 'mean': torch.zeros((1, *shape)),
                   'std': torch.ones((1, *shape))}
     path = tmp_path/'model.pt'; torch.save(checkpoint, path)
@@ -141,3 +141,24 @@ def test_partial_contiguous_clip_is_rejected_in_count_training_and_evaluation():
     raw = [{'capture_t': i*.01, 'packet': {'source_seq': i}} for i in range(50)]
     with pytest.raises(ValueError, match='missing EMG'):
         check_trial_coverage(raw, trial, {})
+
+
+def test_lstm_trains_with_meta_schedule_rotation_and_weak_bags():
+    torch.set_num_threads(1)
+    rng = np.random.default_rng(3)
+    def wave(i, label):
+        r = row(i, group=str(i), label=label); r['waveform'] = rng.normal(0, 1+(label == 'snap'), (8, 256)).astype(np.float32)
+        return r
+    training = [wave(i, 'snap' if i % 2 else 'negative') for i in range(8)]
+    validation = [{**wave(20+i, 'snap' if i % 2 else 'negative'), 'part': 'validation', 'group': 'v'+str(i)} for i in range(4)]
+    spec = {'classes': ['negative', 'snap'], 'background': 'negative', 'event_class': 'snap'}
+    config = {'epochs': 3, 'patience': 3, 'dropout': .1, 'learning_rate': .001, 'weight_decay': .01, 'batch_size': 4,
+              'lstm': {'conv_channels': 16, 'hidden': 16, 'layers': 2, 'warmup_epochs': 2, 'lr_milestones': [2]}}
+    bags = [{'rows': [wave(40, None)], 'positive': True, 'reported_count': 1}]
+    bags[0]['rows'][0]['label'] = None
+    bag_arrays = [{'rows': bags[0]['rows']}]
+    _, checkpoint, p, report = fit_classifier(training, validation, spec, 'lstm', config, 7, bag_arrays)
+    assert checkpoint['hyper']['hidden'] == 16 and checkpoint['hyper']['rotation'] == 1
+    assert p.shape == (4, 2) and np.isfinite(p).all()
+    assert NeuralClassifier(checkpoint).predict_rows(validation).shape == (4, 2)
+    assert report['parameters'] < 20000
