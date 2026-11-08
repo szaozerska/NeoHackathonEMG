@@ -8,7 +8,7 @@ upper-body pose, and renders the state the server sends back. It runs no game me
 - Unity **6000.6.8f1** (see `ProjectSettings/ProjectVersion.txt`) with **Android Build Support**, including the
   OpenJDK and Android SDK & NDK Tools. Add them in Unity Hub → Installs → ⋯ → Add modules, or from the CLI:
   ```bash
-  "/Applications/Unity Hub.app/Contents/MacOS/Unity Hub" -- --headless install-modules --version 6000.6.8f1 -m android android-sdk-ndk-tools android-open-jdk
+  "/Applications/Unity Hub.app/Contents/MacOS/Unity Hub" -- --headless install-modules --version 6000.6.8f1 -m android --childModules
   ```
 - A Quest 3 in developer mode, connected over USB or Air Link.
 
@@ -73,6 +73,19 @@ The client ignores its own pose when the server echoes it back.
 3. Open **Window → Meta → Tools → Project Setup Tool** and click **Fix All** on the Android and Standalone tabs.
 4. Use **SpellGame → Rebuild Main Scene** to regenerate `Scenes/Main.unity` at any time.
    The first run also imports TMP Essential Resources and generates the UI theme (see `Assets/SpellGame/UI/README.md`).
+
+To verify the current game's scripts and Editor code from the repository root
+(with the project closed in Unity):
+
+```bash
+.venv/bin/python scripts/check_unity_core.py --build-target Android
+```
+
+This launches the pinned Editor, resolves the actual project packages and checks
+compilation. It replaces the historical portable-recorder-only check; it does
+not build an APK or establish physical headset tracking. Use `--editor` or
+`UNITY_EDITOR` for a different Editor installation path. Build the Quest APK with
+`SpellGame/Build APK`, or `SpellGame.Editor.QuestBuild.BuildBatch` in batch mode.
 
 ## Running
 

@@ -1,5 +1,17 @@
 {
   "dependencies": {
+    "com.meta.xr.mrutilitykit": {
+      "version": "207.0.1",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.meta.xr.sdk.core": "207.0.1",
+        "com.unity.textmeshpro": "3.0.6",
+        "com.unity.ai.navigation": "1.1.4",
+        "com.unity.nuget.newtonsoft-json": "3.0.2"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.meta.xr.sdk.core": {
       "version": "207.0.1",
       "depth": 0,
@@ -25,6 +37,15 @@
         "com.unity.ugui": "1.0.0"
       },
       "hash": "77274f138974087ba2909bab2723fc6ff851338b"
+    },
+    "com.unity.ai.navigation": {
+      "version": "2.0.16",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.modules.ai": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
     },
     "com.unity.burst": {
       "version": "2.0.0",
