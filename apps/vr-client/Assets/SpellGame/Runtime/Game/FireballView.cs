@@ -7,25 +7,27 @@ namespace SpellGame.Game
     /// <summary>
     /// Renders fireballs from server events and state (architecture.md §9). The snap and the throw look different:
     /// <list type="bullet">
-    /// <item>snap (<c>spell charging</c>): a spark burst, then a held orb on the caster's band hand;</item>
-    /// <item>throw (<c>spell cast</c>): the orb leaves the hand as a projectile with a trail;</item>
-    /// <item><c>impact hit</c> explodes, <c>impact expired</c> and a fizzled hold (<c>spell cancelled</c>) puff out;</item>
+    /// <item>snap (<c>spell charging</c>): a flash and spark burst, then a burning orb held on the caster's band hand;</item>
+    /// <item>throw (<c>spell cast</c>): the orb leaves the hand as a projectile with a flame, smoke and glow trail;</item>
+    /// <item><c>impact hit</c> explodes, <c>impact blocked</c> explodes smaller, <c>impact expired</c> and a fizzled
+    /// hold (<c>spell cancelled</c>) puff out in smoke;</item>
     /// <item>while on cooldown, a small ember sits on the hand and shrinks until the next snap is allowed.</item>
     /// </list>
     /// The local player's held orb follows local hand tracking, so it never lags behind the real hand.
+    /// The effects themselves are built by <see cref="FireballVfx"/>.
     /// </summary>
     public sealed class FireballView : MonoBehaviour
     {
         [SerializeField] private GameClient gameClient;
-        [SerializeField] private Material fireMaterial;
-        [SerializeField] private Material sparkMaterial;
-        [SerializeField] private Material smokeMaterial;
+        [SerializeField] private FireballMaterials materials = new();
 
         [Header("Look")]
         [SerializeField] private float heldDiameter = 0.12f;
         [Tooltip("Server Tuning.fireball_radius is 0.15, so 0.3 shows the true hit size.")]
         [SerializeField] private float projectileDiameter = 0.2f;
         [SerializeField] private float emberDiameter = 0.04f;
+        [Tooltip("Size multiplier of the hit explosion; a shield block shows a smaller one.")]
+        [SerializeField] private float explosionScale = 1f;
         [Tooltip("Server Tuning.fireball_cooldown_s, used to scale the ember.")]
         [SerializeField] private float fullCooldown = 0.75f;
         [Tooltip("How fast a projectile's drawn position converges onto the server's extrapolated position (1/s).")]
@@ -33,13 +35,13 @@ namespace SpellGame.Game
 
         private sealed class HandVisuals
         {
-            public Transform HeldOrb;
+            public FireballOrb HeldOrb;
             public Transform Ember;
         }
 
         private sealed class ProjectileVisual
         {
-            public Transform Orb;
+            public FireballOrb Orb;
             public Vector3 ServerPosition;
             public Vector3 ServerVelocity;
             public float ReceivedAt;
@@ -76,14 +78,13 @@ namespace SpellGame.Game
             switch (spell.State)
             {
                 case SpellState.Charging:
-                    SpellVfx.Burst(at.Value, sparkMaterial, count: 24, speed: 1.5f, size: 0.02f, lifetime: 0.35f);
-                    SpellVfx.Burst(at.Value, fireMaterial, count: 10, speed: 0.6f, size: 0.04f, lifetime: 0.3f);
+                    FireballVfx.Ignite(at.Value, materials);
                     break;
                 case SpellState.Cast:
-                    SpellVfx.Burst(at.Value, sparkMaterial, count: 12, speed: 1f, size: 0.02f, lifetime: 0.25f);
+                    FireballVfx.Launch(at.Value, materials);
                     break;
                 case SpellState.Cancelled:
-                    SpellVfx.Burst(at.Value, smokeMaterial, count: 16, speed: 0.4f, size: 0.05f, lifetime: 0.8f);
+                    FireballVfx.Fizzle(at.Value, materials, scale: 0.7f);
                     break;
             }
         }
@@ -126,18 +127,21 @@ namespace SpellGame.Game
             if (impact.Kind != SpellKind.Fireball)
                 return;
 
-            var at = _projectiles.TryGetValue(impact.ProjectileId, out var visual) ? visual.Orb.position : impact.Position;
+            var at = _projectiles.TryGetValue(impact.ProjectileId, out var visual) ? visual.Orb.Root.position : impact.Position;
             RemoveProjectile(impact.ProjectileId);
             _seenProjectiles.Add(impact.ProjectileId);
 
-            if (impact.Reason == ImpactReason.Hit)
+            switch (impact.Reason)
             {
-                SpellVfx.Burst(at, fireMaterial, count: 40, speed: 2.5f, size: 0.07f, lifetime: 0.5f);
-                SpellVfx.Burst(at, sparkMaterial, count: 30, speed: 4f, size: 0.02f, lifetime: 0.4f);
-            }
-            else
-            {
-                SpellVfx.Burst(at, smokeMaterial, count: 20, speed: 0.6f, size: 0.06f, lifetime: 0.9f);
+                case ImpactReason.Hit:
+                    FireballVfx.Explosion(at, materials, explosionScale);
+                    break;
+                case ImpactReason.Blocked:
+                    FireballVfx.Explosion(at, materials, explosionScale * 0.6f);
+                    break;
+                default:
+                    FireballVfx.Fizzle(at, materials, scale: 1f);
+                    break;
             }
         }
 
@@ -156,19 +160,21 @@ namespace SpellGame.Game
                 var holding = player.Item == SpellKind.Fireball && position != null;
                 var cooling = !holding && player.Cooldown > 0f && position != null;
 
-                hand.HeldOrb.gameObject.SetActive(holding);
+                hand.HeldOrb.Root.gameObject.SetActive(holding);
                 hand.Ember.gameObject.SetActive(cooling);
 
                 if (holding)
                 {
-                    hand.HeldOrb.position = position.Value;
+                    hand.HeldOrb.Root.position = position.Value;
                     var pulse = 1f + 0.08f * Mathf.Sin(Time.time * 18f);
-                    hand.HeldOrb.localScale = Vector3.one * (heldDiameter * pulse);
+                    hand.HeldOrb.Core.localScale = Vector3.one * (heldDiameter * pulse);
                 }
                 else if (cooling)
                 {
                     hand.Ember.position = position.Value;
-                    hand.Ember.localScale = Vector3.one * (emberDiameter * Mathf.Clamp01(player.Cooldown / fullCooldown));
+                    // The ember's glow scales with it; never quite zero, so the particle system's scale stays valid.
+                    var left = Mathf.Max(0.05f, Mathf.Clamp01(player.Cooldown / fullCooldown));
+                    hand.Ember.localScale = Vector3.one * (emberDiameter * left);
                 }
             }
 
@@ -176,7 +182,7 @@ namespace SpellGame.Game
             {
                 if (_players.ContainsKey(playerId))
                     continue;
-                hand.HeldOrb.gameObject.SetActive(false);
+                hand.HeldOrb.Root.gameObject.SetActive(false);
                 hand.Ember.gameObject.SetActive(false);
             }
         }
@@ -187,17 +193,15 @@ namespace SpellGame.Game
             foreach (var visual in _projectiles.Values)
             {
                 var predicted = visual.ServerPosition + visual.ServerVelocity * (Time.time - visual.ReceivedAt);
-                var drifted = visual.Orb.position + visual.ServerVelocity * Time.deltaTime;
-                visual.Orb.position = Vector3.Lerp(drifted, predicted, blend);
+                var root = visual.Orb.Root;
+                var drifted = root.position + visual.ServerVelocity * Time.deltaTime;
+                root.position = Vector3.Lerp(drifted, predicted, blend);
             }
         }
 
         private ProjectileVisual CreateProjectile(ProjectileSnapshot snapshot)
         {
-            var orb = SpellVfx.CreateOrb($"Fireball {snapshot.Id}", transform, fireMaterial, projectileDiameter);
-            orb.position = snapshot.Position;
-            SpellVfx.AddFlames(orb, sparkMaterial, rate: 60f);
-            SpellVfx.AddTrail(orb, fireMaterial, width: projectileDiameter * 0.8f, time: 0.2f);
+            var orb = FireballVfx.CreateProjectile($"Fireball {snapshot.Id}", transform, materials, projectileDiameter, snapshot.Position);
             return new ProjectileVisual { Orb = orb };
         }
 
@@ -205,7 +209,7 @@ namespace SpellGame.Game
         {
             if (!_projectiles.Remove(id, out var visual))
                 return;
-            Destroy(visual.Orb.gameObject);
+            FireballVfx.Release(visual.Orb);
         }
 
         private HandVisuals HandFor(string playerId)
@@ -213,12 +217,10 @@ namespace SpellGame.Game
             if (_hands.TryGetValue(playerId, out var hand))
                 return hand;
 
-            var heldOrb = SpellVfx.CreateOrb($"Held Fireball {playerId}", transform, fireMaterial, heldDiameter);
-            SpellVfx.AddFlames(heldOrb, sparkMaterial, rate: 30f);
             hand = new HandVisuals
             {
-                HeldOrb = heldOrb,
-                Ember = SpellVfx.CreateOrb($"Ember {playerId}", transform, sparkMaterial, emberDiameter),
+                HeldOrb = FireballVfx.CreateHeldOrb($"Held Fireball {playerId}", transform, materials, heldDiameter),
+                Ember = FireballVfx.CreateEmber($"Ember {playerId}", transform, materials),
             };
             _hands[playerId] = hand;
             return hand;
