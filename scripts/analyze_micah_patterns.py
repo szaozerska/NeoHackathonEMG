@@ -339,8 +339,8 @@ def run(static, dynamic, output):
               'and hard negative movements. Keep new wearing sessions separate.', '',
               '## Reproduce', '', '```sh',
               '.venv/bin/python scripts/analyze_micah_patterns.py \\',
-              '  --static "Micah contributed data/static/20261108-014551-cf745f65" \\',
-              '  --dynamic "Micah contributed data/dynamic/20261108-011407-c127f0d5/original" \\',
+              '  --static "data/micah/static/20261108-014551-cf745f65" \\',
+              '  --dynamic "data/micah/dynamic/20261108-011407-c127f0d5/original" \\',
               '  --output .local/micah-pattern-analysis', '```', '',
               'Reads raw JSONL or its lossless gzip form. Caches are hash-keyed and stay in the requested output folder. '
               'Matplotlib is needed for the plot. Full scores, fold membership, timing and five-second drift trajectories '

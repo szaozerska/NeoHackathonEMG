@@ -135,8 +135,8 @@ def sweep_runs(config, sweep_name, dataset, kind, epochs):
 
 
 @app.local_entrypoint()
-def main(output: str, captures: str = 'data/partner/neural-guided', config: str = 'configs/neural-emg.json',
-         sweep: str = 'quick', epochs: int = 0, interval_captures: str = 'Micah contributed data',
+def main(output: str, captures: str = 'data/ken/guided', config: str = 'configs/neural-emg.json',
+         sweep: str = 'quick', epochs: int = 0, interval_captures: str = 'data/micah',
          windows: str = '', architectures: str = ''):
     """windows: 'state:snap' sample lengths, comma separated (e.g. 410:256,820:512); each gets its own dataset."""
     check_workspace()

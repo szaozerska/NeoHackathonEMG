@@ -19,7 +19,7 @@ as controls. These remain participant reports, not independently verified
 physical action times or measured force.
 
 The page is locked to reserved evaluation. Files save under
-`Micah contributed data/validation/<session-id>/`, with:
+`data/micah/validation/<session-id>/`, with:
 
 - `metadata.json`: `dataset_role: untouched_guided_count_check`, `do_not_train:
   true`, `do_not_tune_thresholds: true`, `test_condition: mixed`, and

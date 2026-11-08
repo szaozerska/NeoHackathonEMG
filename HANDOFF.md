@@ -97,8 +97,8 @@ snaps, start a new Kinesis raw recording at a chosen path, then run:
 
 ```sh
 .venv/bin/python scripts/collect_neural_emg.py \
-  --kinesis-file data/partner/raw/snaps-01.jsonl \
-  --output-root data/partner/neural-guided \
+  --kinesis-file data/ken/raw/snaps-01.jsonl \
+  --output-root data/ken/guided \
   --wearing-session partner-wearing-01 --kind snap --repetitions 20
 ```
 

@@ -21,7 +21,7 @@
   },
   "recording_complete": true,
   "online_learning": false,
-  "dataset_role": "untouched_guided_count_check",
+  "dataset_role": "pooled_split_train_validation_test",
   "label_policy": "Participant action/effort selection and immediate Space boundaries. Each interval preserves its own static/dynamic condition. No physical onsets verified.",
   "time_basis": "capture_t is host monotonic seconds relative to Record; sensor timestamps/sequence remain original",
   "pre_roll_seconds": 2.0,
@@ -80,9 +80,9 @@
     "absolute_radio_latency_known": false,
     "emg_timestamp_policy": "native batch timestamp preserved; 16 samples at 2048 Hz, within-batch timestamp convention has not been hardware calibrated"
   },
-  "do_not_train": true,
-  "do_not_tune_thresholds": true,
-  "evaluation_status": "reserved_unscored",
+  "do_not_train": false,
+  "do_not_tune_thresholds": false,
+  "evaluation_status": "pooled_split_member",
   "model_frozen_reference": null,
   "classification_modalities": [
     "emg"
@@ -128,5 +128,11 @@
   "correction_count": 0,
   "sequence_discontinuities": 42,
   "last_emg_capture_t": 824.3252167090541,
-  "publication_attribution_source": "Explicit user confirmation; original collector default retained in original/metadata.json"
+  "publication_attribution_source": "Explicit user confirmation; original collector default retained in original/metadata.json",
+  "role_change": {
+    "date": "2026-11-08",
+    "by": "Sophie (contributor)",
+    "previous_role": "untouched_guided_count_check",
+    "reason": "Contributor asked to use her capture in the pooled Ken/Micah/Sophie train/validation/test split, after stricter quality selection (analysis/training-selection.json)."
+  }
 }

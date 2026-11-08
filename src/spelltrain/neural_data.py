@@ -262,13 +262,17 @@ def interval_capture_features(directory, signal=None):
     return features, meta
 
 
-def add_interval_capture(dataset, directory, validation_after=.7, signal=None):
+def add_interval_capture(dataset, directory, validation_after=.7, signal=None, split=None):
     """Micah-style Space-held intervals: holds -> open/fist, non-intended -> none/negative, snaps -> bags.
 
     Within each class (non-intended, snap, shield, sword) the intervals after the first
     validation_after fraction validate, since contributions are recorded in class blocks. Validation snaps use the published reference peak as expected event; snaps without
     one are dropped from validation. Windows within 1 s of a published snap-like candidate in a
     non-intended interval are excluded rather than relabeled.
+
+    split={'seed', 'fractions': (train, validation, test), 'chunk_seconds'} replaces validation_after with a
+    shuffled per-class split; intervals longer than two chunks are split per chunk instead of whole.
+    Intervals marked not eligible in analysis/training-selection.json are skipped.
     """
     directory = Path(directory)
     original = directory/'original' if (directory/'original').is_dir() else directory
@@ -289,15 +293,33 @@ def add_interval_capture(dataset, directory, validation_after=.7, signal=None):
         classes.setdefault((interval.get('selected_motion') or {}).get('motion') if interval['intended'] else None, []).append(i)
     validation = {i for ix in classes.values() for i in ix[len(ix)-round(len(ix)*(1-validation_after)):]} \
         if validation_after else set()
+    selection = analysis/'training-selection.json'
+    eligible = {r['index'] for r in read_json(selection)['intervals'] if r['train_eligible']} \
+        if selection.exists() else None
+    if eligible is not None:
+        classes = {k: [i for i in ix if i in eligible] for k, ix in classes.items()}
+    chunk_s = split['chunk_seconds'] if split else None
+    long = lambda i: split is not None and intervals[i]['end']-intervals[i]['start'] > 2*chunk_s
+    if split:
+        rng = np.random.default_rng([split['seed'], int(meta['id'][:8]), int(meta['id'][9:15])])
+        units = {}
+        for i in (i for ix in classes.values() for i in ix):
+            n = int(np.ceil((intervals[i]['end']-intervals[i]['start'])/chunk_s)) if long(i) else 0
+            units[i] = [(i, k) for k in range(n)] if n else [(i, None)]
+        parts = {}
+        for ix in classes.values():
+            parts.update(assign_parts([u for i in ix for u in units[i]], rng, split['fractions']))
     by_kind = {k: sorted((f for f in features if f['kind'] == k), key=lambda f: f['t']) for k in ('state', 'snap')}
     ends = {k: np.array([f['t'] for f in v]) for k, v in by_kind.items()}
     session = meta['id']; added = {'state': 0, 'snap': 0, 'bags': 0}
-    # Animation Gesture (Infinite Void) contributions report possible gesture contamination in
-    # red time, so their non-intended intervals are not used as negatives.
-    animation = 'animation_gesture' in classes
+    # Animation-Gesture-only contributions report possible gesture contamination in red time, so their
+    # non-intended intervals are not used as negatives. Mixed sessions rely on the burst review instead.
+    animation = {k for k, ix in classes.items() if k and ix} == {'animation_gesture'}
     for index, interval in enumerate(intervals):
+        if eligible is not None and index not in eligible:
+            continue
         a, b = interval['start'], interval['end']
-        part = 'validation' if index in validation else 'train'
+        part = parts.get((index, None), 'train') if split else 'validation' if index in validation else 'train'
         motion = (interval.get('selected_motion') or {}).get('motion') if interval['intended'] else None
         if interval['intended'] and motion not in INTERVAL_STATES and motion != 'snap' or animation and not interval['intended']:
             continue
@@ -318,26 +340,33 @@ def add_interval_capture(dataset, directory, validation_after=.7, signal=None):
                         'label_source': 'participant_spacebar_interval', 'instruction': 'snap'})
                     added['bags'] += 1
             elif index in peaks:
-                o = peaks[index]
+                o = peaks[index]; base['part'] = part
                 # Starts stay clear of the previous interval's windows (its margin is >= .15 s).
                 for r in rows('snap', a-.05, b+.3):
                     label = 'snap' if o-.05 <= r['end'] <= o+.125 else None if r['start']-.3 <= o <= r['end']+.3 else 'negative'
-                    dataset['tasks']['snap'].append({**r, 'label': label, 'snap_label': label, 'expected_events': [o],
+                    dataset['tasks']['snap'].append({**r, 'part': part, 'label': label, 'snap_label': label, 'expected_events': [o],
                                                      'label_source': 'micah_review_reference_peak'})
                     added['snap'] += 1
             continue
         state = INTERVAL_STATES.get(motion, 'none')
         # Space marks the first finger interaction; the multi-step sign forms and undoes inside the hold.
-        margin = 1. if motion == 'animation_gesture' else .15 if interval['intended'] else .3
+        # Long holds keep the full 1 s; short Space-tapped gestures keep a fifth of their length.
+        margin = min(1., max(.15, .2*(b-a))) if motion == 'animation_gesture' else .15 if interval['intended'] else .3
         for kind in ('state', 'snap'):
             for r in rows(kind, a+margin, b-margin):
                 if r['start'] < a+margin or (not interval['intended'] and not clear(r)):
                     continue
                 label = state if kind == 'state' else 'negative'
+                if long(index):
+                    k = int((r['start']-a)//chunk_s)
+                    if r['end'] > a+(k+1)*chunk_s:
+                        continue
+                    r.update(part=parts[(index, k)], group=f"{group}:c{k}", trial=f"{group}:c{k}")
                 r.update({'label': label, ('hand_state' if kind == 'state' else 'snap_label'): label, 'expected_events': []})
                 dataset['tasks'][kind].append(r); added[kind] += 1
     dataset['sources'].append({'directory': str(directory.resolve()), 'supervision': 'weak_participant_spacebar_intervals',
-                              'wearing_session': meta['wearing_session'], 'validation_after': validation_after, 'windows': added})
+                              'wearing_session': meta['wearing_session'], 'windows': added,
+                              **({'split': split} if split else {'validation_after': validation_after})})
 
 
 
@@ -403,5 +432,104 @@ def guided_only_dataset(directories, interval_directories=(), signal=None):
     dataset['validation_captures'] = sorted(held_out)
     dataset['validation_tail_captures'] = sorted(single)
     dataset['validation_snap_trials'] = sorted(snap_validation)
+    validate_dataset(dataset)
+    return dataset
+
+
+def assign_parts(units, rng, fractions=(.7, .15, .15)):
+    """Shuffle units and deal them into train/validation/test; with 3+ units each held-out part gets at least one."""
+    units = list(units); order = rng.permutation(len(units)); n = len(units)
+    held = [max(1, round(n*f)) if n >= 3 else 0 for f in fractions[1:]]
+    names = ['validation']*held[0]+['test']*held[1]
+    return {units[i]: names[j] if j < len(names) else 'train' for j, i in enumerate(order)}
+
+
+def drop_cross_split_overlaps(dataset):
+    """Windows that overlap a window of another part in the same session (at split boundaries) are dropped."""
+    import bisect
+    for name, rows in dataset['tasks'].items():
+        bags = dataset.get('weak_bags', {}).get(name, [])
+        every = rows+[r for b in bags for r in b['rows']]
+        index = {}
+        for r in every:
+            index.setdefault((r['session'], r['part']), []).append((r['start'], r['end']))
+        for key in index:
+            index[key].sort()
+        longest = max((r['end']-r['start'] for r in every), default=0)
+
+        def clashes(r):
+            for (session, part), spans in index.items():
+                if session != r['session'] or part == r['part']:
+                    continue
+                i = bisect.bisect_left(spans, (r['start']-longest,))
+                while i < len(spans) and spans[i][0] < r['end']:
+                    if spans[i][1] > r['start']:
+                        return True
+                    i += 1
+            return False
+        dataset['tasks'][name] = [r for r in rows if not clashes(r)]
+        for b in bags:
+            b['rows'] = [r for r in b['rows'] if not clashes(r)]
+        if bags:
+            dataset['weak_bags'][name] = [b for b in bags if b['rows']]
+
+
+def split_guided_rows(dataset, sessions, rng, fractions, chunk_s):
+    """Guided clips: long holds are cut into chunk_s blocks; units are dealt per (wearer, class)."""
+    rows = [r for task in dataset['tasks'].values() for r in task if r['session'] in sessions]
+    span = {}
+    for r in rows:
+        a, b = span.get(r['group'], (r['start'], r['end'])); span[r['group']] = (min(a, r['start']), max(b, r['end']))
+    keep = []
+    for r in rows:
+        a, b = span[r['group']]
+        if b-a > 2*chunk_s:
+            k = int((r['start']-a)//chunk_s)
+            if r['end'] > a+(k+1)*chunk_s:
+                r['part'] = None; continue
+            r['group'] = r['trial'] = f"{r['group']}:c{k}"
+        keep.append(r)
+    kind = {}
+    for r in keep:
+        label = r['label'] if r['kind'] == 'state' else 'snap' if r['label'] == 'snap' or r.get('expected_events') else None
+        if label:
+            kind.setdefault(r['group'], set()).add((r['wearing_session'], 'snap' if label == 'snap' else label))
+    classes = {}
+    for g, ks in kind.items():
+        snap = [k for k in ks if k[1] == 'snap']
+        classes.setdefault(snap[0] if snap else sorted(ks)[0], []).append(g)
+    parts = {}
+    for groups in classes.values():
+        parts.update(assign_parts(sorted(groups), rng, fractions))
+    for r in keep:
+        r['part'] = parts.get(r['group'], 'train')
+    for name in dataset['tasks']:
+        dataset['tasks'][name] = [r for r in dataset['tasks'][name] if r['part'] is not None]
+
+
+def pooled_split_dataset(guided_directories, interval_directories, seed=7, fractions=(.7, .15, .15), chunk_s=3.,
+                         signal=None):
+    """Every person's data in one shuffled train/validation/test split.
+
+    Split units are whole labelled clips/intervals (long holds: chunk_s blocks), dealt per (wearer, class), so every
+    person and class appears in every part. Windows straddling a split boundary are dropped. Parts share wearing
+    sessions: the test part measures held-out clips, not a new band session or a new person.
+    """
+    guided_directories = sorted(Path(d) for d in guided_directories)
+    for d in [*guided_directories, *interval_directories]:
+        require_training_directory(d)
+    overrides = signal or {}
+    first = guided_directories[0] if guided_directories else Path(interval_directories[0])
+    base = read_json(first/'metadata.json') if (first/'metadata.json').exists() else read_json(first/'original/metadata.json')
+    dataset = {'schema': 1, 'signal': {**base['model']['signal'], **overrides}, 'tasks': {'state': [], 'snap': []},
+               'sources': [], 'evaluation_role': 'pooled_shuffled_split_same_wearing_sessions',
+               'split': {'seed': seed, 'fractions': list(fractions), 'chunk_seconds': chunk_s}}
+    for directory in guided_directories:
+        add_guided_capture(dataset, directory, hold_negatives=True, audio_onsets=True, signal=overrides)
+    split_guided_rows(dataset, {d.name for d in guided_directories}, np.random.default_rng(seed), fractions, chunk_s)
+    for directory in interval_directories:
+        add_interval_capture(dataset, directory, signal=overrides,
+                             split={'seed': seed, 'fractions': fractions, 'chunk_seconds': chunk_s})
+    drop_cross_split_overlaps(dataset)
     validate_dataset(dataset)
     return dataset

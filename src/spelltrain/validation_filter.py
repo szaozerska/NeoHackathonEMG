@@ -5,7 +5,7 @@ Writes `truth-values.filtered.json` (kept intervals, labels and timestamps uncha
 signal-quality rules (stream resets, dropouts, ADC clipping, tap length, burst size) — no model predictions —
 so the filtered labels stay valid for scoring a frozen model.
 
-    python -m spelltrain.validation_filter "Sophie contributed data/validation/<id>" [--rest-context TEXT]
+    python -m spelltrain.validation_filter "data/sophie/<capture>" [--rest-context TEXT]
 """
 from __future__ import annotations
 
