@@ -14,6 +14,7 @@ namespace SpellGame.Editor
     {
         private const string ScenePath = "Assets/SpellGame/Scenes/Main.unity";
         private const string MaterialFolder = "Assets/SpellGame/Materials";
+        private const string SwordFolder = "Assets/SpellGame/Sword";
         private const string CameraRigPrefabPath = "Packages/com.meta.xr.sdk.core/Prefabs/OVRCameraRig.prefab";
         private const string UnlitShaderName = "Universal Render Pipeline/Unlit";
 
@@ -154,10 +155,34 @@ namespace SpellGame.Editor
             var view = new GameObject("Sword View").AddComponent<SwordView>();
             var serializedView = new SerializedObject(view);
             serializedView.FindProperty("gameClient").objectReferenceValue = client;
-            serializedView.FindProperty("bladeMaterial").objectReferenceValue = UnlitMaterial("Blade", new Color(0.55f, 0.9f, 1f));
-            serializedView.FindProperty("trailMaterial").objectReferenceValue = UnlitMaterial("BladeTrail", new Color(0.2f, 0.6f, 1f));
-            serializedView.FindProperty("sparkMaterial").objectReferenceValue = UnlitMaterial("Spark", new Color(1f, 0.85f, 0.3f));
+            serializedView.FindProperty("bladeMaterial").objectReferenceValue = SwordMaterial("SwordBladeCore", "SpellGame/Sword/BladeCore");
+            serializedView.FindProperty("glowMaterial").objectReferenceValue = SwordMaterial("SwordBladeGlow", "SpellGame/Sword/BladeGlow");
+            serializedView.FindProperty("trailMaterial").objectReferenceValue = SwordMaterial("SwordTrail", "SpellGame/Sword/Trail");
+            serializedView.FindProperty("sparkMaterial").objectReferenceValue = SwordMaterial("SwordSpark", "SpellGame/Sword/Spark");
             serializedView.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>A material on one of the sword shaders in <see cref="SwordFolder"/>, keeping any tweaks made to an existing one.</summary>
+        private static Material SwordMaterial(string name, string shaderName)
+        {
+            var shader = Shader.Find(shaderName);
+            if (shader == null)
+                throw new System.InvalidOperationException($"[SpellGame] Shader '{shaderName}' not found; is {SwordFolder}/Shaders imported?");
+
+            var folder = $"{SwordFolder}/Materials";
+            var path = $"{folder}/{name}.mat";
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material != null)
+            {
+                material.shader = shader;
+                return material;
+            }
+
+            if (!AssetDatabase.IsValidFolder(folder))
+                AssetDatabase.CreateFolder(SwordFolder, "Materials");
+            material = new Material(shader);
+            AssetDatabase.CreateAsset(material, path);
+            return material;
         }
 
         private static void CreateShieldView(GameClient client)
