@@ -7,6 +7,7 @@ from pathlib import Path
 import joblib
 import numpy as np
 from .snap_onsets import refine_snap_onsets
+from .signals import SignalWindows
 from .common import read_json
 from .effort import effort_dataset, _hash
 from .retraining import prepare_records
@@ -209,7 +210,7 @@ def add_guided_capture(dataset, directory, hold_negatives=False, audio_onsets=Fa
                 if any(o-.05 <= t <= o+.125 for o in onsets):
                     label = 'snap'
                 elif any(row['start']-.3 <= o <= t+.3 for o in onsets):
-                    continue
+                    label = None  # Ambiguous: replayed for event scoring, never fitted.
                 else:
                     label = 'negative'
                 dataset['tasks']['snap'].append({**row, 'label': label, 'snap_label': label, 'expected_events': onsets,
@@ -232,7 +233,111 @@ def add_guided_capture(dataset, directory, hold_negatives=False, audio_onsets=Fa
     validate_dataset(dataset)
 
 
-def guided_only_dataset(directories):
+INTERVAL_STATES = {'shield_hold': 'open', 'sword_hold': 'fist'}
+
+
+def interval_capture_features(directory):
+    """Gap-reset windows for a Space-interval contribution (gzip stream, sensor clock mapped to host)."""
+    import gzip, json
+    meta = read_json(directory/'metadata.json')
+    stream = directory/'streams.jsonl'
+    opener = open if stream.exists() else gzip.open
+    stream = stream if stream.exists() else directory/'streams.jsonl.gz'
+    fs = meta['model']['signal']['sample_rate']
+    windows = SignalWindows(meta['model']['signal'], include_waveforms=True)
+    features = []; last = epoch = None
+    with opener(stream, 'rt') as f:
+        for line in f:
+            row = json.loads(line)
+            if row['kind'] != 'emg':
+                continue
+            packet = row['packet']; timing = packet.get('timing') or {}
+            if last is not None and (packet['source_seq'] != last+1 or timing.get('clock_epoch') != epoch):
+                windows.reset()
+            last, epoch = packet['source_seq'], timing.get('clock_epoch')
+            # The collector's lower-envelope band->host mapping; Python receipt lag is not action time.
+            end = timing['mapped_band_host_uptime_estimate']-meta['started_host_uptime']
+            times = end-np.arange(len(packet['samples'])-1, -1, -1)/fs
+            features.extend(windows.feed(packet['samples'], times))
+    return features, meta
+
+
+def add_interval_capture(dataset, directory, validation_after=.7):
+    """Micah-style Space-held intervals: holds -> open/fist, non-intended -> none/negative, snaps -> bags.
+
+    Within each class (non-intended, snap, shield, sword) the intervals after the first
+    validation_after fraction validate, since contributions are recorded in class blocks. Validation snaps use the published reference peak as expected event; snaps without
+    one are dropped from validation. Windows within 1 s of a published snap-like candidate in a
+    non-intended interval are excluded rather than relabeled.
+    """
+    directory = Path(directory)
+    original = directory/'original' if (directory/'original').is_dir() else directory
+    require_usable_capture(directory); require_usable_capture(original)
+    features, meta = interval_capture_features(original)
+    if not meta.get('recording_complete'):
+        raise ValueError('Interval capture incomplete')
+    if meta['model']['signal'] != dataset['signal']:
+        raise ValueError('Interval capture signal settings differ')
+    intervals = read_json(original/'truth-values.json')['intervals']
+    analysis = directory/'analysis'
+    peaks = {r['label_index']: r['peak_capture_t'] for r in read_json(analysis/'reference-quality.json')} \
+        if (analysis/'reference-quality.json').exists() else {}
+    suspects = [c['capture_t_seconds'] for c in read_json(analysis/'review-candidates.json')] \
+        if (analysis/'review-candidates.json').exists() else []
+    classes = {}
+    for i, interval in enumerate(intervals):
+        classes.setdefault((interval.get('selected_motion') or {}).get('motion') if interval['intended'] else None, []).append(i)
+    validation = {i for ix in classes.values() for i in ix[len(ix)-round(len(ix)*(1-validation_after)):]} \
+        if validation_after else set()
+    by_kind = {k: sorted((f for f in features if f['kind'] == k), key=lambda f: f['t']) for k in ('state', 'snap')}
+    ends = {k: np.array([f['t'] for f in v]) for k, v in by_kind.items()}
+    session = meta['id']; added = {'state': 0, 'snap': 0, 'bags': 0}
+    for index, interval in enumerate(intervals):
+        a, b = interval['start'], interval['end']
+        part = 'validation' if index in validation else 'train'
+        motion = (interval.get('selected_motion') or {}).get('motion') if interval['intended'] else None
+        if interval['intended'] and motion not in INTERVAL_STATES and motion != 'snap':
+            continue
+        group = f'{session}:interval-{index:04d}'
+        base = {'part': part, 'group': group, 'trial': group, 'session': session,
+                'wearing_session': meta['wearing_session'], 'label_source': 'participant_spacebar_interval'}
+
+        def rows(kind, lo, hi):
+            ix = np.flatnonzero((ends[kind] >= lo) & (ends[kind] <= hi))
+            return [{**by_kind[kind][i], 'end': by_kind[kind][i]['t'], **base} for i in ix]
+        clear = lambda r: all(abs(r['end']-c) > 1. and abs(r['start']-c) > 1. for c in suspects)
+        if motion == 'snap':
+            if part == 'train':
+                bag = rows('snap', a, b+.15)
+                if bag:
+                    dataset.setdefault('weak_bags', {}).setdefault('snap', []).append({
+                        'rows': bag, 'reported_count': 1, 'group': group, 'part': 'train', 'positive': True,
+                        'label_source': 'participant_spacebar_interval', 'instruction': 'snap'})
+                    added['bags'] += 1
+            elif index in peaks:
+                o = peaks[index]
+                # Starts stay clear of the previous interval's windows (its margin is >= .15 s).
+                for r in rows('snap', a-.05, b+.3):
+                    label = 'snap' if o-.05 <= r['end'] <= o+.125 else None if r['start']-.3 <= o <= r['end']+.3 else 'negative'
+                    dataset['tasks']['snap'].append({**r, 'label': label, 'snap_label': label, 'expected_events': [o],
+                                                     'label_source': 'micah_review_reference_peak'})
+                    added['snap'] += 1
+            continue
+        state = INTERVAL_STATES.get(motion, 'none')
+        margin = .15 if interval['intended'] else .3
+        for kind in ('state', 'snap'):
+            for r in rows(kind, a+margin, b-margin):
+                if r['start'] < a+margin or (not interval['intended'] and not clear(r)):
+                    continue
+                label = state if kind == 'state' else 'negative'
+                r.update({'label': label, ('hand_state' if kind == 'state' else 'snap_label'): label, 'expected_events': []})
+                dataset['tasks'][kind].append(r); added[kind] += 1
+    dataset['sources'].append({'directory': str(directory.resolve()), 'supervision': 'weak_participant_spacebar_intervals',
+                              'wearing_session': meta['wearing_session'], 'validation_after': validation_after, 'windows': added})
+
+
+
+def guided_only_dataset(directories, interval_directories=()):
     """Train from guided captures alone, without the historical reference review.
 
     Whole captures are the split unit: for every held kind with two or more
@@ -274,6 +379,8 @@ def guided_only_dataset(directories):
                     row['part'] = 'validation'; row['group'] += ':tail'; row['trial'] += ':tail'
             kept.append(row)
         dataset['tasks'][name] = kept
+    for directory in interval_directories:
+        add_interval_capture(dataset, directory)
     dataset['validation_captures'] = sorted(held_out)
     dataset['validation_tail_captures'] = sorted(single)
     dataset['validation_snap_trials'] = sorted(snap_validation)
