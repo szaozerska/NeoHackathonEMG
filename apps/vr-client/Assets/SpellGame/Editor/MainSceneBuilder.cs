@@ -97,6 +97,7 @@ namespace SpellGame.Editor
             var view = new GameObject("Debug Skeletons").AddComponent<DebugSkeletonsView>();
             var serializedView = new SerializedObject(view);
             serializedView.FindProperty("boneMaterial").objectReferenceValue = UnlitMaterial("DebugSkeleton", new Color(0.2f, 1f, 0.4f));
+            serializedView.FindProperty("bodyMaterial").objectReferenceValue = UnlitMaterial("RemoteBody", new Color(1f, 0.35f, 0.75f));
             serializedView.ApplyModifiedPropertiesWithoutUndo();
             return view;
         }

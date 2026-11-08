@@ -152,7 +152,7 @@ namespace SpellGame.Game
                     break;
                 case PoseMessage pose when pose.PlayerId != _playerId:
                     _remoteJoints[pose.PlayerId] = pose.Joints;
-                    debugSkeletons.Draw(pose.PlayerId, pose.Joints);
+                    debugSkeletons.Draw(pose.PlayerId, pose.Joints, withBody: true);
                     break;
                 case SignMessage sign:
                     SignReceived?.Invoke(sign);
