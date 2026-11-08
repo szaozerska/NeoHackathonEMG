@@ -1,0 +1,233 @@
+{
+  "session_id": "20261108-011407-c127f0d5",
+  "test_condition": "dynamic",
+  "analysis_role": "exploratory_label_quality_review",
+  "labels_are_primary": true,
+  "original_labels_modified": false,
+  "automatically_retrained": false,
+  "duration_seconds": 1198.9724537921138,
+  "intended_interval_count": 409,
+  "intended_intervals_by_motion": {
+    "snap": 150,
+    "sword_hold": 135,
+    "shield_hold": 124
+  },
+  "timing": {
+    "packets": 152131,
+    "samples_per_channel": 2434096,
+    "sample_rate_hz": 2048,
+    "sequence_discontinuities": 217,
+    "estimated_missing_batches": 1598,
+    "clock_fits": [
+      {
+        "clock_epoch": 3,
+        "native_origin_seconds": 7448.41961,
+        "offset_intercept_seconds": 581263.7090523888,
+        "offset_drift_ppm": -8.457389675550793,
+        "drift_slope_interval_ppm": [
+          -9.928433965784837,
+          -7.262015429463228
+        ],
+        "method": "Theil-Sen affine fit to 10-second minimum receipt-minus-native offsets",
+        "absolute_radio_latency_known": false,
+        "physiological_event_times_verified": false
+      }
+    ],
+    "kinesis_to_python_seconds_quantiles": {
+      "p50": 0.2785020829178393,
+      "p95": 0.4952966659911908,
+      "p99": 0.5220977120450699,
+      "max": 0.5509575830074027
+    },
+    "offline_vs_saved_host_mapping_seconds_quantiles": [
+      -0.015750144666526467,
+      -0.0020950858015567064,
+      0.0011118612019345164
+    ],
+    "orientation_or_gyro_recorded": false,
+    "sample_time_convention": "Kinesis viewer start-of-batch convention; alternative end-of-batch differs by 15/2048 seconds (~7.3ms)",
+    "gap_policy": "Filters reset at sequence/native-clock discontinuities; no gap samples are synthesized"
+  },
+  "snap_labeled_intervals": 150,
+  "usable_snap_reference_peaks": 145,
+  "robust_reference_core_size": 116,
+  "reference_similarity_threshold": 0.8732237815856934,
+  "candidate_count": 4,
+  "candidate_categories": {
+    "unlabeled_snap_like_burst": 4
+  },
+  "top_review_candidates": [
+    {
+      "capture_t_seconds": 249.17965594417183,
+      "time_mm_ss": "04:09.180",
+      "original_label": "non_intended",
+      "proposed_label": null,
+      "independently_reviewed": false,
+      "category": "unlabeled_snap_like_burst",
+      "nearest_label_boundary_seconds": 1.3678020691149868,
+      "template_similarity": 0.9449207782745361,
+      "local_energy_ratio": 27.211342431263063,
+      "peak_width_half_prominence_seconds": 0.1047767976172338,
+      "prominence_adc": 295.3333875521882,
+      "nearest_labeled_reference_capture_t": 154.8835784496041,
+      "reference_label_index": 33,
+      "rank_score": 241.89971923828125,
+      "review_window_start": 248.17965594417183,
+      "review_window_end": 250.17965594417183,
+      "note": "Signal similarity cannot establish intention; dynamic jerks, contact or grip changes may resemble a snap.",
+      "review_rank": 1,
+      "selected_motion_context": "snap",
+      "isolation_ratio": 5.906072942404924,
+      "review_context": "isolated_snap_like"
+    },
+    {
+      "capture_t_seconds": 337.6320328616421,
+      "time_mm_ss": "05:37.632",
+      "original_label": "non_intended",
+      "proposed_label": null,
+      "independently_reviewed": false,
+      "category": "unlabeled_snap_like_burst",
+      "nearest_label_boundary_seconds": 2.0612124305334873,
+      "template_similarity": 0.9143556356430054,
+      "local_energy_ratio": 5.7593790947115995,
+      "peak_width_half_prominence_seconds": 0.12895547308810507,
+      "prominence_adc": 252.31710424991937,
+      "nearest_labeled_reference_capture_t": 182.38334587140707,
+      "reference_label_index": 69,
+      "rank_score": 168.51586345772998,
+      "review_window_start": 336.6320328616421,
+      "review_window_end": 338.6320328616421,
+      "note": "Signal similarity cannot establish intention; dynamic jerks, contact or grip changes may resemble a snap.",
+      "review_rank": 2,
+      "selected_motion_context": "snap",
+      "isolation_ratio": 10.785385289160995,
+      "review_context": "isolated_snap_like"
+    },
+    {
+      "capture_t_seconds": 211.69559796416434,
+      "time_mm_ss": "03:31.696",
+      "original_label": "non_intended",
+      "proposed_label": null,
+      "independently_reviewed": false,
+      "category": "unlabeled_snap_like_burst",
+      "nearest_label_boundary_seconds": 1.240753130230587,
+      "template_similarity": 0.8859022855758667,
+      "local_energy_ratio": 28.091328422120267,
+      "peak_width_half_prominence_seconds": 0.0803454155526282,
+      "prominence_adc": 265.0208211615285,
+      "nearest_labeled_reference_capture_t": 373.3192310385639,
+      "reference_label_index": 245,
+      "rank_score": 53.35560842917679,
+      "review_window_start": 210.69559796416434,
+      "review_window_end": 212.69559796416434,
+      "note": "Signal similarity cannot establish intention; dynamic jerks, contact or grip changes may resemble a snap.",
+      "review_rank": 3,
+      "selected_motion_context": "snap",
+      "isolation_ratio": 0.9410534268618193,
+      "review_context": "dynamic_cluster_ambiguous"
+    },
+    {
+      "capture_t_seconds": 221.22676735464483,
+      "time_mm_ss": "03:41.227",
+      "original_label": "non_intended",
+      "proposed_label": null,
+      "independently_reviewed": false,
+      "category": "unlabeled_snap_like_burst",
+      "nearest_label_boundary_seconds": 10.771922520711087,
+      "template_similarity": 0.8764801025390625,
+      "local_energy_ratio": 3.7256444648064293,
+      "peak_width_half_prominence_seconds": 0.10743007688573414,
+      "prominence_adc": 288.9369846455968,
+      "nearest_labeled_reference_capture_t": 264.1482793476316,
+      "reference_label_index": 157,
+      "rank_score": 18.01938438098077,
+      "review_window_start": 220.22676735464483,
+      "review_window_end": 222.22676735464483,
+      "note": "Signal similarity cannot establish intention; dynamic jerks, contact or grip changes may resemble a snap.",
+      "review_rank": 4,
+      "selected_motion_context": "snap",
+      "isolation_ratio": 0.6897734802266551,
+      "review_context": "dynamic_cluster_ambiguous"
+    }
+  ],
+  "method": "Causal 20\u2013450Hz bandpass + 60Hz notch, 15.625ms eight-channel RMS. Burst descriptors subtract edge baseline and normalize amplitude. A mutually similar 80% core of peaks inside participant snap windows supplies an exploratory template bank; non-intended bursts are ranked against it.",
+  "limitations": [
+    "This is one dynamic wearing session, not an independent accuracy evaluation.",
+    "Peak-in-clip references are weak examples; mistaken labels or multiple actions can contaminate them. Consensus reduces but cannot eliminate this.",
+    "Temporal/channel resemblance is not proof of a snap or mental intent. No proposed correction is automatically training truth.",
+    "Events within 250ms of a key boundary are separated as timing/overlap cases.",
+    "EMG-only capture: gyro, orientation and camera cannot independently verify this recording.",
+    "Band/host alignment uses a receipt-offset lower envelope. Absolute transport latency, physiological onset and within-batch timestamp convention remain uncalibrated."
+  ],
+  "snap_reference_review_queue": 34,
+  "snap_reference_review_reasons": {
+    "lower_consensus_waveform": 29,
+    "no_usable_peak": 5
+  },
+  "condition_patterns": {
+    "snap:None": {
+      "intervals": 150,
+      "median_interval_seconds": 0.6413500000489876,
+      "interval_median_rms_adc_quantiles": [
+        19.285450166320796,
+        25.296050655255915,
+        39.779716948862266
+      ]
+    },
+    "sword_hold:low": {
+      "intervals": 33,
+      "median_interval_seconds": 0.8074999999953434,
+      "interval_median_rms_adc_quantiles": [
+        21.033884318533904,
+        34.91561490985666,
+        63.36277502004428
+      ]
+    },
+    "sword_hold:medium": {
+      "intervals": 44,
+      "median_interval_seconds": 0.8389999999781139,
+      "interval_median_rms_adc_quantiles": [
+        63.96866311227065,
+        89.33460631113421,
+        143.62393514440902
+      ]
+    },
+    "sword_hold:high": {
+      "intervals": 58,
+      "median_interval_seconds": 0.9690500000724569,
+      "interval_median_rms_adc_quantiles": [
+        169.20084255957056,
+        222.21408579414805,
+        343.86961935957453
+      ]
+    },
+    "shield_hold:low": {
+      "intervals": 53,
+      "median_interval_seconds": 0.9495999999344349,
+      "interval_median_rms_adc_quantiles": [
+        90.23703895152232,
+        98.85030064897663,
+        108.60441186975257
+      ]
+    },
+    "shield_hold:medium": {
+      "intervals": 35,
+      "median_interval_seconds": 0.8836999998893589,
+      "interval_median_rms_adc_quantiles": [
+        99.55650649381987,
+        116.78298500613009,
+        132.31545504049924
+      ]
+    },
+    "shield_hold:high": {
+      "intervals": 36,
+      "median_interval_seconds": 0.9804000000585802,
+      "interval_median_rms_adc_quantiles": [
+        141.80049421280526,
+        182.8624154068625,
+        207.49963120013933
+      ]
+    }
+  },
+  "ranking_context": "Prioritize isolated bursts over peaks embedded in larger dynamic-motion clusters; neither establishes intention."
+}

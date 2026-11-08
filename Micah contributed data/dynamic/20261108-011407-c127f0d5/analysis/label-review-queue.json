@@ -1,0 +1,312 @@
+{
+  "items": [
+    {
+      "original_label_index": 1,
+      "start": 131.83353433408774,
+      "end": 132.43903433403466,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 11,
+      "start": 139.832725750166,
+      "end": 140.44742575008422,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 17,
+      "start": 144.3405257500708,
+      "end": 144.9899257500656,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 19,
+      "start": 145.48112575011328,
+      "end": 146.285525750136,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 23,
+      "start": 148.01002575014718,
+      "end": 148.4001257501077,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 37,
+      "start": 157.8962257502135,
+      "end": 158.38532575021964,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 61,
+      "start": 177.24088595912326,
+      "end": 177.80558595911134,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 75,
+      "start": 185.7824859591201,
+      "end": 186.2985859591281,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 77,
+      "start": 187.1147859590128,
+      "end": 187.60728595906403,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 101,
+      "start": 200.25414483400527,
+      "end": 200.89764483401086,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 107,
+      "start": 203.7977448339807,
+      "end": 204.56334483390674,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 125,
+      "start": 242.63155387504958,
+      "end": 243.26295387512073,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 131,
+      "start": 245.43745387508534,
+      "end": 246.1425538751064,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 137,
+      "start": 252.88295387511607,
+      "end": 253.54695387510583,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 151,
+      "start": 260.7013353339862,
+      "end": 261.61773533397354,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 161,
+      "start": 265.90153533406556,
+      "end": 266.5310353341047,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 165,
+      "start": 268.17023533396423,
+      "end": 268.89213533408474,
+      "reason": "no_usable_peak",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 167,
+      "start": 269.16093533404637,
+      "end": 269.8338353340514,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 169,
+      "start": 270.20363533403724,
+      "end": 270.9044353340287,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 203,
+      "start": 341.65124529215973,
+      "end": 342.38844529213384,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 225,
+      "start": 353.33434158412274,
+      "end": 354.1327415840933,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 229,
+      "start": 356.1455415841192,
+      "end": 356.87244158412796,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 231,
+      "start": 357.7528415841516,
+      "end": 358.4936415841803,
+      "reason": "no_usable_peak",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 239,
+      "start": 363.7851415842306,
+      "end": 364.95874158409424,
+      "reason": "no_usable_peak",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 251,
+      "start": 376.72898904199246,
+      "end": 377.57438904209994,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 259,
+      "start": 381.5838890420273,
+      "end": 382.4081890420057,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 263,
+      "start": 383.8509890419664,
+      "end": 384.77558904199395,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 277,
+      "start": 392.8462890420342,
+      "end": 393.51458904193714,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 289,
+      "start": 398.7257890420733,
+      "end": 399.38818904198706,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 291,
+      "start": 399.62598904198967,
+      "end": 400.38588904205244,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 293,
+      "start": 400.66238904208876,
+      "end": 401.29958904196974,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 295,
+      "start": 401.6251890420681,
+      "end": 402.31218904198613,
+      "reason": "lower_consensus_waveform",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 297,
+      "start": 402.7031890420476,
+      "end": 403.340789042064,
+      "reason": "no_usable_peak",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    },
+    {
+      "original_label_index": 299,
+      "start": 404.1592890419997,
+      "end": 404.56668904202525,
+      "reason": "no_usable_peak",
+      "original_label_retained": true,
+      "automatic_relabel": false,
+      "note": "Could be a weak/rotated snap, missing signal, failed attempt, multiple actions or label mistake. Review before training; no one explanation is established."
+    }
+  ],
+  "original_labels_modified": false,
+  "training_exclusions_automatically_applied": false
+}

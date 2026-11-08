@@ -1,0 +1,21 @@
+{
+  "trials": 0,
+  "usable_confirmed": 0,
+  "postprocessing_required": true,
+  "interval_policy": "untrimmed_participant_reports",
+  "exported_training_clips": 0,
+  "failure_flags": 0,
+  "dataset_role": "training_only_weak_labels",
+  "binary_intent_clips": 0,
+  "toggle_intervals": 819,
+  "toggle_labeled_seconds": 1198.9724537921138,
+  "intended_seconds": 342.6970202069497,
+  "non_intended_seconds": 856.2754335851641,
+  "confirmed_zero_snap_seconds": 0,
+  "false_snap_candidates": 0,
+  "false_snap_candidates_per_minute": null,
+  "actual_event_precision": null,
+  "actual_event_recall": null,
+  "automatically_retrained": false,
+  "note": "Count agreement is not event accuracy. False-candidate rate uses participant-confirmed zero-snap clips only. Camera estimates and model outputs are never truth. Open holds remain separate from deliberate shield labels."
+}

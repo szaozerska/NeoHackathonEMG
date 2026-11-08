@@ -1,0 +1,68 @@
+{
+  "conditions": {
+    "snap:None": {
+      "intervals": 150,
+      "median_interval_seconds": 0.6413500000489876,
+      "interval_median_rms_adc_quantiles": [
+        19.285450166320796,
+        25.296050655255915,
+        39.779716948862266
+      ]
+    },
+    "sword_hold:low": {
+      "intervals": 33,
+      "median_interval_seconds": 0.8074999999953434,
+      "interval_median_rms_adc_quantiles": [
+        21.033884318533904,
+        34.91561490985666,
+        63.36277502004428
+      ]
+    },
+    "sword_hold:medium": {
+      "intervals": 44,
+      "median_interval_seconds": 0.8389999999781139,
+      "interval_median_rms_adc_quantiles": [
+        63.96866311227065,
+        89.33460631113421,
+        143.62393514440902
+      ]
+    },
+    "sword_hold:high": {
+      "intervals": 58,
+      "median_interval_seconds": 0.9690500000724569,
+      "interval_median_rms_adc_quantiles": [
+        169.20084255957056,
+        222.21408579414805,
+        343.86961935957453
+      ]
+    },
+    "shield_hold:low": {
+      "intervals": 53,
+      "median_interval_seconds": 0.9495999999344349,
+      "interval_median_rms_adc_quantiles": [
+        90.23703895152232,
+        98.85030064897663,
+        108.60441186975257
+      ]
+    },
+    "shield_hold:medium": {
+      "intervals": 35,
+      "median_interval_seconds": 0.8836999998893589,
+      "interval_median_rms_adc_quantiles": [
+        99.55650649381987,
+        116.78298500613009,
+        132.31545504049924
+      ]
+    },
+    "shield_hold:high": {
+      "intervals": 36,
+      "median_interval_seconds": 0.9804000000585802,
+      "interval_median_rms_adc_quantiles": [
+        141.80049421280526,
+        182.8624154068625,
+        207.49963120013933
+      ]
+    }
+  },
+  "note": "Dynamic EMG amplitude summaries, not physical force measurements or static-pose accuracy. Participant condition labels are retained."
+}
