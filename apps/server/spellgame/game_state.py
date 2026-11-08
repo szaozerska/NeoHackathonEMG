@@ -101,6 +101,8 @@ class Tuning:
     domain_stun_s: float = 5.0
     """After the streaks land, targets can't attack for this long."""
     domain_void_hold_s: float = 2.0
+    domain_void_gap_s: float = 0.4
+    """Gaps in the Infinite Void reading up to this long don't break the hold (the classifier flickers mid-hold)."""
     """Holding the band's Infinite Void sign this long expands the domain; brief misreads of the sign do nothing."""
 
 
@@ -199,6 +201,7 @@ class PlayerState:
     void_since: float | None = None
     """When the current unbroken Infinite Void hold started; each hold expands the domain at most once."""
     void_cast: bool = False
+    void_seen_at: float = 0.0
 
     @property
     def alive(self) -> bool:
@@ -326,10 +329,12 @@ class GameState:
 
     def _void_held(self, player: PlayerState) -> bool:
         if player.sign != p.Sign.INFINITE_VOID:
-            player.void_since = None
+            if player.void_since is not None and self.time - player.void_seen_at > self.tuning.domain_void_gap_s:
+                player.void_since = None
             return False
         if player.void_since is None:
             player.void_since, player.void_cast = self.time, False
+        player.void_seen_at = self.time
         if player.void_cast or self.time - player.void_since < self.tuning.domain_void_hold_s:
             return False
         player.void_cast = True
