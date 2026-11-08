@@ -247,6 +247,8 @@ namespace SpellGame.Game
                 return;
 
             _alignedTo = null;
+            gameClient.Send(new UnalignedMessage());
+            SetStatus("The headset recentered: calibrate the room again");
             Advance();
         }
 

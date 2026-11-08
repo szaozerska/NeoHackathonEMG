@@ -297,6 +297,9 @@ class GameServer:
             self._on_anchor_shared(conn, slot, message)
         elif conn is slot.vr and isinstance(message, p.Aligned):
             self._on_aligned(conn, slot, message)
+        elif conn is slot.vr and isinstance(message, p.Unaligned):
+            self.space.forget(slot.player_id)
+            log.info("%s left the shared frame (recentered): must calibrate again", slot.player_id)
         elif conn is slot.vr and isinstance(message, p.DomainExpand):
             slot.input.domain_expanded = True
         elif conn is slot.vr and isinstance(

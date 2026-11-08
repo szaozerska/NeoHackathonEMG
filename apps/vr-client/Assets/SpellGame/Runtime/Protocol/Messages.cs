@@ -518,6 +518,13 @@ namespace SpellGame.Protocol
         public bool Ready { get; set; } = true;
     }
 
+    /// <summary>VR → server: this headset left the shared frame (e.g. it recentered) and must calibrate again.</summary>
+    public sealed class UnalignedMessage : Message
+    {
+        public const string TypeName = "unaligned";
+        public override string Type => TypeName;
+    }
+
     /// <summary>VR → server: end the running match, or leave the ready or results screen for the lobby.</summary>
     public sealed class MatchQuitMessage : Message
     {

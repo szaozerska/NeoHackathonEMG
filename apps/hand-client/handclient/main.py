@@ -13,7 +13,10 @@ import asyncio
 import contextlib
 import logging
 import queue
+import shutil
+import subprocess
 import threading
+import time
 from collections.abc import Callable
 from pathlib import Path
 
@@ -116,6 +119,24 @@ async def run_hand_client(kinesis_url: str, server: Server, classifier: EmgClass
         tasks.create_task(BandInputRouter(link).run(inbox))
 
 
+def wait_for_kinesis_url() -> str:
+    """Kinesis's stream URL, taken from the clipboard as soon as its "copy stream URL" puts it there (macOS; no
+    terminal needed, so the server can start this client in the background). Elsewhere it's typed in."""
+    if shutil.which("pbpaste") is None:
+        return validate_feed_url(input("Paste the stream URL from Kinesis's stream tab: ").strip())
+    log.info(
+        "waiting for the Kinesis stream URL: in Kinesis's stream tab, "
+        "enable the local sensor feed and click 'copy stream URL'"
+    )
+    while True:
+        text = subprocess.run(["pbpaste"], capture_output=True, text=True, check=False).stdout.strip()
+        with contextlib.suppress(ValueError):
+            url = validate_feed_url(text)
+            log.info("got the Kinesis stream URL from the clipboard")
+            return url
+        time.sleep(0.5)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--kinesis-url", type=validate_feed_url, help="the stream URL copied from Kinesis's stream tab")
@@ -141,9 +162,7 @@ def main() -> None:
         level=logging.DEBUG if args.verbose else logging.INFO, format="%(asctime)s %(name)s %(message)s"
     )
     with contextlib.suppress(KeyboardInterrupt):
-        kinesis_url = args.kinesis_url or validate_feed_url(
-            input("Paste the stream URL from Kinesis's stream tab: ").strip()
-        )
+        kinesis_url = args.kinesis_url or wait_for_kinesis_url()
         server = (args.host, args.port) if args.host else pick_server(args.discovery_port, args.discovery_s)
         classifier = (
             EmgLogger()
