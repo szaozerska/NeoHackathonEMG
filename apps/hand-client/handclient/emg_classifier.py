@@ -13,6 +13,7 @@ from typing import Protocol
 import numpy as np
 
 from .kinesis_feed import EMG_CHANNELS, EMG_SAMPLES_PER_BATCH, EmgBatch
+from .tension import TensionItem, TensionTracker
 
 log = logging.getLogger(__name__)
 
@@ -76,11 +77,13 @@ class ClassifierWorker:
         self,
         batches: queue.Queue[EmgBatch],
         classifier: EmgClassifier,
-        on_prediction: Callable[[SignPrediction], None],
+        on_prediction: Callable[[SignPrediction | TensionItem], None],
+        tension: TensionTracker | None = None,
     ) -> None:
         self._batches = batches
         self._classifier = classifier
         self._on_prediction = on_prediction
+        self._tension = tension
 
     def run(self, stop: threading.Event) -> None:
         while not stop.is_set():
@@ -91,3 +94,6 @@ class ClassifierWorker:
             prediction = self._classifier.push(batch)
             if prediction is not None:
                 self._on_prediction(prediction)
+            if self._tension is not None:
+                for item in self._tension.push(batch):
+                    self._on_prediction(item)

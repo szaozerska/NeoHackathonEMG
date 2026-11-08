@@ -298,6 +298,14 @@ class GameServer:
                 slot.input.snapped = True
             slot.input.sign = message.sign
             slot.input.hand = message.hand
+        elif conn is slot.classifier and isinstance(message, p.Tension):
+            slot.input.tension = min(1.0, max(0.0, message.value)) if message.calibrated else None
+        elif conn is slot.classifier and isinstance(message, p.CalibrationStatus):
+            message.player_id = slot.player_id
+            self._broadcast([message])
+        elif conn is slot.vr and isinstance(message, p.Calibrate):
+            if slot.classifier is not None:
+                slot.classifier.send(p.Calibrate(player_id=slot.player_id))
         elif conn is slot.classifier and isinstance(message, p.Gesture):
             message.player_id = slot.player_id
             self._broadcast([message])

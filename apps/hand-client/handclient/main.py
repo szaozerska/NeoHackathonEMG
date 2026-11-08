@@ -24,10 +24,11 @@ from .kinesis_feed import BandGestureEvent, BandStatus, EmgBatch, FeedEvent, Kin
 from .kinesis_haptics import HapticsWorker
 from .server_link import ServerLink
 from .server_picker import Server, pick_server
+from .tension import CalibrationUpdate, TensionReading, TensionTracker
 
 log = logging.getLogger("handclient")
 
-InboxItem = BandStatus | BandGestureEvent | SignPrediction
+InboxItem = BandStatus | BandGestureEvent | SignPrediction | TensionReading | CalibrationUpdate
 
 
 class BandInputRouter:
@@ -53,6 +54,12 @@ class BandInputRouter:
                     self._link.send_gesture(gesture, self._hand())
             case SignPrediction():
                 self._link.send_sign(item, self._hand())
+            case TensionReading():
+                if self._status is not None and self._status.hand is not None:
+                    self._link.send_tension(item, self._status.hand)
+            case CalibrationUpdate():
+                log.info("grip calibration: %s %.0f%%", item.phase, item.progress * 100)
+                self._link.send_calibration(item)
 
     def _on_status(self, status: BandStatus) -> None:
         if status != self._status:
@@ -94,9 +101,10 @@ async def run_hand_client(kinesis_url: str, server: Server, classifier: EmgClass
         elif isinstance(event, (BandStatus, BandGestureEvent)):
             post(event)
 
-    link = ServerLink(*server, on_haptic=haptic_durations_ms.put)
+    tension = TensionTracker()
+    link = ServerLink(*server, on_haptic=haptic_durations_ms.put, on_calibrate=tension.request_calibration)
     feed = KinesisFeed(kinesis_url, on_feed_event)
-    worker = ClassifierWorker(emg_batches, classifier, post)
+    worker = ClassifierWorker(emg_batches, classifier, post, tension)
     async with asyncio.TaskGroup() as tasks:
         tasks.create_task(run_in_thread(feed.run))
         tasks.create_task(run_in_thread(worker.run))

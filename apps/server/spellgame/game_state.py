@@ -72,6 +72,12 @@ class Tuning:
     sword_full_damage_tip_speed: float = 8.0
     sword_min_damage: float = 6.0
     sword_max_damage: float = 15.0
+    # Grip tension (PLACEHOLDER: retune once the band's real tension data is known). Tension shapes a hit rather than
+    # deciding it: damage × 0.85–1.15 and the shield fades up to 15% slower, with no extra gain past `tension_full_at`
+    # of a player's own calibrated range so nobody has to strain.
+    tension_min_multiplier: float = 0.85
+    tension_max_multiplier: float = 1.15
+    tension_full_at: float = 0.8
     sword_rehit_s: float = 0.5
     """A swing hits each target at most once in this window, so one pass isn't counted every tick."""
 
@@ -114,6 +120,8 @@ class PlayerInput:
     band_paired: bool = False
     connected: bool = True
     aligned: bool = False
+    tension: float | None = None
+    """Calibrated grip tension 0–1 from the band, or None (uncalibrated / no data → neutral strength)."""
 
 
 class Item:
@@ -170,6 +178,7 @@ class PlayerState:
     band_hand: str = p.Hand.RIGHT
     item: str = Item.NONE
     item_since: float = 0.0
+    tension: float | None = None
     cooldown_until: float = 0.0
     held_fireball_velocity: np.ndarray = field(default_factory=lambda: np.zeros(3))
     """The held fireball lags the hand by `Tuning.fireball_inertia_s`; this is its velocity."""
@@ -215,6 +224,8 @@ class Projectile:
     vel: np.ndarray
     born: float
     traveled: float = 0.0
+    power: float = 1.0
+    """The thrower's grip-tension damage multiplier at release (`GameState._tension_multiplier`)."""
 
 
 @dataclass
@@ -286,6 +297,7 @@ class GameState:
         player.band_paired = player_input.band_paired
         player.aligned = player_input.aligned
         player.sign = player_input.sign
+        player.tension = player_input.tension
         player.band_hand = player_input.hand if player_input.hand in player.hands else p.Hand.RIGHT
         stunned = self.time < player.stunned_until
         if stunned:
@@ -387,6 +399,7 @@ class GameState:
                 pos=origin.copy(),
                 vel=direction * speed,
                 born=self.time,
+                power=self._tension_multiplier(player),
             )
         )
         self._next_projectile_id += 1
@@ -451,7 +464,9 @@ class GameState:
         return events
 
     def _fireball_damage(self, projectile: Projectile) -> float:
-        return round(self.tuning.fireball_damage_per_speed * float(np.linalg.norm(projectile.vel)), 1)
+        return round(
+            self.tuning.fireball_damage_per_speed * float(np.linalg.norm(projectile.vel)) * projectile.power, 1
+        )
 
     def _step_sword(self, player: PlayerState, dt: float) -> list[p.Message]:
         able = player.alive and player.connected and player.sign == p.Sign.FIST
@@ -547,7 +562,7 @@ class GameState:
                     return events
                 if fast and rehit_ready:
                     player.sword_hits[target.player_id] = self.time
-                    damage = self._sword_damage(tip_speed)
+                    damage = round(self._sword_damage(tip_speed) * self._tension_multiplier(player), 1)
                     events.extend(self._shield_leak(target, player.player_id, damage, Item.SWORD, shield_contact))
                     block = self._sword_impact(player, shield_contact, "blocked", target.player_id)
                     block.grade = self._block_grade(target)
@@ -559,7 +574,7 @@ class GameState:
             if body is None:
                 continue
             player.sword_hits[target.player_id] = self.time
-            damage = self._sword_damage(tip_speed)
+            damage = round(self._sword_damage(tip_speed) * self._tension_multiplier(player), 1)
             hit_event = self._damage(target, player.player_id, damage, Item.SWORD, body.pos, body.zone)
             hit_event.grade = self._sword_grade(tip_speed, body.zone)
             events.append(hit_event)
@@ -626,7 +641,21 @@ class GameState:
                 player.shield_boost = max(player.shield_boost, strength)
         return []
 
+    def _tension_multiplier(self, player: PlayerState) -> float:
+        """1 without calibrated tension; otherwise eases from min to max, flat from `tension_full_at` up."""
+        tuning = self.tuning
+        if player.tension is None:
+            return 1.0
+        effort = float(np.clip(player.tension / tuning.tension_full_at, 0.0, 1.0))
+        eased = 1.0 - (1.0 - effort) ** 2
+        return tuning.tension_min_multiplier + (tuning.tension_max_multiplier - tuning.tension_min_multiplier) * eased
+
     def _shield_block_fraction(self, shielder: PlayerState) -> float:
+        """`_base_shield_block_fraction`, with a harder grip slowing the fade (a weaker one speeding it up)."""
+        base = self._base_shield_block_fraction(shielder)
+        return float(np.clip(1.0 - (1.0 - base) / self._tension_multiplier(shielder), 0.0, 1.0))
+
+    def _base_shield_block_fraction(self, shielder: PlayerState) -> float:
         """Share of damage the raised shield blocks: 1 while fresh, then a logistic fade to 0 over `shield_fade_s`."""
         tuning = self.tuning
         fade_progress = (self.time - shielder.item_since - tuning.shield_full_block_s) / tuning.shield_fade_s

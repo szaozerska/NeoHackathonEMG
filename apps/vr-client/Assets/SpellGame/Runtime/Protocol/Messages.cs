@@ -287,6 +287,35 @@ namespace SpellGame.Protocol
         public float StunS { get; set; }
     }
 
+    /// <summary>Grip calibration progress for a player (classifier → server → headsets).</summary>
+    public sealed class CalibrationStatusMessage : Message
+    {
+        public const string TypeName = "calibration";
+        public override string Type => TypeName;
+        public string PlayerId { get; set; }
+
+        /// <summary>A <see cref="CalibrationPhase"/> value.</summary>
+        public string Phase { get; set; }
+
+        /// <summary>0–1 through the current phase.</summary>
+        public float Progress { get; set; }
+    }
+
+    /// <summary>Asks the server to restart this player's grip calibration on their band.</summary>
+    public sealed class CalibrateMessage : Message
+    {
+        public const string TypeName = "calibrate";
+        public override string Type => TypeName;
+    }
+
+    public static class CalibrationPhase
+    {
+        public const string Rest = "rest";
+        public const string Squeeze = "squeeze";
+        public const string Done = "done";
+        public const string Failed = "failed";
+    }
+
     public static class HitGrade
     {
         public const string Good = "good";

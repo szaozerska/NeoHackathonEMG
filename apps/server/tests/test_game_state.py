@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
 
@@ -617,3 +619,15 @@ def test_hits_and_blocks_carry_a_grade():
     incoming_fireball(blocked)
     impacts = [i for i in of_type(blocked.run(1.0, p1_hand=SHIELD_HAND), p.Impact) if i.reason == "blocked"]
     assert impacts and impacts[0].grade is not None
+
+
+def test_grip_tension_shapes_damage_within_bounds_and_is_neutral_without_calibration():
+    game = GameState()
+    player = SimpleNamespace(tension=None)
+    assert game._tension_multiplier(player) == 1.0
+    player.tension = 0.0
+    assert game._tension_multiplier(player) == game.tuning.tension_min_multiplier
+    player.tension = game.tuning.tension_full_at
+    full = game._tension_multiplier(player)
+    player.tension = 1.0
+    assert full == game._tension_multiplier(player) == game.tuning.tension_max_multiplier
