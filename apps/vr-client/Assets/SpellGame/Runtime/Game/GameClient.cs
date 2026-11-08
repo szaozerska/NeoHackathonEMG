@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using SpellGame.Networking;
 using SpellGame.Protocol;
@@ -25,12 +27,14 @@ namespace SpellGame.Game
         [SerializeField] private string manualServerHost = "";
         [SerializeField] private int manualServerPort = 9100;
         [SerializeField] private int discoveryPort = 47777;
+        [SerializeField, Min(1f)] private float connectTimeoutSeconds = 5f;
 
         [Header("Pose stream")]
         [SerializeField, Range(1f, 90f)] private float poseSendRateHz = 72f;
 
         private BodyPoseSampler _poseSampler;
         private ServerConnection _connection;
+        private CancellationTokenSource _attempt;
         private string _playerId;
         private bool _bandPaired;
         private float _nextPoseSendTime;
@@ -46,8 +50,31 @@ namespace SpellGame.Game
         public event Action<ImpactMessage> ImpactReceived;
         public event Action<StateMessage> StateReceived;
         public event Action<SpaceMessage> SpaceReceived;
+        public event Action<ConnectionState> ConnectionChanged;
 
         public string PlayerId => _playerId;
+        public ConnectionState Connection { get; private set; } = ConnectionState.Searching;
+        public TimeSpan ConnectTimeout => TimeSpan.FromSeconds(connectTimeoutSeconds);
+
+        /// <summary>Stops finding or joining the server; leaves the client <see cref="ConnectionState.Cancelled"/>.</summary>
+        public void CancelConnecting()
+        {
+            if (Connection is not (ConnectionState.Searching or ConnectionState.Connecting))
+                return;
+
+            _attempt?.Cancel();
+            CloseConnection();
+            SetConnection(ConnectionState.Cancelled, "Connection cancelled");
+        }
+
+        /// <summary>Looks for the server again after a cancel, a failed connect or a disconnect.</summary>
+        public void Rescan()
+        {
+            if (Connection is ConnectionState.Searching or ConnectionState.Connecting or ConnectionState.Connected)
+                return;
+
+            ConnectAsync();
+        }
 
         /// <summary>Connection, pairing, room-alignment and HP status lines.</summary>
         public string StatusText { get; private set; } = "";
@@ -71,7 +98,7 @@ namespace SpellGame.Game
             RenderStatus();
         }
 
-        /// <summary>The server this client connected to, once resolved.</summary>
+        /// <summary>The server this client is connecting or connected to, once discovery has found it.</summary>
         public IPEndPoint ServerEndpoint { get; private set; }
 
         /// <summary>
@@ -88,16 +115,65 @@ namespace SpellGame.Game
             return _remoteJoints.TryGetValue(playerId ?? "", out joints);
         }
 
-        private async void Start()
+        private void Start()
         {
             _poseSampler = new BodyPoseSampler(bodySkeleton);
-            SetStatus("Searching for server…");
-            var endpoint = await ResolveServerAsync();
+            ConnectAsync();
+        }
 
-            SetStatus($"Connecting to {endpoint}…");
-            _connection = await ServerConnection.ConnectAsync(endpoint, destroyCancellationToken);
-            ServerEndpoint = endpoint;
+        /// <summary>Finds the server and opens the connection; <see cref="WelcomeMessage"/> then makes it Connected.</summary>
+        private async void ConnectAsync()
+        {
+            using var attempt = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
+            _attempt = attempt;
+            ServerEndpoint = null;
+            SetConnection(ConnectionState.Searching, "Searching for server…");
+            ServerConnection connection;
+            try
+            {
+                ServerEndpoint = await ResolveServerAsync(attempt.Token);
+                SetConnection(ConnectionState.Connecting, $"Connecting to {ServerEndpoint}…");
+                connection = await ServerConnection.ConnectAsync(ServerEndpoint, ConnectTimeout, attempt.Token);
+            }
+            catch (Exception) when (attempt.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (Exception exception) when (exception is SocketException or ObjectDisposedException)
+            {
+                SetConnection(ConnectionState.Unreachable, $"Can't reach server at {ServerEndpoint}");
+                return;
+            }
+            finally
+            {
+                if (_attempt == attempt)
+                    _attempt = null;
+            }
+
+            if (attempt.IsCancellationRequested)
+            {
+                connection.Dispose();
+                return;
+            }
+
+            _connection = connection;
             _connection.Send(new HelloMessage { Role = ClientRole.Vr, Device = DeviceInfo.ThisDevice() });
+        }
+
+        private void CloseConnection()
+        {
+            _connection?.Dispose();
+            _connection = null;
+            _playerId = null;
+            _bandPaired = false;
+            _remoteJoints.Clear();
+        }
+
+        private void SetConnection(ConnectionState state, string status)
+        {
+            Connection = state;
+            SetStatus(status);
+            ConnectionChanged?.Invoke(state);
         }
 
         private const string LocalSkeletonId = "local";
@@ -111,7 +187,8 @@ namespace SpellGame.Game
 
             if (!_connection.IsOpen)
             {
-                SetStatus("Disconnected from server");
+                CloseConnection();
+                SetConnection(ConnectionState.Disconnected, "Disconnected from server");
                 return;
             }
 
@@ -126,10 +203,10 @@ namespace SpellGame.Game
             _connection?.Dispose();
         }
 
-        private Task<IPEndPoint> ResolveServerAsync()
+        private Task<IPEndPoint> ResolveServerAsync(CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(manualServerHost))
-                return ServerDiscovery.FindServerAsync(discoveryPort, destroyCancellationToken);
+                return ServerDiscovery.FindServerAsync(discoveryPort, cancellationToken);
 
             return Task.FromResult(new IPEndPoint(IPAddress.Parse(manualServerHost), manualServerPort));
         }
@@ -140,7 +217,7 @@ namespace SpellGame.Game
             {
                 case WelcomeMessage welcome:
                     _playerId = welcome.PlayerId;
-                    SetStatus(IdleStatus());
+                    SetConnection(ConnectionState.Connected, IdleStatus());
                     break;
                 case ErrorMessage error:
                     Debug.LogError($"Server error: {error.Message}");

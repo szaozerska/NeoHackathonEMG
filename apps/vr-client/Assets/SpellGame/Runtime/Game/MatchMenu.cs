@@ -52,7 +52,7 @@ namespace SpellGame.Game
         private static readonly Color HoverColor = new(0.3f, 0.5f, 0.95f);
         private static readonly Color AccentText = new(1f, 0.8f, 0.35f);
 
-        private enum View { None, Mode, Duration, Controls, Ready, Pause, Results }
+        private enum View { None, Connection, Mode, Duration, Controls, Ready, Pause, Results }
 
         private sealed class Button
         {
@@ -86,6 +86,7 @@ namespace SpellGame.Game
         private int _keyStateVersion = -1;
         private View _keyView;
         private string _key;
+        private ConnectionState _keyConnection;
 
         private Button _hovered;
         private float _hoverStart;
@@ -128,6 +129,9 @@ namespace SpellGame.Game
         private string Me => gameClient.PlayerId;
         private bool IsFighter => Me != null && _match.Fighters.Contains(Me);
 
+        /// <summary>The connection screen covers every other screen until the server has welcomed this headset.</summary>
+        private View ShownView => gameClient.Connection == ConnectionState.Connected ? _view : View.Connection;
+
         private void Awake()
         {
             _panelMaterial = Tinted(PanelColor);
@@ -143,9 +147,29 @@ namespace SpellGame.Game
             CreateTimerBadge();
         }
 
-        private void OnEnable() => gameClient.StateReceived += OnState;
+        private void OnEnable()
+        {
+            gameClient.StateReceived += OnState;
+            gameClient.ConnectionChanged += OnConnectionChanged;
+        }
 
-        private void OnDisable() => gameClient.StateReceived -= OnState;
+        private void OnDisable()
+        {
+            gameClient.StateReceived -= OnState;
+            gameClient.ConnectionChanged -= OnConnectionChanged;
+        }
+
+        /// <summary>Forgets the last server's match, so a rejoin starts from the menu the new state puts it on.</summary>
+        private void OnConnectionChanged(ConnectionState connection)
+        {
+            if (connection == ConnectionState.Connected)
+                return;
+
+            _state = null;
+            _match = new MatchSnapshot();
+            _lastPhase = null;
+            _view = View.Mode;
+        }
 
         private void OnState(StateMessage state)
         {
@@ -220,11 +244,13 @@ namespace SpellGame.Game
 
         private void UpdatePanel()
         {
-            if (_view != _keyView || _stateVersion != _keyStateVersion || _key == null)
+            var view = ShownView;
+            if (view != _keyView || _stateVersion != _keyStateVersion || gameClient.Connection != _keyConnection || _key == null)
             {
-                _key = PanelKey();
-                _keyView = _view;
+                _key = PanelKey(view);
+                _keyView = view;
                 _keyStateVersion = _stateVersion;
+                _keyConnection = gameClient.Connection;
             }
             var key = _key;
             if (_panel != null && _panel.Key == key)
@@ -239,10 +265,10 @@ namespace SpellGame.Game
                 Destroy(_panel.Root.gameObject);
             _panel = null;
             _hovered = null;
-            if (_view == View.None)
+            if (view == View.None)
                 return;
 
-            _panel = BuildPanel(key);
+            _panel = BuildPanel(view, key);
             _panel.Target = keep ?? PanelSpot();
             _panel.Root.position = _panel.Target;
             _panel.Placed = true;
@@ -258,22 +284,26 @@ namespace SpellGame.Game
         }
 
         /// <summary>Changes whenever what the current screen shows changes, so the panel is rebuilt only then.</summary>
-        private string PanelKey()
+        private string PanelKey(View view)
         {
-            return _view switch
+            return view switch
             {
+                View.Connection => $"connection|{gameClient.Connection}|{gameClient.ServerEndpoint}",
                 View.Ready => $"ready|{Me}|{_match.Mode}|{_match.DurationS}|{string.Join(",", _match.Fighters)}|{string.Join(",", _match.Ready)}",
                 View.Results => $"results|{IsFighter}",
-                _ => _view.ToString(),
+                _ => view.ToString(),
             };
         }
 
-        private Panel BuildPanel(string key)
+        private Panel BuildPanel(View view, string key)
         {
-            var panel = new Panel { Key = key, Root = new GameObject($"Menu {_view}").transform };
+            var panel = new Panel { Key = key, Root = new GameObject($"Menu {view}").transform };
             panel.Root.SetParent(transform, false);
-            switch (_view)
+            switch (view)
             {
+                case View.Connection:
+                    BuildConnection(panel);
+                    break;
                 case View.Mode:
                     Layout(panel, "SPELL DUEL", "Choose your match",
                         ("1 Player  ·  vs AI", PrimaryColor, () => PickMode(MatchMode.Solo)),
@@ -304,6 +334,33 @@ namespace SpellGame.Game
                     break;
             }
             return panel;
+        }
+
+        /// <summary>Cancel while finding or joining the server; Rescan once that has stopped, failed or dropped.</summary>
+        private void BuildConnection(Panel panel)
+        {
+            var server = gameClient.ServerEndpoint;
+            (string Label, Color Color, Action OnPress) cancel = ("Cancel", ButtonColor, gameClient.CancelConnecting);
+            (string Label, Color Color, Action OnPress) rescan = ("Rescan for servers", PrimaryColor, gameClient.Rescan);
+            switch (gameClient.Connection)
+            {
+                case ConnectionState.Searching:
+                    Layout(panel, "FINDING SERVER", "Looking for the game server on this network…", cancel);
+                    break;
+                case ConnectionState.Connecting:
+                    Layout(panel, "CONNECTING", $"Joining the server at {server}…", cancel);
+                    break;
+                case ConnectionState.Cancelled:
+                    Layout(panel, "NOT CONNECTED", "Connection cancelled.", rescan);
+                    break;
+                case ConnectionState.Unreachable:
+                    Layout(panel, "CAN'T REACH SERVER",
+                        $"No answer from {server}.\nCheck the server is running and both devices\nare on the same network.", rescan);
+                    break;
+                case ConnectionState.Disconnected:
+                    Layout(panel, "DISCONNECTED", $"Lost the connection to {server}.", rescan);
+                    break;
+            }
         }
 
         private void BuildReady(Panel panel)
