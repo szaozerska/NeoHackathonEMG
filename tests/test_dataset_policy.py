@@ -5,7 +5,7 @@ from spelltrain.dataset_policy import require_usable_capture
 from spelltrain.feedback_update import capture_features
 
 
-@pytest.mark.parametrize('session',['20261108-021109-c4c1082d','20261108-024600-0df8f41b'])
+@pytest.mark.parametrize('session',['20261108-021109-c4c1082d','20261108-024600-0df8f41b','20261108-033319-04f674dd'])
 def test_rejected_session_is_blocked_by_id_before_loading_signals(tmp_path,session):
     path = tmp_path/session
     path.mkdir()

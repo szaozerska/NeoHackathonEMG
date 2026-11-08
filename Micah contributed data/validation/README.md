@@ -11,3 +11,7 @@ similarity as verified event accuracy.
 
 Only completed, explicitly authorized sessions should be published here with
 their unchanged labels, source checksums and lossless raw-stream compression.
+
+## TRASHED — DO NOT USE
+
+Session [`20261108-033319-04f674dd`](20261108-033319-04f674dd/DO_NOT_USE.md) was explicitly trashed by Micah because the setup was not correct. Exclude every part from training, validation, evaluation, analysis and non-intended/negative baselines. Only the rejection notice is published; original data remain local for audit.
