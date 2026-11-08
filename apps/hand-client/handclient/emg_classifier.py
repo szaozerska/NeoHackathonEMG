@@ -13,6 +13,7 @@ from typing import Any, Protocol
 
 import numpy as np
 from spellgame import protocol as p
+from spelltrain.neural import NeuralEMGPredictor
 
 from .kinesis_feed import EMG_CHANNELS, EMG_SAMPLES_PER_BATCH, EmgBatch
 from .tension import TensionItem, TensionTracker
@@ -94,8 +95,6 @@ class NeuralSignClassifier:
     ) -> None:
         """`snap_threshold` replaces the bundle's snap confidence threshold (higher: fewer accidental fireballs)."""
         if predictor is None:
-            from spelltrain.neural import NeuralEMGPredictor
-
             predictor = NeuralEMGPredictor(model_dir)
         if snap_threshold is not None:
             for spec in predictor.manifest["tasks"].values():

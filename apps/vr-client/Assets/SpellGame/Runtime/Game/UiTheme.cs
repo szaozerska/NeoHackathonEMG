@@ -166,7 +166,7 @@ namespace SpellGame.Game
     {
         public const string ResourceName = "SpellGameUiTheme";
 
-        /// <summary>The plain black theme (Cinzel titles, Inter body text), the default menu style.</summary>
+        /// <summary>The plain black theme (Inter Bold titles, Inter Medium body text), the default menu style.</summary>
         public const string MidnightResourceName = "SpellGameUiThemeMidnight";
 
         [SerializeField] private string displayName = "Smoky Opal";

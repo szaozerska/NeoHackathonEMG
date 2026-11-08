@@ -168,7 +168,7 @@ After `--with-game`, use the repository-local uv:
 
 The hand-client prompts for Kinesis's current stream URL and game server. Read
 the two app READMEs for pairing/server controls. It sends signs from
-`models/neural-emg-05` by default (needs `--extra neural`); `--neural-model`
+`models/neural-emg-05` by default; `--neural-model`
 picks another bundle and `--log-only` only logs EMG.
 
 ## Ask Codex or Claude

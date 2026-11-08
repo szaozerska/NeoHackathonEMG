@@ -293,7 +293,9 @@ class GameServer:
             self._on_aligned(conn, slot, message)
         elif conn is slot.vr and isinstance(message, p.DomainExpand):
             slot.input.domain_expanded = True
-        elif conn is slot.vr and isinstance(message, (p.MatchSetup, p.Ready, p.MatchQuit, p.Rematch)):
+        elif conn is slot.vr and isinstance(
+            message, (p.MatchSetup, p.Ready, p.MatchQuit, p.Rematch, p.MatchPause, p.MatchRestart)
+        ):
             self._on_match_message(conn, slot, message)
         elif conn is slot.classifier and isinstance(message, p.SignMessage):
             if message.sign == p.Sign.SNAP and slot.input.sign != p.Sign.SNAP:
@@ -325,6 +327,10 @@ class GameServer:
             self.match.quit(slot.player_id)
         elif isinstance(message, p.Rematch):
             self.match.rematch()
+        elif isinstance(message, p.MatchPause):
+            self.match.pause(slot.player_id, message.paused)
+        elif isinstance(message, p.MatchRestart):
+            self.match.vote_restart(slot.player_id, self.game)
         self._sync_ai()
 
     def _sync_ai(self) -> None:
@@ -398,7 +404,8 @@ class GameServer:
             won = match.phase == p.MatchPhase.ENDED and match.winner == self.ai.player_id
             self.ai.sword_only = match.sword_only
             inputs[self.ai.player_id] = match.restrict(self.ai.input(self.game, match.owner, fighting, won))
-        events = self.game.step(inputs, self.dt)
+        paused = self.match.paused
+        events = [] if paused else self.game.step(inputs, self.dt)
         self._step_match()
         outgoing: list[p.Message] = []
         for slot in self.players.values():
@@ -410,6 +417,9 @@ class GameServer:
         if self.ai is not None and (ai_pose := inputs[self.ai.player_id].pose) is not None:
             outgoing.append(ai_pose)
         state = self.game.snapshot()
+        if paused:
+            for projectile in state.projectiles:
+                projectile.vel = [0.0, 0.0, 0.0]
         state.match = self.match.snapshot()
         outgoing.append(state)
         outgoing.extend(events)

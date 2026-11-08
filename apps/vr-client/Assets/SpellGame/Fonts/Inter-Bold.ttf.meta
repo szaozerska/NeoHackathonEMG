@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 9e9e32586fb4441997c9c32892e98598
+guid: 61d89fb400444393a733652fb0c6e49a
 TrueTypeFontImporter:
   externalObjects: {}
   serializedVersion: 4
@@ -9,7 +9,7 @@ TrueTypeFontImporter:
   characterPadding: 1
   includeFontData: 1
   fontNames:
-  - Cinzel
+  - Inter
   fallbackFontReferences: []
   customCharacters: 
   fontRenderingMode: 0

@@ -12,7 +12,7 @@ namespace SpellGame.Editor
     /// Generates the <see cref="UiTheme"/> behind <see cref="UiStyle"/>: imports TMP Essential Resources if the project
     /// doesn't have them yet, makes dynamic SDF font assets from the Chakra Petch TTFs in <see cref="FontFolder"/>, the text
     /// materials (outline + underlay) and the crystal panel material, and saves the theme into Resources. Also makes the
-    /// plain black Midnight theme (<see cref="UiTheme.MidnightResourceName"/>) from the Cinzel and Inter TTFs.
+    /// plain black Midnight theme (<see cref="UiTheme.MidnightResourceName"/>) from the Inter TTFs (Bold for titles, Medium for body).
     /// Called first thing by <see cref="MainSceneBuilder.Build"/>. Existing assets are reused, so tweaks to them survive.
     /// </summary>
     public static class UiThemeBuilder
@@ -61,7 +61,7 @@ namespace SpellGame.Editor
         /// <summary>Palette and shape are set only when the asset is first made, so tweaks to them survive.</summary>
         private static void EnsureMidnightTheme()
         {
-            var display = FontAsset("Cinzel-Bold");
+            var display = FontAsset("Inter-Bold");
             var body = FontAsset("Inter-Medium");
 
             var path = $"{ResourcesFolder}/{UiTheme.MidnightResourceName}.asset";

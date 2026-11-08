@@ -91,6 +91,7 @@ namespace SpellGame.Game
         private MatchSnapshot _match = new();
         private StateMessage _state;
         private string _lastPhase;
+        private bool _wasPaused;
         private int _stateVersion;
         private int _keyStateVersion = -1;
         private View _keyView;
@@ -220,6 +221,15 @@ namespace SpellGame.Game
             _state = state;
             _stateVersion++;
             _match = state.Match ?? new MatchSnapshot();
+            var paused = _match.PausedBy != null;
+            if (paused != _wasPaused)
+            {
+                _wasPaused = paused;
+                if (paused)
+                    _view = View.Pause;
+                else if (_view == View.Pause)
+                    _view = View.None;
+            }
             if (_match.Phase == _lastPhase)
                 return;
             OnPhaseChanged(_lastPhase, _match.Phase);
@@ -277,7 +287,16 @@ namespace SpellGame.Game
         {
             var inMatch = _match.Phase is MatchPhase.Countdown or MatchPhase.Playing;
             if (inMatch && IsFighter)
-                _view = _view == View.Pause ? View.None : View.Pause;
+            {
+                if (_match.PausedBy != null)
+                    return;
+                if (_view == View.Pause)
+                    _view = View.None;
+                else if (_match.Phase == MatchPhase.Playing && PausesLeft(Me) > 0)
+                    gameClient.Send(new MatchPauseMessage { Paused = true });
+                else
+                    _view = View.Pause;
+            }
             else if (_panel != null)
                 _panel.Target = PanelSpot();
         }
@@ -337,6 +356,7 @@ namespace SpellGame.Game
                 View.Connection => $"connection|{gameClient.Connection}|{gameClient.ServerEndpoint}",
                 View.Duration => $"duration|{_pendingMode}|{_pendingSwordOnly}",
                 View.Ready => $"ready|{Me}|{_match.Mode}|{_match.SwordOnly}|{_match.DurationS}|{string.Join(",", _match.Fighters)}|{string.Join(",", _match.Ready)}|{string.Join(",", AlignedFighters())}",
+                View.Pause => $"pause|{IsFighter}|{_match.PausedBy}|{Mathf.CeilToInt(_match.ResumeIn)}|{string.Join(",", _match.RestartVotes ?? new List<string>())}|{PausesLeft(Me)}",
                 View.Results => $"results|{IsFighter}",
                 _ => view.ToString(),
             };
@@ -384,9 +404,7 @@ namespace SpellGame.Game
                     BuildReady(panel);
                     break;
                 case View.Pause:
-                    Layout(panel, "END MATCH?", "Ends it for everyone, with no winner.",
-                        ("End match", Kind.Secondary, () => { gameClient.Send(new MatchQuitMessage()); _view = View.None; }),
-                        ("Keep fighting", Kind.Primary, () => _view = View.None));
+                    BuildPause(panel);
                     break;
                 case View.Results:
                     BuildResults(panel);
@@ -485,6 +503,55 @@ namespace SpellGame.Game
             buttons.Add(("How to cast", Kind.Secondary, () => ShowControls(View.Ready)));
             buttons.Add(("Back to menu", Kind.Secondary, () => gameClient.Send(new MatchQuitMessage())));
             Layout(panel, title, string.Join("\n", lines), buttons.ToArray());
+        }
+
+        /// <summary>
+        /// The match menu. While the server has the match paused (everything frozen) it shows for everyone, with Resume;
+        /// otherwise it's just this fighter's menu and the match keeps running. Restart needs every human fighter's vote.
+        /// </summary>
+        private void BuildPause(Panel panel)
+        {
+            var paused = _match.PausedBy != null;
+            var votes = _match.RestartVotes ?? new List<string>();
+            var waitingFor = _match.Fighters.Where(f => f != _match.AiId && !votes.Contains(f)).ToList();
+            var lines = new List<string>();
+            string title;
+            if (paused)
+            {
+                title = _match.ResumeIn > 0f ? $"RESUMING IN {Mathf.CeilToInt(_match.ResumeIn)}" : $"PAUSED BY {_match.PausedBy}";
+                lines.Add("Spells, HP and the clock are frozen.");
+            }
+            else
+            {
+                title = "MATCH MENU";
+                lines.Add(_match.Phase == MatchPhase.Playing && PausesLeft(Me) == 0
+                    ? "No pauses left: the match keeps running."
+                    : "The match keeps running.");
+            }
+            if (votes.Count > 0 && waitingFor.Count > 0)
+                lines.Add(votes.Contains(Me)
+                    ? $"Restart: waiting for {string.Join(", ", waitingFor)} to agree."
+                    : $"{string.Join(", ", votes)} wants to restart.");
+
+            var buttons = new List<(string, Kind, Action)>();
+            if (IsFighter)
+            {
+                if (paused && _match.ResumeIn <= 0f)
+                    buttons.Add(("Resume", Kind.Primary, () => gameClient.Send(new MatchPauseMessage { Paused = false })));
+                else if (!paused)
+                    buttons.Add(("Keep fighting", Kind.Primary, () => _view = View.None));
+                if (!votes.Contains(Me))
+                    buttons.Add((votes.Count > 0 ? "Agree to restart" : "Restart match", Kind.Secondary,
+                        () => gameClient.Send(new MatchRestartMessage())));
+                buttons.Add(("End match (no winner)", Kind.Secondary, () => gameClient.Send(new MatchQuitMessage())));
+            }
+            Layout(panel, title, string.Join("\n", lines), buttons.ToArray());
+        }
+
+        private int PausesLeft(string player)
+        {
+            var index = _match.Fighters.IndexOf(player);
+            return index >= 0 && _match.PausesLeft != null && index < _match.PausesLeft.Count ? _match.PausesLeft[index] : 0;
         }
 
         /// <summary>Just the choices: <see cref="EndGameView"/>'s banner above shows the result, reason and stats.</summary>
