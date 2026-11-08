@@ -152,7 +152,7 @@ The first message on every TCP connection:
 - The server uses this ID to link the two streams to one player.
 - The server assigns player IDs in the order the headsets join: `P1`, `P2`, and so on. Each headset shows its own ID.
 - **Pairing a Neural Band with a headset** uses **pairing mode** (the "Pair Neural Bands" screen):
-  - Triggered from the game server's monitor (`p`), or by any connected client (headset or classifier) sending `pair_start`.
+  - Triggered from the game server's monitor (`p`), a headset's B or Y button, or by any other connected client (headset or classifier) sending `pair_start`.
   - The server sends `pair_start`, then `pair_prompt` naming the first headset without a band (in join order): that player pinches their fingers.
   - The next unpaired classifier to report a `pinch` (using the band's built-in decoded `gesture` events, so no trained model is needed) is paired with the prompted player. The server then prompts the next headset without a band, and so on.
   - If the prompted headset disconnects, the server moves on to the next one. Pairing mode ends once every connected headset has a band; a headset that joins later needs pairing mode started again.

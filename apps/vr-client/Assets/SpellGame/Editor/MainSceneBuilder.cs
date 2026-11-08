@@ -29,6 +29,7 @@ namespace SpellGame.Editor
             var debugSkeletons = CreateDebugSkeletonsView();
             var client = CreateGameClient(bodySkeleton, debugSkeletons, statusLabel);
             CreateControllerBand(client);
+            CreatePairingButton(client);
             CreateFireballView(client);
             CreateSwordView(client);
             CreateShieldView(client);
@@ -116,6 +117,14 @@ namespace SpellGame.Editor
             var serializedBand = new SerializedObject(band);
             serializedBand.FindProperty("gameClient").objectReferenceValue = client;
             serializedBand.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void CreatePairingButton(GameClient client)
+        {
+            var button = client.gameObject.AddComponent<PairingButton>();
+            var serializedButton = new SerializedObject(button);
+            serializedButton.FindProperty("gameClient").objectReferenceValue = client;
+            serializedButton.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void CreateFireballView(GameClient client)

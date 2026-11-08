@@ -31,6 +31,7 @@ namespace SpellGame.Game
         private BodyPoseSampler _poseSampler;
         private ServerConnection _connection;
         private string _playerId;
+        private bool _bandPaired;
         private float _nextPoseSendTime;
         private BodyJoints _localJoints;
         private readonly Dictionary<string, BodyJoints> _remoteJoints = new();
@@ -42,6 +43,15 @@ namespace SpellGame.Game
         public event Action<StateMessage> StateReceived;
 
         public string PlayerId => _playerId;
+
+        /// <summary>Asks the server to start pairing mode (architecture.md §5).</summary>
+        public void StartPairing()
+        {
+            if (_connection == null || !_connection.IsOpen)
+                return;
+
+            _connection.Send(new PairStartMessage());
+        }
 
         /// <summary>The server this client connected to, once resolved.</summary>
         public IPEndPoint ServerEndpoint { get; private set; }
@@ -112,7 +122,7 @@ namespace SpellGame.Game
             {
                 case WelcomeMessage welcome:
                     _playerId = welcome.PlayerId;
-                    SetStatus($"You are {_playerId}");
+                    SetStatus(IdleStatus());
                     break;
                 case ErrorMessage error:
                     Debug.LogError($"Server error: {error.Message}");
@@ -123,8 +133,9 @@ namespace SpellGame.Game
                 case PairPromptMessage prompt:
                     SetStatus(prompt.PlayerId == _playerId ? "Pinch your fingers to pair your band" : $"Waiting for {prompt.PlayerId} to pinch…");
                     break;
-                case PairedMessage paired when paired.PlayerId == _playerId:
-                    SetStatus($"You are {_playerId} · band paired");
+                case PairedMessage paired:
+                    _bandPaired |= paired.PlayerId == _playerId;
+                    SetStatus(IdleStatus());
                     break;
                 case PoseMessage pose when pose.PlayerId != _playerId:
                     _remoteJoints[pose.PlayerId] = pose.Joints;
@@ -170,6 +181,13 @@ namespace SpellGame.Game
                 Joints = _localJoints,
             });
         }
+
+        /// <summary>
+        /// Shown outside pairing prompts. A <c>paired</c> for any player restores it, so the last pairing doesn't leave
+        /// "Waiting for … to pinch" behind; a following <c>pair_prompt</c> replaces it straight away.
+        /// </summary>
+        private string IdleStatus() =>
+            _bandPaired ? $"You are {_playerId} · band paired" : $"You are {_playerId} · press B or Y to pair bands";
 
         private void SetStatus(string text)
         {
