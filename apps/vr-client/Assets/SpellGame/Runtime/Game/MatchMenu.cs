@@ -28,7 +28,7 @@ namespace SpellGame.Game
 
         [Header("Placement")]
         [SerializeField] private float panelDistance = 1.1f;
-        [SerializeField] private float panelDrop = 0.15f;
+        [SerializeField] private float panelDrop = 0.05f;
         [Tooltip("Degrees off your view before a panel glides back in front of you.")]
         [SerializeField] private float refollowAngle = 35f;
         [SerializeField] private float followSpeed = 4f;
