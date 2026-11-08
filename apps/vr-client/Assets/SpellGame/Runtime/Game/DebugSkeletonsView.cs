@@ -8,9 +8,9 @@ using UnityEngine.Rendering;
 namespace SpellGame.Game
 {
     /// <summary>
-    /// Debug view: draws each player's <see cref="BodyJoints"/> (local and remote) as unlit line segments, and gives
-    /// remote players a solid stand-in body (head, torso, limbs, hands) with a floating player-ID marker (P1 red, P2 blue)
-    /// so they are easy to find in the room.
+    /// Remote players get a floating player-ID marker (P1 red, P2 blue) above their real head; you see the person
+    /// themselves through passthrough. Debug only (off by default): each player's <see cref="BodyJoints"/> as unlit line
+    /// segments, and a solid stand-in body for remote players, to check tracking and alignment.
     /// </summary>
     public sealed class DebugSkeletonsView : MonoBehaviour
     {
@@ -61,6 +61,10 @@ namespace SpellGame.Game
 
         [SerializeField] private Material boneMaterial;
         [SerializeField] private Material bodyMaterial;
+        [Tooltip("Debug: draw every tracked skeleton, your own included, as lines.")]
+        [SerializeField] private bool showSkeletons;
+        [Tooltip("Debug: draw a solid stand-in body over remote players (they are already visible through passthrough).")]
+        [SerializeField] private bool showRemoteBodies;
 
         private readonly Dictionary<string, LineRenderer[]> _bonesBySkeleton = new();
         private readonly Dictionary<string, Body> _bodiesBySkeleton = new();
@@ -77,11 +81,14 @@ namespace SpellGame.Game
 
         public void Draw(string skeletonId, BodyJoints joints, bool withBody = false)
         {
-            var lines = BonesFor(skeletonId);
-            for (var i = 0; i < Bones.Length; i++)
+            if (showSkeletons)
             {
-                lines[i].SetPosition(0, Bones[i].From(joints).Position);
-                lines[i].SetPosition(1, Bones[i].To(joints).Position);
+                var lines = BonesFor(skeletonId);
+                for (var i = 0; i < Bones.Length; i++)
+                {
+                    lines[i].SetPosition(0, Bones[i].From(joints).Position);
+                    lines[i].SetPosition(1, Bones[i].To(joints).Position);
+                }
             }
 
             if (withBody)
@@ -91,14 +98,20 @@ namespace SpellGame.Game
         private static void PlaceBody(Body body, BodyJoints joints)
         {
             var head = joints.Head.Position;
+            PlaceLabel(body.Label, head);
+            if (body.Head == null)
+                return;
             body.Head.SetPositionAndRotation(head, joints.Head.Rotation);
             SpellVfx.PlaceBlade(body.Torso, joints.Hips.Position, joints.Chest.Position, TorsoWidth);
             body.LHand.position = joints.LHand.Position;
             body.RHand.position = joints.RHand.Position;
             for (var i = 0; i < Limbs.Length; i++)
                 SpellVfx.PlaceBlade(body.Limbs[i], Limbs[i].From(joints).Position, Limbs[i].To(joints).Position, LimbWidth);
+        }
 
-            var label = body.Label.transform;
+        private static void PlaceLabel(TextMesh text, Vector3 head)
+        {
+            var label = text.transform;
             label.position = head + Vector3.up * LabelHeightAboveHead;
             var viewer = Camera.main;
             if (viewer != null)
@@ -112,6 +125,13 @@ namespace SpellGame.Game
 
             var root = new GameObject($"Body {skeletonId}").transform;
             root.SetParent(transform, false);
+            if (!showRemoteBodies)
+            {
+                var tagOnly = new Body { Label = CreateLabel(root, skeletonId) };
+                _bodiesBySkeleton[skeletonId] = tagOnly;
+                return tagOnly;
+            }
+
             var material = bodyMaterial != null ? bodyMaterial : boneMaterial;
             var body = new Body
             {

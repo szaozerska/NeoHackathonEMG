@@ -27,9 +27,8 @@ namespace SpellGame.Editor
             var rig = CreateCameraRig();
             var trackingSpace = rig.transform.Find("TrackingSpace");
             var bodySkeleton = CreateBodyTracking(trackingSpace);
-            var statusLabel = CreateStatusLabel(trackingSpace.Find("CenterEyeAnchor"));
             var debugSkeletons = CreateDebugSkeletonsView();
-            var client = CreateGameClient(bodySkeleton, debugSkeletons, statusLabel);
+            var client = CreateGameClient(bodySkeleton, debugSkeletons);
             CreateControllerBand(client);
             CreatePairingButton(client);
             CreateSharedSpaceAligner(client, rig);
@@ -40,6 +39,8 @@ namespace SpellGame.Editor
             CreateMatchMenu(client, rig);
             CreateEndGameView(client, rig);
             CreateAiAvatarView(client);
+            CreateSpellAudio(client);
+            CreateHitCallouts(client);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
@@ -85,21 +86,6 @@ namespace SpellGame.Editor
             return skeleton;
         }
 
-        private static TextMesh CreateStatusLabel(Transform centerEye)
-        {
-            var label = new GameObject("Status Label").AddComponent<TextMesh>();
-            label.transform.SetParent(centerEye, false);
-            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            label.GetComponent<MeshRenderer>().sharedMaterial = label.font.material;
-            label.transform.localPosition = new Vector3(0f, -0.25f, 1f);
-            label.anchor = TextAnchor.MiddleCenter;
-            label.alignment = TextAlignment.Center;
-            label.characterSize = 0.01f;
-            label.fontSize = 48;
-            label.text = "SpellGame";
-            return label;
-        }
-
         private static DebugSkeletonsView CreateDebugSkeletonsView()
         {
             var view = new GameObject("Debug Skeletons").AddComponent<DebugSkeletonsView>();
@@ -110,13 +96,12 @@ namespace SpellGame.Editor
             return view;
         }
 
-        private static GameClient CreateGameClient(OVRSkeleton bodySkeleton, DebugSkeletonsView debugSkeletons, TextMesh statusLabel)
+        private static GameClient CreateGameClient(OVRSkeleton bodySkeleton, DebugSkeletonsView debugSkeletons)
         {
             var client = new GameObject("Game Client").AddComponent<GameClient>();
             var serializedClient = new SerializedObject(client);
             serializedClient.FindProperty("bodySkeleton").objectReferenceValue = bodySkeleton;
             serializedClient.FindProperty("debugSkeletons").objectReferenceValue = debugSkeletons;
-            serializedClient.FindProperty("statusLabel").objectReferenceValue = statusLabel;
             serializedClient.ApplyModifiedPropertiesWithoutUndo();
             return client;
         }
@@ -285,6 +270,22 @@ namespace SpellGame.Editor
             serializedMenu.FindProperty("cameraRig").objectReferenceValue = rig;
             serializedMenu.FindProperty("baseMaterial").objectReferenceValue = UnlitMaterial("DebugSkeleton", new Color(0.2f, 1f, 0.4f));
             serializedMenu.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void CreateSpellAudio(GameClient client)
+        {
+            var audio = new GameObject("Spell Audio").AddComponent<SpellAudio>();
+            var serializedAudio = new SerializedObject(audio);
+            serializedAudio.FindProperty("gameClient").objectReferenceValue = client;
+            serializedAudio.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void CreateHitCallouts(GameClient client)
+        {
+            var view = new GameObject("Hit Callouts").AddComponent<HitCalloutView>();
+            var serializedView = new SerializedObject(view);
+            serializedView.FindProperty("gameClient").objectReferenceValue = client;
+            serializedView.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void CreateEndGameView(GameClient client, OVRCameraRig rig)

@@ -67,6 +67,7 @@ namespace SpellGame.Game
         private sealed class Panel
         {
             public Transform Root;
+            public TextMesh Footer;
             public string Key;
             public readonly List<Button> Buttons = new();
             public Vector3 Target;
@@ -81,6 +82,11 @@ namespace SpellGame.Game
         private MatchSnapshot _match = new();
         private StateMessage _state;
         private string _lastPhase;
+        private int _stateVersion;
+        private int _keyStateVersion = -1;
+        private View _keyView;
+        private string _key;
+        private ConnectionState _keyConnection;
 
         private Button _hovered;
         private float _hoverStart;
@@ -168,6 +174,7 @@ namespace SpellGame.Game
         private void OnState(StateMessage state)
         {
             _state = state;
+            _stateVersion++;
             _match = state.Match ?? new MatchSnapshot();
             if (_match.Phase == _lastPhase)
                 return;
@@ -238,10 +245,18 @@ namespace SpellGame.Game
         private void UpdatePanel()
         {
             var view = ShownView;
-            var key = PanelKey(view);
+            if (view != _keyView || _stateVersion != _keyStateVersion || gameClient.Connection != _keyConnection || _key == null)
+            {
+                _key = PanelKey(view);
+                _keyView = view;
+                _keyStateVersion = _stateVersion;
+                _keyConnection = gameClient.Connection;
+            }
+            var key = _key;
             if (_panel != null && _panel.Key == key)
             {
                 FollowView(_panel);
+                UpdateFooter(_panel);
                 return;
             }
 
@@ -258,17 +273,24 @@ namespace SpellGame.Game
             _panel.Root.position = _panel.Target;
             _panel.Placed = true;
             FaceViewer(_panel.Root);
+            UpdateFooter(_panel);
+        }
+
+        /// <summary>Connection, pairing and HP status from <see cref="GameClient"/>, in small text under the panel.</summary>
+        private void UpdateFooter(Panel panel)
+        {
+            if (panel.Footer != null && panel.Footer.text != gameClient.StatusText)
+                panel.Footer.text = gameClient.StatusText;
         }
 
         /// <summary>Changes whenever what the current screen shows changes, so the panel is rebuilt only then.</summary>
         private string PanelKey(View view)
         {
-            var players = _state?.Players.Select(p => $"{p.PlayerId}:{p.Hp:0}") ?? Enumerable.Empty<string>();
             return view switch
             {
                 View.Connection => $"connection|{gameClient.Connection}|{gameClient.ServerEndpoint}",
                 View.Ready => $"ready|{Me}|{_match.Mode}|{_match.DurationS}|{string.Join(",", _match.Fighters)}|{string.Join(",", _match.Ready)}",
-                View.Results => $"results|{Me}|{_match.Winner}|{_match.Reason}|{_match.EndedBy}|{string.Join(",", players)}",
+                View.Results => $"results|{IsFighter}",
                 _ => view.ToString(),
             };
         }
@@ -368,41 +390,14 @@ namespace SpellGame.Game
             Layout(panel, title, string.Join("\n", lines), buttons.ToArray());
         }
 
+        /// <summary>Just the choices: <see cref="EndGameView"/>'s banner above shows the result, reason and stats.</summary>
         private void BuildResults(Panel panel)
         {
-            string title;
-            if (_match.Reason == MatchEndReason.Quit)
-                title = "MATCH ENDED";
-            else if (_match.Winner == null)
-                title = "DRAW";
-            else if (_match.Winner == Me)
-                title = "VICTORY!";
-            else if (IsFighter)
-                title = "DEFEAT";
-            else
-                title = $"{_match.Winner} WINS";
-
-            var reason = _match.Reason switch
-            {
-                MatchEndReason.Ko => "Knockout",
-                MatchEndReason.Time => "Time's up: most HP wins",
-                MatchEndReason.Quit => $"Ended by {(_match.EndedBy == Me ? "you" : _match.EndedBy)}",
-                MatchEndReason.Disconnect => "Opponent disconnected",
-                _ => "",
-            };
-            var lines = new List<string> { reason };
-            foreach (var fighter in _match.Fighters)
-            {
-                var hp = _state?.Players.FirstOrDefault(p => p.PlayerId == fighter)?.Hp ?? 0f;
-                var name = fighter == Me ? "You" : fighter == _match.AiId ? "AI mage" : fighter;
-                lines.Add($"{name}:  {Mathf.Max(0f, hp):0} HP");
-            }
-
             var buttons = new List<(string, Color, Action)>();
             if (IsFighter)
                 buttons.Add(("Rematch", PrimaryColor, () => gameClient.Send(new RematchMessage())));
             buttons.Add(("Main menu", ButtonColor, () => gameClient.Send(new MatchQuitMessage())));
-            Layout(panel, title, string.Join("\n", lines), buttons.ToArray());
+            Layout(panel, "PLAY AGAIN?", "", buttons.ToArray());
         }
 
         private static string ControlsText() => string.Join("\n",
@@ -448,6 +443,8 @@ namespace SpellGame.Game
 
             var back = CreateQuad("Panel", panel.Root, _panelMaterial);
             back.localScale = new Vector3(panelWidth, height, 1f);
+            panel.Footer = CreateText("Status", panel.Root, "", new Vector3(0f, -height * 0.5f - 0.012f, -0.003f), 0.0055f, new Color(0.75f, 0.8f, 0.9f), FontStyle.Normal);
+            panel.Footer.anchor = TextAnchor.UpperCenter;
 
             var y = height * 0.5f - pad;
             CreateText("Title", panel.Root, title, new Vector3(0f, y - titleHeight * 0.45f, -0.003f), 0.011f, AccentText, FontStyle.Bold);
