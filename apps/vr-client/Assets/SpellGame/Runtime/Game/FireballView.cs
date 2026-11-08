@@ -23,6 +23,8 @@ namespace SpellGame.Game
 
         [Header("Look")]
         [SerializeField] private float heldDiameter = 0.12f;
+        [Tooltip("Seconds of holding until the held orb looks fully charged (visual only; damage doesn't change).")]
+        [SerializeField] private float chargeSeconds = 1.5f;
         [Tooltip("Server Tuning.fireball_radius is 0.1, so 0.2 shows the true hit size.")]
         [SerializeField] private float projectileDiameter = 0.2f;
         [SerializeField] private float emberDiameter = 0.04f;
@@ -37,6 +39,8 @@ namespace SpellGame.Game
         {
             public FireballOrb HeldOrb;
             public Transform Ember;
+            public float HeldSince;
+            public bool WasHolding;
         }
 
         private sealed class ProjectileVisual
@@ -160,14 +164,19 @@ namespace SpellGame.Game
                 var holding = player.Item == SpellKind.Fireball && position != null;
                 var cooling = !holding && player.Cooldown > 0f && position != null;
 
+                if (holding && !hand.WasHolding)
+                    hand.HeldSince = Time.time;
+                hand.WasHolding = holding;
                 hand.HeldOrb.Root.gameObject.SetActive(holding);
                 hand.Ember.gameObject.SetActive(cooling);
 
                 if (holding)
                 {
                     hand.HeldOrb.Root.position = position.Value;
-                    var pulse = 1f + 0.08f * Mathf.Sin(Time.time * 18f);
-                    hand.HeldOrb.Core.localScale = Vector3.one * (heldDiameter * pulse);
+                    // Charging up: the orb grows from 75% to 125% and pulses harder and faster the longer it's held.
+                    var charge = Mathf.Clamp01((Time.time - hand.HeldSince) / chargeSeconds);
+                    var pulse = 1f + (0.04f + 0.08f * charge) * Mathf.Sin(Time.time * (12f + 14f * charge));
+                    hand.HeldOrb.Core.localScale = Vector3.one * (heldDiameter * (0.75f + 0.5f * charge) * pulse);
                 }
                 else if (cooling)
                 {
