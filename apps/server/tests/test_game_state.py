@@ -166,10 +166,14 @@ def test_throw_direction_follows_facing_and_misses_when_aimed_away():
     cast = of_type(events, p.Spell)[-1]
     assert cast.direction[0] > 0.9
 
-    events = match.run(match.game.tuning.fireball_lifetime_s + 0.1, p1_facing=90.0)
+    events = match.run(5.0, p1_facing=90.0)
     assert not of_type(events, p.Damage)
-    assert [i.reason for i in of_type(events, p.Impact)] == ["expired"]
+    impacts = of_type(events, p.Impact)
+    assert [i.reason for i in impacts] == ["expired"]
     assert match.p2.hp == match.game.tuning.max_hp
+
+    flown = float(np.linalg.norm(np.array(impacts[0].pos) - np.array(cast.origin)))
+    assert flown == pytest.approx(match.game.tuning.fireball_max_range_m, abs=0.05)
 
 
 def test_aim_assist_bends_a_slightly_off_throw_onto_the_target():
