@@ -139,6 +139,13 @@ def test_fireball_damage_is_proportional_to_its_speed():
     assert fast.amount == pytest.approx(2 * slow.amount, abs=0.1)
 
 
+def test_throw_speed_and_so_fireball_damage_are_capped():
+    match = Match()
+    [damage] = of_type(push_hand(match, 20.0, 0.3), p.Damage)
+    tuning = match.game.tuning
+    assert damage.amount == pytest.approx(tuning.fireball_damage_per_speed * tuning.throw_max_speed)
+
+
 def test_heavy_fireball_ignores_a_wrist_flick_but_follows_a_full_swing():
     flick = Match()
     push_hand(flick, 3.0, 0.05)

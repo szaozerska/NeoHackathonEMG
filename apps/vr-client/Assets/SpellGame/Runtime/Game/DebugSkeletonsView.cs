@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using SpellGame.Protocol;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -20,12 +21,6 @@ namespace SpellGame.Game
         private const float LimbWidth = 0.08f;
         private const float HandDiameter = 0.1f;
         private const float LabelHeightAboveHead = 0.3f;
-
-        private static readonly Dictionary<string, Color> MarkerColors = new()
-        {
-            ["P1"] = Color.red,
-            ["P2"] = new Color(0.2f, 0.45f, 1f),
-        };
 
         private static readonly (Func<BodyJoints, JointPose> From, Func<BodyJoints, JointPose> To)[] Bones =
         {
@@ -76,7 +71,7 @@ namespace SpellGame.Game
             public Transform LHand;
             public Transform RHand;
             public Transform[] Limbs;
-            public TextMesh Label;
+            public TextMeshPro Label;
         }
 
         public void Draw(string skeletonId, BodyJoints joints, bool withBody = false)
@@ -109,7 +104,7 @@ namespace SpellGame.Game
                 SpellVfx.PlaceBlade(body.Limbs[i], Limbs[i].From(joints).Position, Limbs[i].To(joints).Position, LimbWidth);
         }
 
-        private static void PlaceLabel(TextMesh text, Vector3 head)
+        private static void PlaceLabel(TextMeshPro text, Vector3 head)
         {
             var label = text.transform;
             label.position = head + Vector3.up * LabelHeightAboveHead;
@@ -146,21 +141,9 @@ namespace SpellGame.Game
             return body;
         }
 
-        private static TextMesh CreateLabel(Transform root, string text)
-        {
-            var label = new GameObject("Label").AddComponent<TextMesh>();
-            label.transform.SetParent(root, false);
-            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            label.GetComponent<MeshRenderer>().sharedMaterial = label.font.material;
-            label.anchor = TextAnchor.MiddleCenter;
-            label.alignment = TextAlignment.Center;
-            label.characterSize = 0.03f;
-            label.fontSize = 64;
-            label.fontStyle = FontStyle.Bold;
-            label.color = MarkerColors.TryGetValue(text, out var color) ? color : Color.white;
-            label.text = text;
-            return label;
-        }
+        /// <summary>Player tag over the head in that player's colour (<see cref="UiStyle.PlayerColor"/>): P1 red, P2 blue, others white.</summary>
+        private static TextMeshPro CreateLabel(Transform root, string text) =>
+            UiStyle.CreateText("Label", root, text, Vector3.zero, 0.16f, UiStyle.PlayerColor(text), display: true, width: 0.6f, spacing: 4f);
 
         private LineRenderer[] BonesFor(string skeletonId)
         {

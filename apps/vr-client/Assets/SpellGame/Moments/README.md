@@ -8,6 +8,6 @@ Announcer lines for `MatchMomentsView` (`Announcer/*.ogg`: three, two, one, figh
   extra licence restriction and may be committed and shipped.
 - Drum, impact, bass and whoosh effects are synthesised at runtime in `MatchMomentsView`.
 
-Font: `../Fonts/Rajdhani-Bold.ttf` (Indian Type Foundry, SIL Open Font License 1.1, see `../Fonts/Rajdhani-OFL.txt`).
-SpellGame/Rebuild Main Scene imports TMP Essential Resources and creates `Rajdhani-Bold SDF.asset` and
+Font: `../Fonts/ChakraPetch-BoldItalic.ttf` (Cadson Demak, SIL Open Font License 1.1, see `../Fonts/ChakraPetch-OFL.txt`).
+SpellGame/Rebuild Main Scene imports TMP Essential Resources and creates `ChakraPetch-BoldItalic SDF.asset` and
 `MomentText.mat` here on first run.

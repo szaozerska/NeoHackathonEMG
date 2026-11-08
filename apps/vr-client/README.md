@@ -45,9 +45,12 @@ Assets/SpellGame/
     Game/SwordView.cs          Sword visuals: draw/sheathe flash, glowing blade along the forearm, speed-scaled swing trail, hit sparks
     Game/ShieldView.cs         Shield visuals: disc in front of the band hand, swells with push boost, block/parry flashes
     Game/SpellVfx.cs           Procedural orbs, blades, trails and particle bursts (no art assets yet)
+    Game/UiStyle.cs            UI style helpers reading the active UiTheme (palette, card shape, sounds, fonts); default Smoky Opal; UiTheme holds the fonts/materials
   Editor/                      SpellGame.Editor assembly
     QuestProjectConfigurator.cs  Menu "SpellGame/Configure Project for Quest 3"
     MainSceneBuilder.cs          Menu "SpellGame/Rebuild Main Scene"
+    UiThemeBuilder.cs            TMP Essential Resources + Chakra Petch SDF fonts + UI materials (run by Rebuild Main Scene)
+  UI/                          Crystal card shader and UI theme notes (fonts in Fonts/); see UI/README.md
     QuestBuild.cs                Menus "SpellGame/Build APK", "Build And Run On Headset"; headless QuestBuild.BuildBatch
   Scenes/Main.unity            OVRCameraRig with passthrough + body tracking + debug skeletons + GameClient + pairing button + shared-space aligner + status label + Fireball View + Sword View + Shield View
 ```
@@ -69,6 +72,7 @@ The client ignores its own pose when the server echoes it back.
    ```
 3. Open **Window → Meta → Tools → Project Setup Tool** and click **Fix All** on the Android and Standalone tabs.
 4. Use **SpellGame → Rebuild Main Scene** to regenerate `Scenes/Main.unity` at any time.
+   The first run also imports TMP Essential Resources and generates the UI theme (see `Assets/SpellGame/UI/README.md`).
 
 ## Running
 
