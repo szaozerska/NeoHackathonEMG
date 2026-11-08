@@ -122,7 +122,7 @@ TensionItem = TensionReading | CalibrationUpdate
 class TensionTracker:
     """Runs on the classifier thread: `push` each EMG batch, get readings and calibration progress to forward.
 
-    `request_calibration` may be called from any thread (e.g. when the band pairs or a headset asks).
+    `request_calibration` may be called from any thread (when a headset asks from its menu).
     """
 
     def __init__(self, clock: Callable[[], float] | None = None) -> None:
