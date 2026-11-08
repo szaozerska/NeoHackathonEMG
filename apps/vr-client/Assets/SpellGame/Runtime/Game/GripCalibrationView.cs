@@ -8,7 +8,8 @@ namespace SpellGame.Game
     /// Prompts for the band's grip calibration (hand-client <c>tension.py</c>): "Relax your band hand", then a comfortably
     /// firm fist, then a comfortably firm shield hand (each read as 70% strength), with a progress row, then a short confirmation. It's placed in the room a metre ahead,
     /// just below eye level, when each step starts (not head-locked). It only shows the local player's calibration.
-    /// <see cref="Recalibrate"/> asks the band to run it again (e.g. from a menu button).
+    /// It runs only when asked (<see cref="Recalibrate"/>, or Settings → Calibrate grip). If the band stops sending
+    /// progress for <see cref="stallSeconds"/>, the prompt says so and goes away instead of hanging.
     /// </summary>
     public sealed class GripCalibrationView : MonoBehaviour
     {
@@ -17,12 +18,14 @@ namespace SpellGame.Game
         [SerializeField] private float drop = 0.15f;
         [SerializeField] private float doneSeconds = 1.5f;
         [SerializeField] private float failedSeconds = 3.5f;
+        [SerializeField] private float stallSeconds = 3f;
 
         private const int ProgressDots = 10;
 
         private TextMeshPro _label;
         private string _phase;
         private float _hideAt = float.PositiveInfinity;
+        private float _stallAt = float.PositiveInfinity;
 
         public void Recalibrate() => gameClient.Send(new CalibrateMessage());
 
@@ -32,7 +35,16 @@ namespace SpellGame.Game
 
         private void Update()
         {
-            if (_label != null && _label.gameObject.activeSelf && Time.time >= _hideAt)
+            if (_label == null || !_label.gameObject.activeSelf)
+                return;
+            if (Time.time >= _stallAt)
+            {
+                _stallAt = float.PositiveInfinity;
+                _phase = null;
+                _label.text = "Grip calibration stopped\n<size=60%>No signal from the band; playing at normal strength</size>";
+                _hideAt = Time.time + failedSeconds;
+            }
+            if (Time.time >= _hideAt)
                 _label.gameObject.SetActive(false);
         }
 
@@ -47,6 +59,9 @@ namespace SpellGame.Game
             _phase = status.Phase;
             _label.gameObject.SetActive(true);
             _hideAt = float.PositiveInfinity;
+            _stallAt = status.Phase is CalibrationPhase.Rest or CalibrationPhase.Squeeze or CalibrationPhase.Palm
+                ? Time.time + stallSeconds
+                : float.PositiveInfinity;
             switch (status.Phase)
             {
                 case CalibrationPhase.Rest:

@@ -35,7 +35,7 @@ class ServerLink:
         self._port = port
         self._on_haptic = on_haptic
         self._on_calibrate = on_calibrate
-        """Starts the grip calibration: on first pairing and whenever a headset asks (`Calibrate`)."""
+        """Starts the grip calibration when the player asks for it from the headset menu (`Calibrate`)."""
         self._conn: Connection | None = None
         self.player_id: str | None = None
 
@@ -114,11 +114,8 @@ class ServerLink:
     def _on_message(self, message: p.Message) -> None:
         match message:
             case p.Paired(player_id=player_id):
-                first = self.player_id is None
                 self.player_id = player_id
                 log.info("band paired with %s", player_id)
-                if first:
-                    self._on_calibrate()
             case p.Calibrate():
                 self._on_calibrate()
             case p.Haptic(duration_ms=duration_ms):
