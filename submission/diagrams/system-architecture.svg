@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" font-family="Inter, Helvetica Neue, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#111"/></marker>
+    <marker id="o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#E4572E"/></marker>
+  </defs>
+  <rect width="1600" height="1000" fill="#fff"/>
+  <text x="40" y="58" font-size="30" font-weight="700" fill="#111">Spellcasting duel · system design</text>
+  <text x="40" y="88" font-size="17" fill="#555">Two players in one room. Muscle signals in, one authoritative server, AR out. Everything on one local network.</text>
+
+  <!-- player group -->
+  <rect x="40" y="120" width="740" height="760" rx="14" fill="none" stroke="#111" stroke-width="1.5" stroke-dasharray="6 6"/>
+  <text x="60" y="148" font-size="15" font-weight="700" fill="#111" letter-spacing="1.5">EACH PLAYER  ×2</text>
+
+  <rect x="60" y="170" width="210" height="96" rx="10" fill="#fff" stroke="#E4572E" stroke-width="2.5"/>
+  <text x="78" y="204" font-size="19" font-weight="700" fill="#111">Meta Neural Band</text>
+  <text x="78" y="230" font-size="15" fill="#444">forearm EMG</text>
+  <text x="78" y="251" font-size="15" fill="#444">8 channels · 2,048 Hz</text>
+
+  <rect x="60" y="330" width="210" height="96" rx="10" fill="#fff" stroke="#111" stroke-width="2"/>
+  <text x="78" y="364" font-size="19" font-weight="700" fill="#111">Kinesis (Mac)</text>
+  <text x="78" y="390" font-size="15" fill="#444">Bluetooth → local</text>
+  <text x="78" y="411" font-size="15" fill="#444">sensor stream</text>
+
+  <rect x="330" y="170" width="430" height="300" rx="10" fill="#fff" stroke="#111" stroke-width="2"/>
+  <text x="350" y="204" font-size="19" font-weight="700" fill="#111">Hand client (Mac, Python)</text>
+  <g font-size="15" fill="#222">
+    <text x="350" y="240"><tspan font-weight="700" fill="#E4572E">1</tspan>  causal 20–450 Hz band-pass + 60 Hz notch</text>
+    <text x="350" y="275"><tspan font-weight="700" fill="#E4572E">2</tspan>  hand state · FNN · 400 ms window</text>
+    <text x="368" y="296" fill="#666">relaxed / open palm (shield) / fist (sword)</text>
+    <text x="350" y="331"><tspan font-weight="700" fill="#E4572E">3</tspan>  snap detector · CNN · 160 ms window</text>
+    <text x="350" y="366"><tspan font-weight="700" fill="#E4572E">4</tspan>  grip tension, calibrated per player</text>
+    <text x="368" y="387" fill="#666">relax → firm fist → firm palm (~8 s)</text>
+  </g>
+  <line x1="350" y1="414" x2="740" y2="414" stroke="#ddd"/>
+  <text x="350" y="446" font-size="15" fill="#444">sends only <tspan font-weight="700" fill="#111">sign</tspan> + <tspan font-weight="700" fill="#111">tension</tspan>, never raw EMG</text>
+
+  <rect x="60" y="530" width="700" height="330" rx="10" fill="#fff" stroke="#111" stroke-width="2"/>
+  <text x="80" y="564" font-size="19" font-weight="700" fill="#111">Meta Quest 3 · AR client (Unity, passthrough)</text>
+  <g font-size="15">
+    <rect x="80" y="590" width="205" height="140" rx="8" fill="#f4f4f4"/>
+    <text x="96" y="620" font-weight="700" fill="#111">Body tracking</text>
+    <text x="96" y="646" fill="#444">Movement SDK,</text>
+    <text x="96" y="667" fill="#444">full body</text>
+    <text x="96" y="700" fill="#444">pose out at 72 Hz</text>
+    <rect x="307" y="590" width="205" height="140" rx="8" fill="#f4f4f4"/>
+    <text x="323" y="620" font-weight="700" fill="#111">Shared space</text>
+    <text x="323" y="646" fill="#444">QR marker on the floor</text>
+    <text x="323" y="667" fill="#444">→ both headsets use</text>
+    <text x="323" y="688" fill="#444">one room frame</text>
+    <rect x="534" y="590" width="205" height="140" rx="8" fill="#f4f4f4"/>
+    <text x="550" y="620" font-weight="700" fill="#111">Renderer</text>
+    <text x="550" y="646" fill="#444">spells, HP, menus</text>
+    <text x="550" y="667" fill="#444">over the real room</text>
+    <text x="550" y="700" fill="#444">no game logic</text>
+  </g>
+  <text x="80" y="780" font-size="15" fill="#444">Players see each other's real bodies through passthrough;</text>
+  <text x="80" y="802" font-size="15" fill="#444">the headset and band of one player share a <tspan font-weight="700" fill="#111">player ID</tspan> (P1 red, P2 blue).</text>
+  <text x="80" y="836" font-size="15" fill="#666">Controller buttons can stand in for the band while debugging.</text>
+
+  <!-- server -->
+  <rect x="900" y="170" width="660" height="590" rx="14" fill="#111"/>
+  <text x="930" y="214" font-size="22" font-weight="700" fill="#fff">Game server (Mac, Python)</text>
+  <text x="930" y="244" font-size="16" fill="#bbb">authoritative · fixed 30 Hz tick · all mechanics live here</text>
+  <g font-size="16">
+    <text x="930" y="306" font-weight="700" fill="#fff">Match flow</text><text x="1100" y="306" fill="#ddd">lobby → ready → countdown → fight → K.O.</text>
+    <text x="930" y="356" font-weight="700" fill="#fff">Spells</text><text x="1100" y="356" fill="#ddd">snap → fireball · fist → sword · palm → shield</text>
+    <text x="930" y="406" font-weight="700" fill="#fff">Hit testing</text><text x="1100" y="406" fill="#ddd">per-body-part hitboxes from tracked joints</text>
+    <text x="930" y="456" font-weight="700" fill="#E4572E">Tension</text><text x="1100" y="456" fill="#ddd">grip strength scales damage and blocking</text>
+    <text x="930" y="506" font-weight="700" fill="#fff">Shared room</text><text x="1100" y="506" fill="#ddd">tracks which headsets are aligned</text>
+    <text x="930" y="556" font-weight="700" fill="#fff">Pairing</text><text x="1100" y="556" fill="#ddd">headset + band joined by player ID</text>
+    <text x="930" y="606" font-weight="700" fill="#fff">Haptics</text><text x="1100" y="606" fill="#ddd">buzzes the band on cast, hit, match start/end</text>
+  </g>
+  <text x="930" y="700" font-size="15" fill="#999">Clients only send inputs and draw what the server says,</text>
+  <text x="930" y="722" font-size="15" fill="#999">so both players always see the same fight.</text>
+
+  <rect x="900" y="800" width="660" height="80" rx="10" fill="#fff" stroke="#111" stroke-width="2" stroke-dasharray="6 5"/>
+  <text x="925" y="835" font-size="17" font-weight="700" fill="#111">UDP discovery beacon</text>
+  <text x="925" y="861" font-size="15" fill="#444">"SPELLGAME &lt;port&gt;" every second; headsets and hand clients find the server</text>
+
+  <!-- arrows -->
+  <line x1="165" y1="266" x2="165" y2="326" stroke="#E4572E" stroke-width="3" marker-end="url(#o)"/>
+  <text x="176" y="302" font-size="14" fill="#E4572E">Bluetooth</text>
+  <line x1="270" y1="378" x2="326" y2="378" stroke="#E4572E" stroke-width="3" marker-end="url(#o)"/>
+  <text x="276" y="368" font-size="14" fill="#E4572E">EMG</text>
+
+  <line x1="760" y1="250" x2="896" y2="250" stroke="#E4572E" stroke-width="3" marker-end="url(#o)"/>
+  <text x="788" y="240" font-size="13" fill="#E4572E">sign · tension</text>
+  <line x1="896" y1="320" x2="764" y2="320" stroke="#111" stroke-width="2" marker-end="url(#a)"/>
+  <text x="788" y="310" font-size="13" fill="#111">haptics · calibrate</text>
+
+  <line x1="760" y1="620" x2="896" y2="620" stroke="#111" stroke-width="2" marker-end="url(#a)"/>
+  <text x="788" y="610" font-size="13" fill="#111">body pose</text>
+  <line x1="896" y1="690" x2="764" y2="690" stroke="#111" stroke-width="2" marker-end="url(#a)"/>
+  <text x="788" y="680" font-size="13" fill="#111">state · spells · HP</text>
+
+  <line x1="900" y1="840" x2="764" y2="840" stroke="#111" stroke-width="1.5" stroke-dasharray="5 5" marker-end="url(#a)"/>
+  <text x="788" y="830" font-size="13" fill="#111">discovery</text>
+
+  <!-- legend -->
+  <line x1="40" y1="940" x2="90" y2="940" stroke="#E4572E" stroke-width="3"/>
+  <text x="100" y="945" font-size="15" fill="#333">muscle signal path: what a controller can't give you</text>
+  <line x1="560" y1="940" x2="610" y2="940" stroke="#111" stroke-width="2"/>
+  <text x="620" y="945" font-size="15" fill="#333">game traffic over TCP</text>
+  <line x1="820" y1="940" x2="870" y2="940" stroke="#111" stroke-width="1.5" stroke-dasharray="5 5"/>
+  <text x="880" y="945" font-size="15" fill="#333">UDP discovery</text>
+</svg>
