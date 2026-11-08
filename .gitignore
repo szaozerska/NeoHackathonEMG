@@ -53,6 +53,7 @@ __pycache__/
 /.setup/
 /.local/
 /data/
+/Micah data contribution/
 /artifacts/
 /demo-output/
 *.joblib

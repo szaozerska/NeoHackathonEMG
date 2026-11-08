@@ -139,6 +139,17 @@ second each side), and intersect the remainder with continuous sensor coverage.
 Prefer clicking with the other hand. Guarded intervals remain participant
 reports; clicking is not an exact physiological onset or a guarantee of intent.
 
+The current **Micah data contribution** page is an independent, EMG-only Stage A
+collector, without camera validation or inference. Start with the mouse, select
+Snap or a low/medium/high Shield/Sword hold, then **hold Space for intended
+activity and release for non-intended**. These motion selections are participant
+metadata, separate from the binary target; they need not be used to fit the
+initial intent gate. Retain guards around both key edges and use the other hand
+for Space. Data and participant truth reports stay in the Git-ignored
+`Micah data contribution/` folder. See
+[`docs/micah-contribution.md`](docs/micah-contribution.md). The older continuous
+toggle and optional camera workflow remain available at `/collect`.
+
 Collect intended interactions with varied arm positions, continuously varying
 wrist rotations, and relaxed, natural and comfortably firm effort. Collect
 equally varied non-intended activity: resting, finger fidgeting with a still

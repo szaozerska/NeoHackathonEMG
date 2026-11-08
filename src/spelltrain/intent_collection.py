@@ -88,6 +88,8 @@ class IntentCollection:
         self.interaction_guard=interaction_guard
         self.intent_markers=[{'capture_t':0.,'label':initial_intent,'source':'participant_toggle_at_record_start','uncertainty_seconds':0.}]
         self.interactions=[{'capture_t':0.,'guard_seconds':interaction_guard,'kind':'record_start'}]
+        self.space_down=None
+        self.selected_motion=None;self.motion_selections=[];self.focus_lost=None
         self.signal_segments=[];self.global_last_seq=None;self.global_last_t=None;self.global_generation=None
         self.capture.meta.update(kind='intent_collection_v1',wearing_session=wearing_session,target_hand=hand,
             dataset_role='training_only_weak_labels' if role=='train' else 'untouched_guided_count_check',
@@ -104,23 +106,51 @@ class IntentCollection:
         write_json(self.capture.directory/'collection-plan.json',self.plan)
         write_json(self.capture.directory/'intent-toggle-markers.json',self.intent_markers)
         write_json(self.capture.directory/'interaction-exclusions.json',self.interactions)
+        write_json(self.capture.directory/'motion-selections.json',self.motion_selections)
+
+    def select_motion(self,motion,effort=None):
+        if self.intent_markers[-1]['label']=='intended':raise ValueError('Release Space before changing the selected motion.')
+        if motion not in ('snap','shield_hold','sword_hold') or (motion=='snap' and effort is not None) or (motion!='snap' and effort not in ('low','medium','high')):
+            raise ValueError('Select Snap, or a Shield/Sword hold with low, medium or high effort.')
+        self.interaction(kind='motion_selection')
+        self.selected_motion={'motion':motion,'effort':effort,'source':'participant_selection','performed_verified':False}
+        self.motion_selections.append({'capture_t':self.clock()-self.capture.start,**self.selected_motion})
+        self.capture.append('motion_selection',self.clock(),selection=self.selected_motion)
+        write_json(self.capture.directory/'motion-selections.json',self.motion_selections)
+        return self.selected_motion
 
     def interaction(self,host=None,uncertainty=0.,kind='button'):
         host=self.clock() if host is None else host
         if not math.isfinite(host) or abs(self.clock()-host)>5 or not math.isfinite(uncertainty) or not 0<=uncertainty<=.5:
             raise ValueError('Refresh clock alignment before marking intent.')
         row={'capture_t':host-self.capture.start,'guard_seconds':self.interaction_guard+uncertainty,'kind':kind}
+        if kind=='space_keydown':self.space_down=host
+        if kind=='space_keyup' and self.space_down is not None:
+            # Exclude the full key hold, not just its two edges.
+            row['capture_t']=(host+self.space_down)/2-self.capture.start
+            row['guard_seconds']+=(host-self.space_down)/2
+            self.space_down=None
+        if kind=='focus_lost':self.focus_lost=host
+        if kind=='focus_regained' and self.focus_lost is not None:
+            row['capture_t']=(host+self.focus_lost)/2-self.capture.start
+            row['guard_seconds']+=(host-self.focus_lost)/2
+            self.focus_lost=None
         self.interactions.append(row)
         self.capture.append('participant_interaction',host,interaction=row)
         write_json(self.capture.directory/'interaction-exclusions.json',self.interactions)
 
     def mark_intent(self,label,host=None,uncertainty=0.):
         if label not in ('intended','non_intended'):raise ValueError('Invalid intent label')
+        if label=='intended' and self.capture.meta.get('recording_profile')=='micah_emg' and not self.selected_motion:
+            raise ValueError('Select a motion and effort before holding Space.')
         host=self.clock() if host is None else host
         if host-self.capture.start<self.intent_markers[-1]['capture_t']:raise ValueError('Intent marker arrived out of order; retry.')
         self.interaction(host,uncertainty,'intent_toggle')
         marker={'capture_t':host-self.capture.start,'label':label,'source':'participant_toggle',
                 'uncertainty_seconds':uncertainty,'exact_action_time_verified':False}
+        if self.capture.meta.get('recording_profile')=='micah_emg':
+            marker['source']='participant_spacebar_press' if label=='intended' else 'participant_spacebar_release'
+            marker['selected_motion']=dict(self.selected_motion) if label=='intended' and self.selected_motion else None
         self.intent_markers.append(marker);self.capture.append('intent_toggle',host,marker=marker)
         write_json(self.capture.directory/'intent-toggle-markers.json',self.intent_markers)
         return self.annotation_status()
@@ -254,6 +284,8 @@ class IntentCollection:
         return self.status()
 
     def finish(self):
+        if self.space_down is not None:self.interaction(kind='space_keyup')
+        if self.focus_lost is not None:self.interaction(kind='focus_regained')
         if self.phase!='finished':self.interaction(kind='record_finish')
         if self.current:
             trial={**self.current,'confirmed':False,'interrupted':True};self.trials.append(trial)
@@ -292,10 +324,18 @@ class IntentCollection:
                     if b-a>=.5:intervals.append({'start':a,'end':b,'label':marker['label'],
                         'wearing_session':self.wearing_session,'dataset_role':self.capture.meta['dataset_role'],
                         'source':'participant_toggle_with_interaction_exclusion','supervision':'weak_interval_label',
-                        'gesture_label':None,'exact_action_times_verified':False})
+                        'gesture_label':None,'selected_motion':marker.get('selected_motion'),'exact_action_times_verified':False})
         write_json(self.capture.directory/'intent-gate-intervals.json',{'intervals':intervals,'gesture_labels_required':False,
             'interaction_guard_seconds':self.interaction_guard,'policy':'Guarded participant reports intersected with continuous EMG; not inferred mental intent.'})
-        names=('streams.jsonl','metadata.json','guided-trials.json','intent-gate-trials.json','intent-trials.json','failure-flags.json','collection-plan.json','intent-toggle-markers.json','interaction-exclusions.json','intent-gate-intervals.json')
+        names=('streams.jsonl','metadata.json','guided-trials.json','intent-gate-trials.json','intent-trials.json','failure-flags.json','collection-plan.json','intent-toggle-markers.json','interaction-exclusions.json','intent-gate-intervals.json','motion-selections.json')
+        if self.capture.meta.get('recording_profile')=='micah_emg':
+            truth={'contributor':'Micah','input_modalities':['emg'],'camera_used':False,
+                'label_source':'participant_spacebar_reports','exact_action_onsets_verified':False,
+                'interaction_guard_seconds':self.interaction_guard,
+                'intervals':[{**v,'intended':v['label']=='intended'} for v in intervals],
+                'note':'Participant-provided truth values, with keyboard/mouse boundaries and signal gaps excluded. Short intervals can be fully excluded.'}
+            write_json(self.capture.directory/'truth-values.json',truth)
+            names+=('truth-values.json',)
         hashes={name:hashlib.sha256((self.capture.directory/name).read_bytes()).hexdigest() for name in names}
         write_json(self.capture.directory/'guided-manifest.json',{'schema':1,'wearing_session':self.wearing_session,
             'supervision':'weak_clip_labels','source_hashes':hashes,'open_hold_and_transitions_require_review':True})
@@ -306,6 +346,8 @@ class IntentCollection:
             'exported_training_clips':len(exported),'failure_flags':len(self.flags),'dataset_role':self.capture.meta['dataset_role'],
             'binary_intent_clips':len(gate_trials),
             'toggle_intervals':len(intervals),'toggle_labeled_seconds':sum(v['end']-v['start'] for v in intervals),
+            'intended_seconds':sum(v['end']-v['start'] for v in intervals if v['label']=='intended'),
+            'non_intended_seconds':sum(v['end']-v['start'] for v in intervals if v['label']=='non_intended'),
             'confirmed_zero_snap_seconds':negative_seconds,'false_snap_candidates':false_candidates,
             'false_snap_candidates_per_minute':60*false_candidates/negative_seconds if negative_seconds else None,
             'actual_event_precision':None,'actual_event_recall':None,'automatically_retrained':False,
@@ -320,7 +362,7 @@ class IntentCollection:
         return {'phase':self.phase,'index':self.index,'total':len(self.plan),'trial':trial,'remaining':remaining,
                 'saved_trials':len(self.trials),'usable_trials':sum(t.get('confirmed',False) for t in self.trials),
                 'wearing_session':self.wearing_session,'role':self.role,'hand':self.hand,'failure_flags':len(self.flags),
-                'annotation':self.annotation_status()}
+                'annotation':self.annotation_status(),'selected_motion':self.selected_motion}
 
 
 class EquipmentPreview:

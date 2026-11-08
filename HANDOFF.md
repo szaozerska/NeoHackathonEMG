@@ -35,8 +35,12 @@ installations are not embedded in this repository.
 
 ## Start the original bench
 
-The launcher now opens **Intent lab** at `/`, with the intent-first collection
-workflow described in [`docs/intent-lab.md`](docs/intent-lab.md). Use **Original
+The launcher now opens **Micah data contribution** at `/`: an EMG-only page
+where the mouse starts a session, buttons select Snap/Shield/Sword effort, and
+holding/releasing Space marks intended/non-intended intervals. See
+[`docs/micah-contribution.md`](docs/micah-contribution.md). No camera is required
+or started. The optional **Intent lab** remains at `/collect`, with its workflow
+described in [`docs/intent-lab.md`](docs/intent-lab.md). Use **Original
 v4 tester** at `/live` for the original model feedback page described below.
 Both pages use the same active sensor connection and preserve the v4 weights.
 The training order is documented for Sophie in **Our Methodology for Training

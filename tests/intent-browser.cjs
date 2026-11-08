@@ -8,7 +8,7 @@ const {spawn}=require('child_process'),assert=require('assert'),fs=require('fs')
   const context=await browser.newContext({permissions:['camera','microphone']});const page=await context.newPage(),errors=[];
   page.on('pageerror',error=>errors.push(error.message));
   page.on('console',message=>{if(message.type()==='error')console.log('Browser:',message.text())});
-  await page.goto(url);await page.locator('#wearing').fill('synthetic-browser-01');
+  await page.goto(url+'/collect');await page.locator('#wearing').fill('synthetic-browser-01');
   await page.locator('#focus').selectOption('snaps');
   console.log('Camera API:',await page.evaluate(()=>({available:!!window.CameraReference,handler:!!document.getElementById('enableCamera').onclick,secure:window.isSecureContext})));
   await page.locator('#role').selectOption('evaluation');
