@@ -154,6 +154,14 @@ namespace SpellGame.Game
             var style = Glass(Fill, opacity);
             style.Rim = WithAlpha(Rim, Mathf.Clamp01(Rim.a * rimAlphaScale));
             style.RimWidth = Shape.RimWidth;
+            var palette = Palette;
+            if (palette.FacetLight != palette.FacetDark)
+            {
+                // Two-tone shading: lighter violet top right, darker bottom left.
+                style.FacetLight = WithAlpha(palette.FacetLight, Mathf.Min(1f, palette.FacetLight.a * opacity / 0.75f));
+                style.FacetDark = WithAlpha(palette.FacetDark, Mathf.Min(1f, palette.FacetDark.a * opacity / 0.75f));
+                style.Facets = 1f;
+            }
             return style;
         }
 
