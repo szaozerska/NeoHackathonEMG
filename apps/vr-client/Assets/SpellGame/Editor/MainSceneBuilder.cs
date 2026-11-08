@@ -54,6 +54,8 @@ namespace SpellGame.Editor
             manager.FindProperty("_trackingOriginType").intValue = (int)OVRManager.TrackingOrigin.FloorLevel;
             manager.FindProperty("requestBodyTrackingPermissionOnStartup").boolValue = true;
             manager.FindProperty("isInsightPassthroughEnabled").boolValue = true;
+            // Players move around a shared room, so hide the Guardian boundary while passthrough is on.
+            manager.FindProperty("shouldBoundaryVisibilityBeSuppressed").boolValue = true;
             manager.ApplyModifiedPropertiesWithoutUndo();
 
             rig.AddComponent<OVRPassthroughLayer>();

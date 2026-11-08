@@ -144,6 +144,7 @@ namespace SpellGame.Editor
             config.insightPassthroughSupport = OVRProjectConfig.FeatureSupport.Required;
             config.anchorSupport = OVRProjectConfig.AnchorSupport.Enabled;
             config.sharedAnchorSupport = OVRProjectConfig.FeatureSupport.Required;
+            config.boundaryVisibilitySupport = OVRProjectConfig.FeatureSupport.Required;
             OVRProjectConfig.CommitProjectConfig(config);
 
             var runtime = OVRRuntimeSettings.GetRuntimeSettings();
