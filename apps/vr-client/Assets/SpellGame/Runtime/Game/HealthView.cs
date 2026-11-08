@@ -34,6 +34,14 @@ namespace SpellGame.Game
         [Tooltip("Above the head joint; the player-ID marker sits at 0.3 m.")]
         [SerializeField] private float headBarHeight = 0.45f;
 
+        [Header("Chip damage")]
+        [Tooltip("Seconds the lost HP stays white before it drains away.")]
+        [SerializeField] private float chipHoldSeconds = 0.5f;
+        [Tooltip("Bar fractions per second the white chip drains at.")]
+        [SerializeField] private float chipDrainRate = 0.6f;
+        [Tooltip("At or below this HP fraction the bar pulses.")]
+        [SerializeField] private float lowHpFraction = 0.25f;
+
         [Header("Damage flash")]
         [SerializeField] private float flashDuration = 0.35f;
         [SerializeField] private float flashDistance = 0.5f;
@@ -47,8 +55,12 @@ namespace SpellGame.Game
         {
             public Transform Root;
             public Transform Fill;
+            public Transform Chip;
             public Material FillMaterial;
             public Vector2 Size;
+            public float Shown = -1f;
+            public float LastFraction = -1f;
+            public float ChipHoldUntil;
         }
 
         private static Mesh _quadMesh;
@@ -57,6 +69,7 @@ namespace SpellGame.Game
         private readonly Dictionary<string, Bar> _headBars = new();
         private Bar _wristBar;
         private Material _backMaterial;
+        private Material _chipMaterial;
         private Material _flashMaterial;
         private Transform[] _flashEdges;
         private float _flashStart = float.NegativeInfinity;
@@ -79,6 +92,7 @@ namespace SpellGame.Game
         private void Awake()
         {
             _backMaterial = Tinted(new Color(0.08f, 0.08f, 0.08f));
+            _chipMaterial = Tinted(new Color(1f, 0.95f, 0.85f));
             _flashMaterial = Tinted(new Color(1f, 0.05f, 0.05f));
             _wristBar = CreateBar("Wrist HP", wristBarSize);
             _flashEdges = CreateFlashEdges();
@@ -220,11 +234,36 @@ namespace SpellGame.Game
             bar.Root.SetPositionAndRotation(position, away.sqrMagnitude > 1e-6f ? Quaternion.LookRotation(away) : Quaternion.identity);
 
             var fraction = Mathf.Clamp01(player.Hp / MaxHpOf(player.PlayerId));
-            var width = bar.Size.x * fraction;
-            bar.Fill.gameObject.SetActive(fraction > 0f);
-            bar.Fill.localPosition = new Vector3((width - bar.Size.x) * 0.5f, 0f, -0.002f);
-            bar.Fill.localScale = new Vector3(width, bar.Size.y, 1f);
-            bar.FillMaterial.SetColor("_BaseColor", HpColor(fraction));
+            SetSegment(bar.Fill, bar.Size, fraction, -0.002f);
+
+            // Chip damage, fighting-game style: the HP just lost stays white for a moment, then drains down to the fill.
+            if (fraction < bar.LastFraction)
+                bar.ChipHoldUntil = Time.time + chipHoldSeconds;
+            bar.LastFraction = fraction;
+            if (bar.Shown < fraction)
+                bar.Shown = fraction;
+            else if (Time.time >= bar.ChipHoldUntil)
+                bar.Shown = Mathf.MoveTowards(bar.Shown, fraction, chipDrainRate * Time.deltaTime);
+            SetSegment(bar.Chip, bar.Size, bar.Shown, -0.001f);
+
+            var color = HpColor(fraction);
+            var scale = 1f;
+            if (fraction > 0f && fraction <= lowHpFraction)
+            {
+                var pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * 8f);
+                color = Color.Lerp(color, new Color(1f, 0.75f, 0.75f), 0.6f * pulse);
+                scale = 1f + 0.06f * pulse;
+            }
+            bar.FillMaterial.SetColor("_BaseColor", color);
+            bar.Root.localScale = Vector3.one * scale;
+        }
+
+        private static void SetSegment(Transform segment, Vector2 size, float fraction, float depth)
+        {
+            var width = size.x * fraction;
+            segment.gameObject.SetActive(fraction > 0f);
+            segment.localPosition = new Vector3((width - size.x) * 0.5f, 0f, depth);
+            segment.localScale = new Vector3(width, size.y, 1f);
         }
 
         private static Color HpColor(float fraction) =>
@@ -245,10 +284,11 @@ namespace SpellGame.Game
             root.SetParent(transform, false);
             var back = CreateQuad("Back", root, _backMaterial);
             back.localScale = new Vector3(size.x + 0.006f, size.y + 0.006f, 1f);
+            var chip = CreateQuad("Chip", root, _chipMaterial);
             var fillMaterial = Tinted(Color.green);
             var fill = CreateQuad("Fill", root, fillMaterial);
             root.gameObject.SetActive(false);
-            return new Bar { Root = root, Fill = fill, FillMaterial = fillMaterial, Size = size };
+            return new Bar { Root = root, Fill = fill, Chip = chip, FillMaterial = fillMaterial, Size = size };
         }
 
         /// <summary>Top, bottom, left, right edges of the view, parented to the eye.</summary>

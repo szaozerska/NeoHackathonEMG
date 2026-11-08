@@ -49,6 +49,11 @@ namespace SpellGame.Game
         [Tooltip("Time for the host to stand on their spot, facing the other player, before the anchor is placed.")]
         [SerializeField] private float placementDelaySeconds = 3f;
 
+        [Tooltip("Unlit material for the ring and arrow drawn on the floor at the shared origin after calibrating.")]
+        [SerializeField] private Material ringMaterial;
+        [SerializeField] private float ringSeconds = 6f;
+        [SerializeField] private float ringRadius = 0.25f;
+
         [SerializeField] private float localizeTimeoutSeconds = 10f;
         [SerializeField] private int loadAttempts = 5;
 
@@ -63,6 +68,8 @@ namespace SpellGame.Game
         private Vector3 _markerPositionSum;
         private Vector3 _markerForwardSum;
         private int _markerSamples;
+        private LineRenderer[] _ring;
+        private int _ringShows;
 
         private const string TouchPrompt =
             "Calibrate: meet in the middle, touch right controller tips, click the left stick";
@@ -201,6 +208,7 @@ namespace SpellGame.Game
             _alignedTo = MarkerKey(_space);
             gameClient.Send(new AlignedMessage { Method = AlignMethod.Marker });
             gameClient.SetSpaceStatus("Room calibrated on the marker");
+            ShowOriginRing();
         }
 
         private void OnSpace(SpaceMessage space)
@@ -326,6 +334,7 @@ namespace SpellGame.Game
             _alignedTo = space.AnchorUuid;
             gameClient.Send(new AlignedMessage { Method = AlignMethod.Anchor, AnchorUuid = space.AnchorUuid });
             gameClient.SetSpaceStatus("Aligned to the room anchor");
+            ShowOriginRing();
         }
 
         private async Task<OVRSpatialAnchor> LoadSharedAnchorAsync(Guid groupUuid, Guid anchorUuid)
@@ -402,6 +411,7 @@ namespace SpellGame.Game
                 _alignedTo = CenterKey(space);
                 gameClient.Send(new AlignedMessage { Method = AlignMethod.Center });
                 gameClient.SetSpaceStatus("Room calibrated: walk back to your side");
+                ShowOriginRing();
                 OVRInput.SetControllerVibration(1f, 0.6f, OVRInput.Controller.RTouch);
                 await Awaitable.WaitForSecondsAsync(0.15f, destroyCancellationToken);
                 OVRInput.SetControllerVibration(0f, 0f, OVRInput.Controller.RTouch);
@@ -439,6 +449,76 @@ namespace SpellGame.Game
             var yaw = (Quaternion.Inverse(trackingSpace.rotation) * originInWorld.rotation).eulerAngles.y;
             var rotation = Quaternion.Euler(0f, -yaw, 0f);
             cameraRig.transform.SetPositionAndRotation(rotation * -position, rotation);
+        }
+
+        /// <summary>
+        /// A glowing ring with an arrow towards P2's side, on the floor at the shared origin (the world origin after
+        /// <see cref="AlignTo"/>). It should sit on the printed marker, or where the tips touched, in both headsets.
+        /// </summary>
+        private async void ShowOriginRing()
+        {
+            if (ringMaterial == null)
+                return;
+
+            _ring ??= CreateOriginRing();
+            var show = ++_ringShows;
+            foreach (var line in _ring)
+                line.gameObject.SetActive(true);
+            try
+            {
+                for (var t = 0f; t < ringSeconds && show == _ringShows; t += Time.deltaTime)
+                {
+                    var fade = Mathf.Clamp01((ringSeconds - t) / 1f);
+                    var width = (0.012f + 0.006f * Mathf.Sin(t * 6f)) * fade;
+                    foreach (var line in _ring)
+                        line.widthMultiplier = width;
+                    await Awaitable.NextFrameAsync(destroyCancellationToken);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+
+            if (show != _ringShows)
+                return;
+            foreach (var line in _ring)
+                line.gameObject.SetActive(false);
+        }
+
+        private LineRenderer[] CreateOriginRing()
+        {
+            var root = new GameObject("Shared Origin Ring").transform;
+            const int segments = 48;
+            var circle = new Vector3[segments];
+            for (var i = 0; i < segments; i++)
+            {
+                var angle = i * Mathf.PI * 2f / segments;
+                circle[i] = new Vector3(Mathf.Sin(angle) * ringRadius, 0.01f, Mathf.Cos(angle) * ringRadius);
+            }
+
+            var tip = ringRadius * 1.8f;
+            var arrow = new[]
+            {
+                new Vector3(0f, 0.01f, 0f), new Vector3(0f, 0.01f, tip),
+                new Vector3(-0.08f, 0.01f, tip - 0.08f), new Vector3(0f, 0.01f, tip), new Vector3(0.08f, 0.01f, tip - 0.08f),
+            };
+            return new[] { CreateLine("Ring", root, circle, loop: true), CreateLine("Arrow", root, arrow, loop: false) };
+        }
+
+        private LineRenderer CreateLine(string name, Transform parent, Vector3[] points, bool loop)
+        {
+            var line = new GameObject(name).AddComponent<LineRenderer>();
+            line.transform.SetParent(parent, false);
+            line.useWorldSpace = false;
+            line.loop = loop;
+            line.positionCount = points.Length;
+            line.SetPositions(points);
+            line.sharedMaterial = ringMaterial;
+            line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            line.receiveShadows = false;
+            line.gameObject.SetActive(false);
+            return line;
         }
 
         private static string CenterKey(SpaceMessage space) => $"{AlignMethod.Center}:{space.GroupUuid}";
