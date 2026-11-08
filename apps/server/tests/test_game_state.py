@@ -602,3 +602,18 @@ def test_only_one_domain_runs_at_a_time_and_a_stunned_player_cannot_expand():
     expand_domain(match)
     assert not [e for e in expand_domain(match, "P1") if isinstance(e, p.DomainExpansion)]
     assert not [e for e in expand_domain(match, "P2") if isinstance(e, p.DomainExpansion)]
+
+
+def test_hits_and_blocks_carry_a_grade():
+    match = Match()
+    match.step(snap=True)
+    events = match.throw()
+    events += match.run(1.0)
+    damage = of_type(events, p.Damage)
+    assert damage and damage[0].grade in (p.Grade.GOOD, p.Grade.GREAT, p.Grade.EXCELLENT, p.Grade.PERFECT)
+
+    blocked = Match()
+    raise_shield(blocked)
+    incoming_fireball(blocked)
+    impacts = [i for i in of_type(blocked.run(1.0, p1_hand=SHIELD_HAND), p.Impact) if i.reason == "blocked"]
+    assert impacts and impacts[0].grade is not None

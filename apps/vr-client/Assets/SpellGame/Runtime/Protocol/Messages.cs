@@ -261,6 +261,9 @@ namespace SpellGame.Protocol
 
         /// <summary>The body part hit: a <see cref="HitZone"/> value.</summary>
         public string Zone { get; set; }
+
+        /// <summary>How good the hit was: a <see cref="HitGrade"/> value; null from older servers.</summary>
+        public string Grade { get; set; }
     }
 
     /// <summary>VR → server: this player held B long enough to expand their domain.</summary>
@@ -282,6 +285,14 @@ namespace SpellGame.Protocol
         public List<string> TargetIds { get; set; } = new();
         public float ExpandS { get; set; }
         public float StunS { get; set; }
+    }
+
+    public static class HitGrade
+    {
+        public const string Good = "good";
+        public const string Great = "great";
+        public const string Excellent = "excellent";
+        public const string Perfect = "perfect";
     }
 
     public static class HitZone
@@ -317,6 +328,9 @@ namespace SpellGame.Protocol
         public float[] Pos { get; set; }
         public string Reason { get; set; }
         public string TargetId { get; set; }
+
+        /// <summary>For <c>blocked</c> / <c>parried</c>: a <see cref="HitGrade"/> value.</summary>
+        public string Grade { get; set; }
 
         [JsonIgnore]
         public Vector3 Position => new(Pos[0], Pos[1], Pos[2]);
