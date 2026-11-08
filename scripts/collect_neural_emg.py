@@ -31,14 +31,14 @@ NEGATIVE_VARIANTS = [
 ]
 
 
-def plan(kind, repetitions, seed=7, instruction=None):
-    variants = SNAP_VARIANTS if kind == 'snap' else NEGATIVE_VARIANTS if kind == 'negative' else [
+def plan(kind, repetitions, seed=7, instruction=None, event=False):
+    variants = SNAP_VARIANTS if kind == 'snap' else NEGATIVE_VARIANTS if kind == 'negative' else [instruction] if event else [
         instruction or {'fist': 'Hold a comfortable closed fist', 'open': 'Hold your deliberate open shield hand',
          'none': 'Keep the hand relaxed; do not hold a fist or shield'}.get(kind, '')]
     if not all(variants):
         raise ValueError('New gesture labels require --instruction')
     items = [{'id': f'{kind}-{i+1:03}', 'kind': kind, 'instruction': variants[i % len(variants)],
-              'intended_count': 1 if kind == 'snap' else 0} for i in range(repetitions)]
+              'intended_count': 1 if kind == 'snap' or event else 0} for i in range(repetitions)]
     random.Random(seed).shuffle(items)
     return items
 
@@ -48,7 +48,8 @@ def main():
     parser.add_argument('--kinesis-file', required=True)
     parser.add_argument('--kind', default='snap', help='snap, negative, or a registered state label')
     parser.add_argument('--config', default='configs/neural-emg.json')
-    parser.add_argument('--instruction', help='Collection instruction for a new state gesture')
+    parser.add_argument('--instruction', help='Collection instruction for a new state or event gesture')
+    parser.add_argument('--event', action='store_true', help='Quick one-off gesture, counted per clip like snap (needs --instruction)')
     parser.add_argument('--repetitions', type=int, default=20)
     parser.add_argument('--seconds', type=float, default=3.)
     parser.add_argument('--output-root', default='data/player-a/neural-guided')
@@ -56,9 +57,12 @@ def main():
     parser.add_argument('--role', choices=['train', 'evaluation'], default='train', help='Evaluation blocks are reserved from fitting')
     args = parser.parse_args()
     registry = json.loads(Path(args.config).read_text())
-    if args.kind not in ('snap', 'negative') and args.kind not in registry['tasks']['state']['classes']:
-        parser.error('Add new gesture to the state class registry first')
-    trial_plan = plan(args.kind, args.repetitions, instruction=args.instruction)
+    counted = args.kind in ('snap', 'negative') or args.event
+    if args.event and (args.kind in ('snap', 'negative') or not args.instruction):
+        parser.error('--event is for a new gesture name and needs --instruction')
+    if not counted and args.kind not in registry['tasks']['state']['classes']:
+        parser.error('Add new gesture to the state class registry first, or pass --event for a quick gesture')
+    trial_plan = plan(args.kind, args.repetitions, instruction=args.instruction, event=args.event)
     if args.repetitions < 1 or args.seconds < 2:
         parser.error('Use at least one repetition and at least two seconds per clip')
     stop = threading.Event(); lock = threading.RLock(); buffer = deque(maxlen=512)
@@ -76,7 +80,7 @@ def main():
                               lambda message: state.update(error=message)), daemon=True)
     reader.start(); capture = None; trials = []
     print('EMG only. Start Kinesis raw recording at: '+str(Path(args.kinesis_file).resolve()), flush=True)
-    print('One snap per short clip, repeated 20 times by default. No snap timestamps are assumed.', flush=True)
+    print('One action per short clip, repeated 20 times by default. No event timestamps are assumed.', flush=True)
     try:
         while state['last'] is None:
             if state['error']:
@@ -103,9 +107,10 @@ def main():
             stop.wait(args.seconds)
             end = time.monotonic()-capture.start
             print('STOP', flush=True)
-            if args.kind in ('snap', 'negative'):
+            if counted:
                 while True:
-                    answer = input('How many actual snaps? [Enter = intended count; x = uncertain/discard] ').strip().lower()
+                    answer = input(f'How many actual {"snaps" if args.kind == "negative" else args.kind + "s"}? '
+                                   '[Enter = intended count; x = uncertain/discard] ').strip().lower()
                     try:
                         count = None if answer == 'x' else trial['intended_count'] if not answer else int(answer)
                         if count is not None and count < 0:

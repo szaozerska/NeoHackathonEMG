@@ -103,6 +103,8 @@ def test_guided_variants_cover_soft_firm_and_rotation_without_camera():
     assert all(r['intended_count'] == 0 for r in module['plan']('negative', 20))
     custom = module['plan']('new_gesture', 3, instruction='Hold two fingers extended')
     assert all(r['kind'] == 'new_gesture' for r in custom)
+    crossed = module['plan']('cross', 4, instruction='Cross index over middle finger, palm up', event=True)
+    assert all(r['intended_count'] == 1 and r['instruction'].startswith('Cross') for r in crossed)
 
 
 def test_guided_counts_become_bags_not_fabricated_positive_windows(tmp_path, monkeypatch):
